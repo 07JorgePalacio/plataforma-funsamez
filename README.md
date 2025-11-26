@@ -30,21 +30,6 @@ El proyecto está organizado como un Monorepo Lógico (Frontend y Backend en el 
 
 ---
 
-## 🚀 Inicio Rápido (Levantar el Entorno de Desarrollo)
-
-Recomendamos usar Docker Compose para iniciar el entorno de desarrollo con la base de datos y los servicios.
-
-### Requisitos
-
-1.  [Docker](https://www.docker.com/)
-2.  [Docker Compose](https://docs.docker.com/compose/)
-
-### 1. Clonar el Repositorio
-
-```bash
-git clone [https://github.com/tu-organizacion/plataforma-funsamez.git](https://github.com/tu-organizacion/plataforma-funsamez.git)
-cd plataforma-funsamez
-
 # 🌳 Flujo de Trabajo Git (Git Workflow)
 
 Este proyecto utiliza una estrategia de ramas basada en **Requisitos Funcionales**. 
@@ -82,3 +67,19 @@ gitGraph
    
    checkout main
    commit id: "Hotfix menor"
+
+
+## 🚀 Inicio Rápido (Levantar el Entorno de Desarrollo)
+
+Recomendamos usar Docker Compose para iniciar el entorno de desarrollo con la base de datos y los servicios.
+
+### Requisitos
+
+1.  [Docker](https://www.docker.com/)
+2.  [Docker Compose](https://docs.docker.com/compose/)
+
+### 1. Clonar el Repositorio
+
+```bash
+git clone [https://github.com/tu-organizacion/plataforma-funsamez.git](https://github.com/tu-organizacion/plataforma-funsamez.git)
+cd plataforma-funsamez
