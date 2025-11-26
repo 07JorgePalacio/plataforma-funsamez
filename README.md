@@ -44,3 +44,41 @@ Recomendamos usar Docker Compose para iniciar el entorno de desarrollo con la ba
 ```bash
 git clone [https://github.com/tu-organizacion/plataforma-funsamez.git](https://github.com/tu-organizacion/plataforma-funsamez.git)
 cd plataforma-funsamez
+
+# 🌳 Flujo de Trabajo Git (Git Workflow)
+
+Este proyecto utiliza una estrategia de ramas basada en **Requisitos Funcionales**. 
+
+La rama `main` contiene el código base estable. Cada nuevo Requisito Funcional (RF) se desarrolla en su propia rama independiente y, una vez completado y probado, se fusiona (merge) de vuelta a `main`.
+
+## 📊 Gráfico del Flujo
+
+```mermaid
+gitGraph
+   commit id: "Inicio Proyecto"
+   commit id: "Configuración Base"
+   
+   %% Requisito Funcional 01
+   branch RF-01-Login
+   checkout RF-01-Login
+   commit id: "Diseño Interfaz"
+   commit id: "Lógica Auth"
+   checkout main
+   merge RF-01-Login id: "Merge RF-01"
+
+   %% Requisito Funcional 02
+   branch RF-02-Catalogo
+   checkout RF-02-Catalogo
+   commit id: "Crear BD"
+   commit id: "Vista Productos"
+   checkout main
+   merge RF-02-Catalogo id: "Merge RF-02"
+
+   %% Requisito Funcional 03 (En desarrollo)
+   branch RF-03-Pagos
+   checkout RF-03-Pagos
+   commit id: "API Pasarela"
+   commit id: "Validaciones"
+   
+   checkout main
+   commit id: "Hotfix menor"
