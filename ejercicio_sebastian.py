@@ -1,2 +1,2 @@
-asdasdsad
- git checkout SCRUM-9-requisito-funcional
+mensaje = input("Por favor ingresa tu nombre: ")
+print(f"Hola {mensaje}. Espero tengas un excelente día.")
