@@ -1,31 +1,44 @@
-import bcrypt
-from src.domain.entities import Usuario
-from src.application.ports.output.user_repository import UserRepository
+import hashlib
+from typing import List, Optional
+from core.domain.entities.user import User
+from core.application.ports.output.user_repository import UserRepository
 
-class RegistrarUsuarioUseCase:
-    
-    def __init__(self, repositorio: UserRepository):
-        # Inyección de Dependencias: Recibimos el repositorio, no lo instanciamos aquí.
-        self.repositorio = repositorio
+class RegisterUser:
+    def __init__(self, user_repository: UserRepository):
+        self.user_repository = user_repository
 
-    def ejecutar(self, nombre: str, email: str, contrasena: str) -> Usuario:
-        # 1. Regla de Negocio: El correo no debe repetirse
-        if self.repositorio.buscar_por_email(email):
-            raise ValueError("El correo electrónico ya está registrado.")
+    def execute(self, nombre_completo: str, email: str, password: str, 
+                tipo_documento: str,  # <--- NUEVO ARGUMENTO OBLIGATORIO
+                numero_identificacion: str, # <--- NUEVO ARGUMENTO OBLIGATORIO
+                telefono: Optional[str] = None, direccion: Optional[str] = None,
+                fecha_nacimiento: Optional[str] = None, 
+                profesion: Optional[str] = None, intereses: List[str] = None, 
+                habilidades: List[str] = None) -> User:
+        
+        # 1. Verificar si el CORREO ya existe
+        if self.user_repository.get_by_email(email):
+            raise ValueError("El correo electrónico ya está registrado")
 
-        # 2. Seguridad: Encriptar la contraseña
-        salt = bcrypt.gensalt()
-        bytes_contrasena = contrasena.encode('utf-8')
-        hash_contrasena = bcrypt.hashpw(bytes_contrasena, salt)
+        # 2. Hashear contraseña
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
-        # 3. Crear la Entidad (Dominio)
-        nuevo_usuario = Usuario(
-            id=None,  # La BD le pondrá ID después
-            nombre_completo=nombre,
+        # 3. Crear Entidad
+        new_user = User(
+            nombre_completo=nombre_completo,
             correo_electronico=email,
-            contrasena_hash=hash_contrasena.decode('utf-8'),
-            estado='pendiente_activacion' # Según tu HU05, nace pendiente
+            contrasena_hash=hashed_password,
+            numero_telefono=telefono,
+            direccion=direccion,
+            rol="voluntario",
+            
+            # Nuevos campos
+            fecha_nacimiento=fecha_nacimiento,
+            tipo_documento=tipo_documento,       # <--- ASIGNAMOS AQUÍ
+            numero_identificacion=numero_identificacion,
+            profesion=profesion,
+            intereses=intereses or [],
+            habilidades=habilidades or []
         )
 
-        # 4. Persistir
-        return self.repositorio.guardar(nuevo_usuario)
+        # 4. Guardar
+        return self.user_repository.save(new_user)

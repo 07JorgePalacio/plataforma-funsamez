@@ -4,6 +4,7 @@ Django settings for plataforma_funsamez project.
 
 from pathlib import Path
 import os
+from datetime import timedelta
 
 # 1. BASE_DIR: Calculamos la ruta raíz (backend/)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -21,17 +22,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Third party
     'rest_framework',
+    'corsheaders',
 
     # Local apps (infraestructura real)
-    'core.infrastructure.persistence.django',
+    'core.infrastructure.persistence.django.apps.PersistenceConfig', 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -100,3 +101,26 @@ STATIC_URL = 'static/'
 
 # Tipo de campo para claves primarias
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- CONFIGURACIÓN DE LIBRERÍAS EXTERNAS ---
+
+# CONFIGURACIÓN DE DRF
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+# CONFIGURACIÓN DE JWT
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # El token dura 1 día (para desarrollo)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7), # La renovación dura 7 días
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',), # Así se enviará desde React: "Bearer <token>"
+}
+
+# PERMITIR QUE REACT SE CONECTE
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
