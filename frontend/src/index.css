@@ -2,7 +2,209 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #F5F5F0;
-  color: #1F1F1F;
+/* Material Design 3 Base Styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply font-sans text-on-surface bg-surface antialiased;
+  }
+  
+  ::selection {
+    @apply bg-primary/30;
+  }
+}
+
+/* Material Design 3 Component Styles */
+@layer components {
+  /* Filled Button (Primary) */
+  .btn-filled {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 
+           bg-primary text-white font-medium text-label-large
+           rounded-full transition-all duration-200
+           hover:bg-primary-dark hover:shadow-elevation-2
+           active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  
+  /* Outlined Button (Secondary) */
+  .btn-outlined {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           border-2 border-outline text-on-surface font-medium text-label-large
+           rounded-full transition-all duration-200
+           hover:bg-on-surface/5 hover:border-on-surface
+           active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  
+  /* Text Button */
+  .btn-text {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2
+           text-primary font-medium text-label-large
+           rounded-full transition-all duration-200
+           hover:bg-primary/10
+           active:scale-[0.98];
+  }
+  
+  /* Tonal Button */
+  .btn-tonal {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-primary-container text-primary-on-container font-medium text-label-large
+           rounded-full transition-all duration-200
+           hover:shadow-elevation-1
+           active:scale-[0.98];
+  }
+  
+  /* Material Card */
+  .card {
+    @apply bg-surface-container rounded-2xl p-6 shadow-elevation-1
+           transition-all duration-300;
+  }
+  
+  .card-elevated {
+    @apply bg-surface rounded-2xl p-6 shadow-elevation-2
+           hover:shadow-elevation-3 transition-all duration-300;
+  }
+  
+  .card-filled {
+    @apply bg-surface-container-highest rounded-2xl p-6
+           transition-all duration-300;
+  }
+  
+  /* Input Fields */
+  .input-outlined {
+    @apply w-full px-4 py-3 border-2 border-outline-variant rounded-lg
+           bg-transparent text-on-surface placeholder:text-on-surface-variant
+           transition-all duration-200
+           focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20;
+  }
+  
+  .input-filled {
+    @apply w-full px-4 py-3 rounded-t-lg border-b-2 border-outline-variant
+           bg-surface-container-highest text-on-surface
+           placeholder:text-on-surface-variant
+           transition-all duration-200
+           focus:outline-none focus:border-primary focus:bg-surface-container;
+  }
+  
+  /* Chips */
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-4 py-2
+           bg-surface-container-high text-on-surface
+           rounded-full text-label-large
+           transition-all duration-200 cursor-pointer
+           hover:bg-surface-container-highest;
+  }
+  
+  .chip-selected {
+    @apply bg-secondary-container text-secondary-on-container;
+  }
+  
+  /* Status Badges */
+  .badge-pending {
+    @apply inline-flex items-center gap-1.5 px-3 py-1
+           bg-warning-container text-warning rounded-full text-label-medium;
+  }
+  
+  .badge-success {
+    @apply inline-flex items-center gap-1.5 px-3 py-1
+           bg-success-container text-success rounded-full text-label-medium;
+  }
+  
+  .badge-error {
+    @apply inline-flex items-center gap-1.5 px-3 py-1
+           bg-error-container text-error rounded-full text-label-medium;
+  }
+  
+  /* Navigation Rail (Desktop) */
+  .nav-rail {
+    @apply fixed left-0 top-0 h-screen w-20 bg-surface-container
+           flex flex-col items-center py-6 gap-3 z-50
+           border-r border-outline-variant;
+  }
+  
+  .nav-rail-item {
+    @apply flex flex-col items-center gap-1 p-3 rounded-xl
+           text-on-surface-variant transition-all duration-200
+           hover:bg-surface-container-high
+           cursor-pointer w-16;
+  }
+  
+  .nav-rail-item.active {
+    @apply bg-secondary-container text-secondary;
+  }
+  
+  /* Navigation Bar (Mobile) */
+  .nav-bar {
+    @apply fixed bottom-0 left-0 right-0 h-20 bg-surface-container
+           flex items-center justify-around px-4 z-50
+           border-t border-outline-variant;
+  }
+  
+  .nav-bar-item {
+    @apply flex flex-col items-center gap-1 p-2 rounded-xl
+           text-on-surface-variant transition-all duration-200
+           hover:bg-surface-container-high cursor-pointer;
+  }
+  
+  .nav-bar-item.active {
+    @apply text-primary;
+  }
+  
+  .nav-bar-item.active .nav-bar-indicator {
+    @apply bg-secondary-container;
+  }
+  
+  /* Dialog/Modal */
+  .dialog-overlay {
+    @apply fixed inset-0 bg-black/50 z-[100] backdrop-blur-sm
+           animate-fade-in;
+  }
+  
+  .dialog {
+    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+           bg-surface rounded-3xl p-6 z-[101] shadow-elevation-5
+           w-[90vw] max-w-md max-h-[85vh] overflow-auto
+           animate-scale-in;
+  }
+  
+  /* Progress Bar */
+  .progress-track {
+    @apply w-full h-2 bg-surface-container-highest rounded-full overflow-hidden;
+  }
+  
+  .progress-fill {
+    @apply h-full bg-primary rounded-full transition-all duration-500;
+  }
+  
+  /* Toast Notification */
+  .toast {
+    @apply fixed bottom-24 left-1/2 -translate-x-1/2 z-[200]
+           bg-on-surface text-surface px-6 py-4 rounded-lg
+           shadow-elevation-3 animate-slide-up
+           flex items-center gap-3;
+  }
+}
+
+/* Utility Classes */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .gradient-hero {
+    background: linear-gradient(
+      135deg,
+      rgba(197, 160, 89, 0.9) 0%,
+      rgba(46, 90, 136, 0.85) 100%
+    );
+  }
+  
+  .glass {
+    @apply bg-white/80 backdrop-blur-md;
+  }
+  
+  .glass-dark {
+    @apply bg-black/60 backdrop-blur-md;
+  }
 }
