@@ -16,14 +16,13 @@ const DOCUMENT_TYPES = [
 ];
 
 const COUNTRY_CODES = [
-  { code: '+57', country: 'CO' }, // Colombia
-  { code: '+58', country: 'VE' }, // Venezuela
-  { code: '+1', country: 'US' },  // USA
-  { code: '+34', country: 'ES' }, // España
-  { code: '+52', country: 'MX' }, // Mexico
-  { code: '+51', country: 'PE' }, // Peru
-  { code: '+593', country: 'EC' }, // Ecuador
-  // Puedes agregar más aquí
+  { code: '+57', country: 'CO' },
+  { code: '+58', country: 'VE' },
+  { code: '+1', country: 'US' },
+  { code: '+34', country: 'ES' },
+  { code: '+52', country: 'MX' },
+  { code: '+51', country: 'PE' },
+  { code: '+593', country: 'EC' },
 ];
 
 const INTERESES_OPCIONES = [
@@ -46,8 +45,8 @@ const HABILIDADES_OPCIONES = [
 // --- COMPONENTE INPUT AUXILIAR ---
 const InputField = ({ label, name, type = "text", required = false, placeholder = "", formData, handleChange, errors, numericOnly = false }) => (
   <div className="space-y-1 scroll-mt-24" id={`field-${name}`}>
-    <label className="text-sm font-semibold text-gray-700">
-      {label} {required && <span className="text-red-500">*</span>}
+    <label className="text-sm font-semibold text-on-surface">
+      {label} {required && <span className="text-error">*</span>}
     </label>
     <input 
       name={name} 
@@ -58,13 +57,13 @@ const InputField = ({ label, name, type = "text", required = false, placeholder 
       onChange={(e) => handleChange(e, numericOnly)} 
       className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all
         ${errors[name] 
-          ? "border-red-500 bg-red-50 text-red-900 focus:border-red-600 focus:ring-4 focus:ring-red-100" 
-          : "border-gray-200 bg-gray-50 focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10"
+          ? "border-error bg-error-container text-error focus:border-error focus:ring-4 focus:ring-error/10" 
+          : "border-outline-variant bg-surface-container focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 text-on-surface"
         }
       `} 
     />
     {errors[name] && (
-      <div className="flex items-center mt-1 text-red-600 animate-pulse">
+      <div className="flex items-center mt-1 text-error animate-pulse">
         <AlertCircle size={14} className="mr-1" />
         <span className="text-xs font-bold">{errors[name]}</span>
       </div>
@@ -93,7 +92,7 @@ const RegisterPage = () => {
     password: '',
     telefono: '', 
     fecha_nacimiento: '',
-    tipo_documento: 'CC', // Default
+    tipo_documento: 'CC',
     numero_identificacion: '',
     profesion: '',
     intereses: [], 
@@ -115,9 +114,8 @@ const RegisterPage = () => {
   const handleChange = (e, numericOnly = false) => {
     const { name, value } = e.target;
     
-    // VALIDACIÓN: Si es solo numérico y el valor no es vacío, verificar regex
     if (numericOnly && value !== '' && !/^\d+$/.test(value)) {
-        return; // No hace nada si escriben letras
+        return;
     }
 
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -168,7 +166,6 @@ const RegisterPage = () => {
     setIsLoading(true);
 
     try {
-      // Preparamos datos: Concatenamos código de país al teléfono
       const payload = {
           ...formData,
           telefono: formData.telefono ? `${countryCode} ${formData.telefono}` : ''
@@ -182,7 +179,6 @@ const RegisterPage = () => {
 
     } catch (err) {
       if (err.response && err.response.data) {
-        // Mapeo inteligente de errores del backend
         const backendErrors = err.response.data;
         const normalizedErrors = {};
         
@@ -202,30 +198,24 @@ const RegisterPage = () => {
     }
   };
 
-  // --- NUEVO: PROTECCIÓN CONTRA RECARGA ACCIDENTAL ---
+  // Protección contra recarga accidental
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      // 1. Verificamos si el formulario tiene datos (está "sucio")
       const isDirty = Object.values(formData).some(value => {
         if (Array.isArray(value)) return value.length > 0;
         return value !== '' && value !== 'CC' && value !== '+57';
       });
 
-      // 2. Si tiene datos Y NO ha sido exitoso el registro, activamos la advertencia
       if (isDirty && !isSuccess) {
         e.preventDefault();
-        // Esto activa el mensaje estándar del navegador "Es posible que los cambios no se guarden"
         e.returnValue = ''; 
         return '';
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [formData, isSuccess]); // Se ejecuta cada vez que cambia el formulario o el estado de éxito
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [formData, isSuccess]);
 
   const renderChipsSection = (title, field, optionsList, showAllState, setShowAllState) => {
     const currentCount = formData[field].length;
@@ -235,8 +225,8 @@ const RegisterPage = () => {
     return (
       <div className="md:col-span-2 mt-6">
         <div className="flex justify-between items-baseline mb-3">
-            <label className="text-sm font-semibold text-gray-700 block">{title}</label>
-            <span className={`text-xs font-medium ${currentCount === MAX_SELECTION ? 'text-brand-gold' : 'text-gray-400'}`}>
+            <label className="text-sm font-semibold text-on-surface block">{title}</label>
+            <span className={`text-xs font-medium ${currentCount === MAX_SELECTION ? 'text-primary' : 'text-on-surface-variant'}`}>
                 {currentCount}/{MAX_SELECTION} seleccionados
             </span>
         </div>
@@ -247,14 +237,19 @@ const RegisterPage = () => {
             return (
             <button key={item} type="button" onClick={() => toggleSelection(field, item)} disabled={isDisabled}
               className={`px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2 
-                ${isSelected ? "bg-brand-gold text-white border-brand-gold shadow-sm" : isDisabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white text-gray-600 border-gray-200 hover:border-brand-gold hover:text-brand-gold"}`}
+                ${isSelected 
+                  ? "bg-primary text-white border-primary shadow-sm" 
+                  : isDisabled 
+                    ? "bg-surface-container-high text-on-surface-variant cursor-not-allowed" 
+                    : "bg-white text-on-surface border-outline-variant hover:border-primary hover:text-primary"
+                }`}
             >
               {isSelected && <Check size={14} />} {item}
             </button>
           )})}
         </div>
         {hasMore && (
-          <button type="button" onClick={() => setShowAllState(!showAllState)} className="mt-3 text-sm text-brand-gold flex items-center font-medium hover:underline">
+          <button type="button" onClick={() => setShowAllState(!showAllState)} className="mt-3 text-sm text-primary flex items-center font-medium hover:underline">
             {showAllState ? <><ChevronUp size={16} className="mr-1"/> Ver menos</> : <><ChevronDown size={16} className="mr-1"/> Ver más opciones</>}
           </button>
         )}
@@ -263,51 +258,51 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-beige p-4 py-10 animate-fade-in">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-surface p-4 py-10 animate-fade-in">
       <div className="text-center mb-8 max-w-md animate-slide-down">
-        <div className="mx-auto h-16 w-16 bg-brand-gold rounded-full flex items-center justify-center shadow-lg mb-4">
+        <div className="mx-auto h-16 w-16 bg-primary rounded-full flex items-center justify-center shadow-lg mb-4">
              <span className="text-white text-2xl font-bold">F</span>
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Únete a FUNSAMEZ</h1>
-        <p className="text-gray-600 text-lg">Crea tu cuenta y sé parte del cambio.</p>
+        <h1 className="text-4xl font-bold text-on-surface mb-2">Únete a FUNSAMEZ</h1>
+        <p className="text-on-surface-variant text-lg">Crea tu cuenta y sé parte del cambio.</p>
       </div>
 
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl p-8 md:p-12 relative overflow-hidden">
-        {isLoading && (<div className="absolute top-0 left-0 w-full h-1.5 bg-gray-100"><div className="h-full bg-brand-gold animate-progress-indeterminate"></div></div>)}
+        {isLoading && (<div className="absolute top-0 left-0 w-full h-1.5 bg-surface-container"><div className="h-full bg-primary animate-progress-indeterminate"></div></div>)}
         
         {isSuccess && (
-          <div className="bg-green-50 border border-green-200 text-green-800 p-6 mb-8 rounded-xl text-center font-medium flex flex-col items-center justify-center animate-pulse shadow-sm">
-            <Check size={28} className="text-green-600 mb-2" />
+          <div className="bg-success-container border border-success/20 text-success p-6 mb-8 rounded-xl text-center font-medium flex flex-col items-center justify-center animate-pulse shadow-sm">
+            <Check size={28} className="text-success mb-2" />
             <span className="text-2xl font-bold mb-1">¡Registro Exitoso!</span>
-            <span className="text-sm text-brand-gold mt-2 font-semibold">Redirigiendo...</span>
+            <span className="text-sm text-primary mt-2 font-semibold">Redirigiendo...</span>
           </div>
         )}
 
         {generalError && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md flex items-center animate-shake">
+          <div className="bg-error-container border-l-4 border-error text-error p-4 mb-6 rounded-md flex items-center animate-shake">
             <AlertCircle size={24} className="mr-3 flex-shrink-0" /> <span className="font-medium">{generalError}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className={`grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 ${isLoading || isSuccess ? 'opacity-50 pointer-events-none' : ''}`}>
           
-          <div className="md:col-span-2 pb-2 border-b border-gray-100 text-gray-400 font-bold uppercase text-xs tracking-wider mb-2">Información Básica</div>
+          <div className="md:col-span-2 pb-2 border-b border-outline-variant text-on-surface-variant font-bold uppercase text-xs tracking-wider mb-2">Información Básica</div>
 
           <InputField label="Nombre Completo" name="nombre_completo" required formData={formData} handleChange={handleChange} errors={errors} />
           
           {/* GRUPO DE DOCUMENTO: TIPO + NUMERO */}
           <div className="space-y-1">
-             <label className="text-sm font-semibold text-gray-700">Tipo Documento <span className="text-red-500">*</span></label>
+             <label className="text-sm font-semibold text-on-surface">Tipo Documento <span className="text-error">*</span></label>
              <div className="relative">
                 <select
                     name="tipo_documento"
                     value={formData.tipo_documento}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-brand-gold appearance-none cursor-pointer"
+                    className="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container outline-none focus:bg-white focus:border-primary appearance-none cursor-pointer text-on-surface"
                 >
                     {DOCUMENT_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}
                 </select>
-                <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-on-surface-variant pointer-events-none" size={16} />
              </div>
           </div>
 
@@ -318,26 +313,26 @@ const RegisterPage = () => {
             formData={formData} 
             handleChange={handleChange} 
             errors={errors}
-            numericOnly={true} // <--- ACTIVAR RESTRICCIÓN NUMÉRICA
+            numericOnly={true}
             placeholder="Solo números, sin puntos"
           />
           
           <InputField label="Fecha de Nacimiento" name="fecha_nacimiento" type="date" required formData={formData} handleChange={handleChange} errors={errors} />
           <InputField label="Profesión / Ocupación" name="profesion" formData={formData} handleChange={handleChange} errors={errors} />
 
-          <div className="md:col-span-2 pb-2 border-b border-gray-100 text-gray-400 font-bold uppercase text-xs tracking-wider mt-6 mb-2">Acceso y Contacto</div>
+          <div className="md:col-span-2 pb-2 border-b border-outline-variant text-on-surface-variant font-bold uppercase text-xs tracking-wider mt-6 mb-2">Acceso y Contacto</div>
 
           <InputField label="Correo Electrónico" name="email" type="email" required placeholder="ejemplo@correo.com" formData={formData} handleChange={handleChange} errors={errors} />
           
           {/* GRUPO TELÉFONO: CÓDIGO PAIS + NUMERO */}
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-gray-700">Teléfono / WhatsApp</label>
+            <label className="text-sm font-semibold text-on-surface">Teléfono / WhatsApp</label>
             <div className="flex gap-2">
                 <div className="relative w-1/3">
                     <select 
                         value={countryCode}
                         onChange={(e) => setCountryCode(e.target.value)}
-                        className="w-full px-2 py-2.5 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:border-brand-gold appearance-none text-center font-medium"
+                        className="w-full px-2 py-2.5 rounded-xl border border-outline-variant bg-surface-container outline-none focus:border-primary appearance-none text-center font-medium text-on-surface"
                     >
                         {COUNTRY_CODES.map(c => <option key={c.code} value={c.code}>{c.country} ({c.code})</option>)}
                     </select>
@@ -347,37 +342,37 @@ const RegisterPage = () => {
                     type="tel"
                     placeholder="300 123 4567"
                     value={formData.telefono}
-                    onChange={(e) => handleChange(e, true)} // <--- NUMÉRICO TAMBIÉN
-                    className="w-2/3 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 outline-none focus:bg-white focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 transition-all"
+                    onChange={(e) => handleChange(e, true)}
+                    className="w-2/3 px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-on-surface"
                 />
             </div>
           </div>
 
           <div className="md:col-span-2 space-y-1 relative z-10 scroll-mt-24" id="field-password">
-            <label className="text-sm font-semibold text-gray-700">Contraseña <span className="text-red-500">*</span></label>
+            <label className="text-sm font-semibold text-on-surface">Contraseña <span className="text-error">*</span></label>
             <div className="relative">
               <input name="password" type={showPassword ? "text" : "password"} required value={formData.password} onChange={handleChange} placeholder="Mínimo 8 caracteres"
-                className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all pr-12 ${errors.password ? "border-red-500 bg-red-50" : "border-gray-200 bg-gray-50 focus:border-brand-gold"}`} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-brand-gold p-1">
+                className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all pr-12 ${errors.password ? "border-error bg-error-container text-error" : "border-outline-variant bg-surface-container focus:border-primary text-on-surface"}`} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant hover:text-primary p-1">
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            {errors.password && <div className="flex items-center mt-1 text-red-600 animate-pulse"><AlertCircle size={14} className="mr-1" /><span className="text-xs font-bold">{errors.password}</span></div>}
+            {errors.password && <div className="flex items-center mt-1 text-error animate-pulse"><AlertCircle size={14} className="mr-1" /><span className="text-xs font-bold">{errors.password}</span></div>}
           </div>
 
-          <div className="md:col-span-2 pb-2 border-b border-brand-gold/30 text-brand-gold font-bold uppercase text-sm tracking-wider mt-8">Tu Perfil de Voluntario</div>
+          <div className="md:col-span-2 pb-2 border-b border-primary/30 text-primary font-bold uppercase text-sm tracking-wider mt-8">Tu Perfil de Voluntario</div>
           
           {renderChipsSection("Áreas de Interés", "intereses", INTERESES_OPCIONES, showAllInterests, setShowAllInterests)}
           {renderChipsSection("Habilidades Destacadas", "habilidades", HABILIDADES_OPCIONES, showAllSkills, setShowAllSkills)}
 
           <div className="md:col-span-2 mt-10">
-            <button type="submit" disabled={isLoading || isSuccess} className={`w-full font-bold py-4 rounded-xl shadow-xl transition-all transform text-lg flex justify-center items-center ${isLoading || isSuccess ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-brand-gold hover:bg-[#b08d55] text-white shadow-brand-gold/30 active:scale-[0.98]"}`}>
+            <button type="submit" disabled={isLoading || isSuccess} className={`w-full font-bold py-4 rounded-xl shadow-xl transition-all transform text-lg flex justify-center items-center ${isLoading || isSuccess ? "bg-surface-container-high text-on-surface-variant cursor-not-allowed shadow-none" : "bg-primary hover:bg-primary-dark text-white shadow-primary/30 active:scale-[0.98]"}`}>
               {isLoading ? <><Loader2 className="mr-3 animate-spin" size={24} /> Validando...</> : isSuccess ? "¡Bienvenido a la familia!" : "¡Completar Registro!"}
             </button>
           </div>
         </form>
       </div>
-      <p className="mt-8 text-center text-gray-600">¿Ya eres parte de FUNSAMEZ? <Link to="/login" className="text-brand-gold font-bold hover:underline ml-1">Inicia Sesión</Link></p>
+      <p className="mt-8 text-center text-on-surface-variant">¿Ya eres parte de FUNSAMEZ? <Link to="/login" className="text-primary font-bold hover:underline ml-1">Inicia Sesión</Link></p>
       
       <style>{`
         @keyframes progress-indeterminate { 0% { width: 0%; margin-left: 0%; } 50% { width: 70%; margin-left: 30%; } 100% { width: 0%; margin-left: 100%; } }

@@ -37,27 +37,27 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-brand-beige p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-surface p-4">
       
       {/* --- BLOQUE 1: CABECERA (AFUERA DE LA TARJETA) --- */}
       <div className="flex flex-col items-center mb-8 max-w-md text-center">
         {/* Logo Flotante */}
-        <div className="bg-gradient-to-br from-brand-gold to-yellow-600 p-4 rounded-2xl mb-6 shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
+        <div className="bg-gradient-to-br from-primary to-primary-dark p-4 rounded-2xl mb-6 shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
           <Heart className="w-10 h-10 text-white fill-current" />
         </div>
         
         {/* Título y Descripción */}
-        <h1 className="text-4xl font-bold text-gray-900 tracking-tight mb-3">Bienvenido</h1>
-        <p className="text-gray-500 text-base">
-          Ingresa tus credenciales para acceder al portal de <span className="font-semibold text-brand-gold">FUNSAMEZ</span>
+        <h1 className="text-4xl font-bold text-on-surface tracking-tight mb-3">Bienvenido</h1>
+        <p className="text-on-surface-variant text-base">
+          Ingresa tus credenciales para acceder al portal de <span className="font-semibold text-primary">FUNSAMEZ</span>
         </p>
       </div>
 
       {/* --- BLOQUE 2: TARJETA DEL FORMULARIO --- */}
-      <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-8 md:p-10 border border-gray-100">
+      <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-8 md:p-10 border border-outline-variant">
         
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 mb-6 text-sm rounded-lg border border-red-100 text-center font-medium">
+          <div className="bg-error-container text-error p-3 mb-6 text-sm rounded-lg border border-error/20 text-center font-medium">
             {error}
           </div>
         )}
@@ -65,19 +65,19 @@ const LoginPage = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700 ml-1">Correo electrónico</label>
+            <label className="text-sm font-semibold text-on-surface ml-1">Correo electrónico</label>
             <input 
               type="email" 
               placeholder="ejemplo@funsamez.org"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required 
-              className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all bg-gray-50 focus:bg-white"
+              className="w-full px-5 py-3 rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all bg-surface-container focus:bg-white text-on-surface"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-gray-700 ml-1">Contraseña</label>
+            <label className="text-sm font-semibold text-on-surface ml-1">Contraseña</label>
             <div className="relative">
               <input 
                 type={showPassword ? "text" : "password"} 
@@ -85,12 +85,12 @@ const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
-                className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:border-brand-gold focus:ring-4 focus:ring-brand-gold/10 outline-none transition-all bg-gray-50 focus:bg-white"
+                className="w-full px-5 py-3 rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all bg-surface-container focus:bg-white text-on-surface"
               />
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-brand-gold transition-colors"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -99,16 +99,16 @@ const LoginPage = () => {
 
           <button 
             type="submit" 
-            className="w-full bg-brand-gold hover:bg-[#b08d55] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-gold/30 transition-all transform active:scale-95 mt-4 text-lg"
+            className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/30 transition-all transform active:scale-95 mt-4 text-lg"
           >
             Iniciar Sesión
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="mt-8 pt-6 border-t border-outline-variant text-center">
+          <p className="text-sm text-on-surface-variant">
             ¿Aún no eres parte del equipo? <br/>
-            <Link to="/register" className="text-brand-gold font-bold hover:text-[#b08d55] transition-colors inline-block mt-1">
+            <Link to="/register" className="text-primary font-bold hover:text-primary-dark transition-colors inline-block mt-1">
               Regístrate como voluntario
             </Link>
           </p>
