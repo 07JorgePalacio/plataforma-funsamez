@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from core.infrastructure.persistence.django.models import ConvocatoriaModel
 
 class RegisterUserSerializer(serializers.Serializer):
     # 1. Credenciales y Datos Básicos
@@ -27,3 +28,13 @@ class RegisterUserSerializer(serializers.Serializer):
 class LoginUserSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+
+class ConvocatoriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConvocatoriaModel
+        fields = [
+            'id', 'titulo', 'descripcion', 'fecha_inicio', 
+            'fecha_fin', 'cupos_disponibles', 'estado', 
+            'habilidades_requeridas', 'fecha_creacion', 'usuario_creador'  # ⬅️ AGREGAR
+        ]
+        read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']  # ⬅️ AGREGAR

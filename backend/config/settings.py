@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
     'corsheaders',
 
     # Local apps (infraestructura real)
@@ -30,9 +31,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -66,9 +67,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'funsamez_db',     # El nombre de tu base de datos
-        'USER': 'postgres',        # Tu usuario de Postgres (usualmente es postgres)
-        'PASSWORD': '123456', # <--- ¡PON TU CONTRASEÑA AQUÍ!
+        'NAME': 'funsamez_db',    
+        'USER': 'postgres',        
+        'PASSWORD': '123456', 
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -102,6 +103,9 @@ STATIC_URL = 'static/'
 # Tipo de campo para claves primarias
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Modelo de Usuario Personalizado (para JWT)
+AUTH_USER_MODEL = 'persistence.UsuarioModel'  # Apunta a tu modelo personalizado
+
 # --- CONFIGURACIÓN DE LIBRERÍAS EXTERNAS ---
 
 # CONFIGURACIÓN DE DRF
@@ -109,6 +113,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    
 }
 
 # CONFIGURACIÓN DE JWT
@@ -123,4 +131,15 @@ SIMPLE_JWT = {
 # PERMITIR QUE REACT SE CONECTE
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+]
+
+# --- AJUSTE DE FECHAS ---
+REST_FRAMEWORK['DATETIME_INPUT_FORMATS'] = [
+    '%Y-%m-%dT%H:%M:%SZ',  # Formato con Z (PowerShell)
+    '%Y-%m-%dT%H:%M:%S',   # Formato ISO estándar
+    '%Y-%m-%d %H:%M:%S',   # Formato clásico
+    'iso-8601',
 ]

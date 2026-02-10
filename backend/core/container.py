@@ -1,6 +1,8 @@
 from core.infrastructure.persistence.django.repositories.postgres_user_repository import PostgresUserRepository
 from core.application.use_cases.register_user import RegisterUser
 from core.application.use_cases.login_user import LoginUser
+from core.infrastructure.persistence.django.repositories.postgres_convocatoria_repository import PostgresConvocatoriaRepository
+from core.application.use_cases.crear_convocatoria import CrearConvocatoriaUseCase
 
 class Container:
     """
@@ -30,3 +32,11 @@ class Container:
         Fabrica el Caso de Uso 'Login' inyectándole el repositorio.
         """
         return LoginUser(user_repository=Container._user_repository)
+    
+    # --- Módulo de Convocatorias ---
+    
+    # 1. Instanciamos el Repositorio (Infraestructura)
+    convocatoria_repository = PostgresConvocatoriaRepository()
+
+    # 2. Inyectamos el Repositorio en el Caso de Uso (Aplicación)
+    crear_convocatoria_use_case = CrearConvocatoriaUseCase(repository=convocatoria_repository)
