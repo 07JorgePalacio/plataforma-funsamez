@@ -1,10 +1,10 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-02-09 17:49:05.417581
+📅 Generado: 2026-02-10 17:42:36.295045
 
 ## 1. ESTRUCTURA DE CARPETAS ACTUAL
 ```text
 ├── .gitignore
-├── CONTEXTO_FUNSAMEZ_2026-02-09_1749.md
+├── CONTEXTO_FUNSAMEZ_2026-02-10_1742.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -19,6 +19,7 @@
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── rest/
 │   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── security.py
 │   │   │   │   │   ├── serializers.py
 │   │   │   │   │   └── views/
 │   │   │   │   │       ├── __init__.py
@@ -89,18 +90,23 @@
 │   │   │   └── react.svg
 │   │   ├── components/
 │   │   │   ├── AdminDashboard.jsx
+│   │   │   ├── AdminLayout.jsx
 │   │   │   └── VolunteerDashboard.jsx
 │   │   ├── context/
+│   │   │   └── AppContext.jsx
 │   │   ├── index.css
 │   │   ├── main.jsx
 │   │   ├── pages/
+│   │   │   ├── AdminConvocationsPage.jsx
 │   │   │   ├── DashboardPage.jsx
 │   │   │   ├── LoginPage.jsx
 │   │   │   └── RegisterPage.jsx
 │   │   └── services/
+│   │       └── convocatoriaService.js
 │   ├── tailwind.config.js
 │   └── vite.config.js
-└── generar_contexto.py
+├── generar_contexto.py
+└── probar_todo.py
 ```
 
 ## 2. CÓDIGO FUENTE (ARCHIVOS CLAVE)
@@ -225,6 +231,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    
 }
 
 # CONFIGURACIÓN DE JWT
@@ -242,6 +249,14 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+]
+
+# --- AJUSTE DE FECHAS ---
+REST_FRAMEWORK['DATETIME_INPUT_FORMATS'] = [
+    '%Y-%m-%dT%H:%M:%SZ',  # Formato con Z (PowerShell)
+    '%Y-%m-%dT%H:%M:%S',   # Formato ISO estándar
+    '%Y-%m-%d %H:%M:%S',   # Formato clásico
+    'iso-8601',
 ]
 ```
 
@@ -665,7 +680,6 @@ class UsuarioModel(AbstractBaseUser):  # ⬅️ CAMBIO AQUÍ: Hereda de Abstract
     def __str__(self):
         return self.correo_electronico
     
-    # ⬇️ NUEVO: Método para compatibilidad con código existente ⬇️
     @property
     def contrasena_hash(self):
         """Alias para compatibilidad con código existente"""
@@ -685,7 +699,7 @@ class ConvocatoriaModel(models.Model):
     usuario_creador = models.ForeignKey(
         'UsuarioModel', 
         on_delete=models.CASCADE, 
-        db_column='id_usuario_creador', # Importante: nombre exacto en tu SQL
+        db_column='id_usuario_creador', 
         related_name='convocatorias_creadas'
     )
     titulo = models.CharField(max_length=255)
@@ -985,31 +999,27 @@ from core.container import Container
 from core.adapters.api.rest.serializers import ConvocatoriaSerializer
 
 class CrearConvocatoriaView(APIView):
-    permission_classes = [IsAuthenticated] # Solo usuarios logueados (Admin/Líder)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # 1. Validar datos de entrada con el Serializer
         serializer = ConvocatoriaSerializer(data=request.data)
+        
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         data = serializer.validated_data
 
         try:
-            # 2. Invocar el Caso de Uso (Lógica Pura)
-            # Nota: request.user.id viene del token JWT
             nueva_convocatoria = Container.crear_convocatoria_use_case.ejecutar(
                 titulo=data['titulo'],
                 descripcion=data.get('descripcion', ''),
                 fecha_inicio=data['fecha_inicio'],
                 fecha_fin=data['fecha_fin'],
                 cupos=data['cupos_disponibles'],
-                id_usuario=request.user.id, # El ID del usuario logueado
+                id_usuario=request.user.id,
                 habilidades=data.get('habilidades_requeridas', '')
             )
 
-            # 3. Responder
-            # Convertimos la Entidad de Dominio resultante a diccionario para la respuesta
             response_data = {
                 "id": nueva_convocatoria.id,
                 "titulo": nueva_convocatoria.titulo,
@@ -1018,10 +1028,9 @@ class CrearConvocatoriaView(APIView):
             return Response(response_data, status=status.HTTP_201_CREATED)
 
         except ValueError as e:
-            # Captura errores de negocio (ej: Fechas inválidas)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Captura errores inesperados
+            print(f"❌ Error Interno: {e}") # Dejamos un print pequeño por si acaso
             return Response({"error": "Error interno del servidor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 ```
 
@@ -1382,20 +1391,25 @@ export default {
 ### 📄 frontend/src/App.jsx
 ```javascript
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AppProvider } from './context/AppContext'; // <--- IMPORTAR
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage'; // <--- Importar
+import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import AdminConvocationsPage from './pages/AdminConvocationsPage';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} /> {/* <--- Nueva Ruta */}
-        <Route path="/dashboard" element={<DashboardPage />} />
-      </Routes>
-    </BrowserRouter>
+    <AppProvider> {/* <--- ENVOLVER TODO AQUÍ */}
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/admin/convocatorias" element={<AdminConvocationsPage />} />
+        </Routes>
+      </BrowserRouter>
+    </AppProvider> // <--- CIERRE
   );
 }
 
@@ -1962,15 +1976,15 @@ export default DashboardPage;
 ### 📄 frontend/src/components/AdminDashboard.jsx
 ```javascript
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Megaphone, Users, Heart, Home, LogOut, Briefcase, DollarSign, ArrowRight, TrendingUp, Calendar, Package } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Megaphone, Users, Heart, DollarSign, ArrowRight, TrendingUp, Package, Calendar } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import AdminLayout from './AdminLayout'; // <--- IMPORTAMOS LA PLANTILLA MAESTRA
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [userName, setUserName] = useState('');
-  const [activeNav, setActiveNav] = useState('dashboard');
+  // Nota: Ya no necesitamos user_name ni activeNav aquí, AdminLayout se encarga.
 
-  // Datos de ejemplo (reemplazar con useApp cuando esté disponible)
+  // --- DATOS DE EJEMPLO (MOCKS) ---
   const campaigns = [
     {
       id: 1,
@@ -2016,16 +2030,6 @@ const AdminDashboard = () => {
     { id: 1, type: 'money', status: 'completed', amount: 150000 }
   ];
 
-  useEffect(() => {
-    const name = localStorage.getItem('user_name') || 'Administrador';
-    setUserName(name);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
-  };
-
   const totalRaised = donations
     .filter(d => d.type === 'money' && d.status === 'completed')
     .reduce((sum, d) => sum + (d.amount || 0), 0);
@@ -2067,291 +2071,182 @@ const AdminDashboard = () => {
     },
   ];
 
+  // --- RENDERIZADO USANDO EL LAYOUT ---
   return (
-    <div className="flex min-h-screen bg-surface">
+    <AdminLayout 
+      title="Panel de Administración" 
+      subtitle="Bienvenido al centro de control de FUNSAMEZ. Gestiona campañas, voluntarios y donaciones."
+    >
       
-      {/* --- SIDEBAR (MANTENIDO DEL DISEÑO ACTUAL) --- */}
-      <aside className="w-[280px] bg-white border-r border-outline-variant hidden md:flex flex-col fixed h-full z-10 shadow-sm">
-        
-        {/* Logo Section */}
-        <div className="px-5 py-4 flex items-center gap-3 border-b border-outline-variant">
-          <div className="bg-primary p-2 rounded-lg shrink-0">
-            <div className="w-5 h-5 bg-white/20 rounded-full" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="font-bold text-on-surface text-sm truncate">FUNSAMEZ</h2>
-            <p className="text-xs text-on-surface-variant truncate">Panel Administrativo</p>
-          </div>
-        </div>
-
-        {/* User Card */}
-        <div className="mx-4 my-4 p-3 bg-surface-container rounded-xl flex items-center gap-3">
-          <div className="w-9 h-9 shrink-0 bg-secondary/10 text-secondary rounded-full flex items-center justify-center font-bold text-sm">
-            A
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-on-surface truncate">Administrador FUNSAMEZ</p>
-            <p className="text-xs text-on-surface-variant truncate">Administrador</p>
-          </div>
-        </div>
-
-        {/* Navigation Menu */}
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          <NavItem 
-            icon={<LayoutDashboard size={18}/>} 
-            text="Dashboard" 
-            active={activeNav === 'dashboard'}
-            onClick={() => setActiveNav('dashboard')}
-          />
-          <NavItem 
-            icon={<Megaphone size={18}/>} 
-            text="Campañas" 
-            active={activeNav === 'campaigns'}
-            onClick={() => setActiveNav('campaigns')}
-          />
-          <NavItem 
-            icon={<Briefcase size={18}/>} 
-            text="Convocatorias" 
-            active={activeNav === 'jobs'}
-            onClick={() => setActiveNav('jobs')}
-          />
-          <NavItem 
-            icon={<Users size={18}/>} 
-            text="Voluntarios" 
-            active={activeNav === 'volunteers'}
-            onClick={() => setActiveNav('volunteers')}
-          />
-          <NavItem 
-            icon={<Heart size={18}/>} 
-            text="Donaciones" 
-            active={activeNav === 'donations'}
-            onClick={() => setActiveNav('donations')}
-          />
-          <NavItem 
-            icon={<Home size={18}/>} 
-            text="Editor de Inicio" 
-            active={activeNav === 'home-editor'}
-            onClick={() => setActiveNav('home-editor')}
-          />
-        </nav>
-
-        {/* Logout Button */}
-        <div className="p-3 border-t border-outline-variant">
-          <button 
-            onClick={handleLogout} 
-            className="flex items-center gap-3 text-on-surface-variant hover:text-error transition-colors w-full px-3 py-2.5 rounded-lg hover:bg-error-container/20"
+      {/* Stats Grid */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {stats.map((stat, index) => (
+          <Link
+            key={index}
+            to={stat.link}
+            className="card-elevated group hover:scale-[1.02] transition-all"
           >
-            <LogOut size={18} />
-            <span className="text-sm font-medium">Cerrar Sesión</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* --- CONTENIDO PRINCIPAL (NUEVO DISEÑO MATERIAL 3) --- */}
-      <main className="flex-1 p-6 md:ml-[280px]">
-        <div className="max-w-6xl mx-auto animate-fade-in">
-          
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-headline-medium text-on-surface font-bold mb-2">
-              Panel de Administración
-            </h1>
-            <p className="text-body-large text-on-surface-variant">
-              Bienvenido al centro de control de FUNSAMEZ. Gestiona campañas, voluntarios y donaciones.
-            </p>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {stats.map((stat, index) => (
-              <Link
-                key={index}
-                to={stat.link}
-                className="card-elevated group hover:scale-[1.02] transition-all"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center
-                    ${stat.color === 'primary' ? 'bg-primary/10' : ''}
-                    ${stat.color === 'secondary' ? 'bg-secondary/10' : ''}
-                    ${stat.color === 'error' ? 'bg-error/10' : ''}
-                    ${stat.color === 'success' ? 'bg-success/10' : ''}
-                  `}>
-                    <stat.icon className={`w-6 h-6
-                      ${stat.color === 'primary' ? 'text-primary' : ''}
-                      ${stat.color === 'secondary' ? 'text-secondary' : ''}
-                      ${stat.color === 'error' ? 'text-error' : ''}
-                      ${stat.color === 'success' ? 'text-success' : ''}
-                    `} />
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-on-surface-variant 
-                    group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                </div>
-                <p className="text-headline-small text-on-surface font-bold mb-1">
-                  {stat.value}
-                </p>
-                <p className="text-body-medium text-on-surface-variant">
-                  {stat.label}
-                </p>
-              </Link>
-            ))}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid lg:grid-cols-2 gap-6 mb-8">
-            
-            {/* Recent Campaigns */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-title-large text-on-surface font-medium">
-                  Campañas Recientes
-                </h2>
-                <Link to="/admin/campanas" className="btn-text text-primary">
-                  Ver todas
-                </Link>
+            <div className="flex items-start justify-between mb-3">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center
+                ${stat.color === 'primary' ? 'bg-primary/10' : ''}
+                ${stat.color === 'secondary' ? 'bg-secondary/10' : ''}
+                ${stat.color === 'error' ? 'bg-error/10' : ''}
+                ${stat.color === 'success' ? 'bg-success/10' : ''}
+              `}>
+                <stat.icon className={`w-6 h-6
+                  ${stat.color === 'primary' ? 'text-primary' : ''}
+                  ${stat.color === 'secondary' ? 'text-secondary' : ''}
+                  ${stat.color === 'error' ? 'text-error' : ''}
+                  ${stat.color === 'success' ? 'text-success' : ''}
+                `} />
               </div>
-              <div className="space-y-3">
-                {campaigns.slice(0, 3).map(campaign => (
-                  <div
-                    key={campaign.id}
-                    className="flex items-center gap-4 p-3 rounded-xl bg-surface-container 
-                      hover:bg-surface-container-high transition-colors"
-                  >
-                    <img
-                      src={campaign.image}
-                      alt={campaign.title}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-title-small text-on-surface font-medium truncate">
-                        {campaign.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        {campaign.acceptsMoney && (
-                          <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-label-small">
-                            Monetaria
-                          </span>
-                        )}
-                        {campaign.acceptsInKind && (
-                          <span className="px-2 py-0.5 rounded bg-secondary/10 text-secondary text-label-small">
-                            <Package className="w-3 h-3 inline mr-1" />
-                            Especie
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {campaign.acceptsMoney && campaign.goalAmount && (
-                      <div className="text-right">
-                        <span className="text-title-small text-primary font-medium">
-                          {Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)}%
-                        </span>
-                        <p className="text-label-small text-on-surface-variant">recaudado</p>
-                      </div>
+              <ArrowRight className="w-5 h-5 text-on-surface-variant 
+                group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+            <p className="text-headline-small text-on-surface font-bold mb-1">
+              {stat.value}
+            </p>
+            <p className="text-body-medium text-on-surface-variant">
+              {stat.label}
+            </p>
+          </Link>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        
+        {/* Recent Campaigns */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-title-large text-on-surface font-medium">
+              Campañas Recientes
+            </h2>
+            <Link to="/admin/campanas" className="btn-text text-primary">
+              Ver todas
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {campaigns.slice(0, 3).map(campaign => (
+              <div
+                key={campaign.id}
+                className="flex items-center gap-4 p-3 rounded-xl bg-surface-container 
+                  hover:bg-surface-container-high transition-colors"
+              >
+                <img
+                  src={campaign.image}
+                  alt={campaign.title}
+                  className="w-12 h-12 rounded-lg object-cover"
+                />
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-title-small text-on-surface font-medium truncate">
+                    {campaign.title}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    {campaign.acceptsMoney && (
+                      <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-label-small">
+                        Monetaria
+                      </span>
+                    )}
+                    {campaign.acceptsInKind && (
+                      <span className="px-2 py-0.5 rounded bg-secondary/10 text-secondary text-label-small">
+                        <Package className="w-3 h-3 inline mr-1" />
+                        Especie
+                      </span>
                     )}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Pending Applications */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-title-large text-on-surface font-medium">
-                  Postulaciones Pendientes
-                </h2>
-                <Link to="/admin/voluntarios" className="btn-text text-primary">
-                  Ver todas
-                </Link>
-              </div>
-              {applications.filter(a => a.status === 'pending').length > 0 ? (
-                <div className="space-y-3">
-                  {applications
-                    .filter(a => a.status === 'pending')
-                    .slice(0, 3)
-                    .map(app => (
-                      <div
-                        key={app.id}
-                        className="flex items-center gap-4 p-3 rounded-xl bg-surface-container"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-secondary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-title-small text-on-surface font-medium truncate">
-                            {app.volunteerName}
-                          </h3>
-                          <p className="text-body-small text-on-surface-variant truncate">
-                            {app.convocationTitle}
-                          </p>
-                        </div>
-                        <span className="badge-pending">
-                          <Calendar className="w-3 h-3" />
-                          {app.appliedAt}
-                        </span>
-                      </div>
-                    ))}
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="w-12 h-12 text-on-surface-variant mx-auto mb-3" />
-                  <p className="text-body-medium text-on-surface-variant">
-                    No hay postulaciones pendientes
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Performance Banner */}
-          <div className="p-6 rounded-2xl bg-gradient-to-r from-primary to-secondary text-white">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="w-8 h-8" />
+                {campaign.acceptsMoney && campaign.goalAmount && (
+                  <div className="text-right">
+                    <span className="text-title-small text-primary font-medium">
+                      {Math.round((campaign.raisedAmount / campaign.goalAmount) * 100)}%
+                    </span>
+                    <p className="text-label-small text-on-surface-variant">recaudado</p>
+                  </div>
+                )}
               </div>
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-title-large font-medium mb-2">
-                  ¡Excelente trabajo este mes!
-                </h3>
-                <p className="text-body-medium text-white/90">
-                  Las donaciones han aumentado un 25% comparado con el mes anterior.
-                  Sigue impulsando las campañas activas.
-                </p>
-              </div>
-              <Link
-                to="/admin/donaciones"
-                className="btn-filled bg-white text-primary hover:bg-white/90"
-              >
-                Ver Reportes
-              </Link>
-            </div>
+            ))}
           </div>
-
         </div>
-      </main>
-    </div>
-  );
-};
 
-// --- COMPONENTE DE NAVEGACIÓN ---
-const NavItem = ({ icon, text, active, onClick }) => {
-  return (
-    <button 
-      onClick={onClick}
-      className={`
-        flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all
-        ${active 
-          ? 'bg-primary/10 text-primary font-semibold' 
-          : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
-        }
-      `}
-    >
-      <span className="shrink-0">{icon}</span>
-      <span className="text-sm truncate">{text}</span>
-    </button>
+        {/* Pending Applications */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-title-large text-on-surface font-medium">
+              Postulaciones Pendientes
+            </h2>
+            <Link to="/admin/voluntarios" className="btn-text text-primary">
+              Ver todas
+            </Link>
+          </div>
+          {applications.filter(a => a.status === 'pending').length > 0 ? (
+            <div className="space-y-3">
+              {applications
+                .filter(a => a.status === 'pending')
+                .slice(0, 3)
+                .map(app => (
+                  <div
+                    key={app.id}
+                    className="flex items-center gap-4 p-3 rounded-xl bg-surface-container"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-secondary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-title-small text-on-surface font-medium truncate">
+                        {app.volunteerName}
+                      </h3>
+                      <p className="text-body-small text-on-surface-variant truncate">
+                        {app.convocationTitle}
+                      </p>
+                    </div>
+                    <span className="badge-pending">
+                      <Calendar className="w-3 h-3" />
+                      {app.appliedAt}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 text-on-surface-variant mx-auto mb-3" />
+              <p className="text-body-medium text-on-surface-variant">
+                No hay postulaciones pendientes
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Performance Banner */}
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-primary to-secondary text-white">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <TrendingUp className="w-8 h-8" />
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h3 className="text-title-large font-medium mb-2">
+              ¡Excelente trabajo este mes!
+            </h3>
+            <p className="text-body-medium text-white/90">
+              Las donaciones han aumentado un 25% comparado con el mes anterior.
+              Sigue impulsando las campañas activas.
+            </p>
+          </div>
+          <Link
+            to="/admin/donaciones"
+            className="btn-filled bg-white text-primary hover:bg-white/90"
+          >
+            Ver Reportes
+          </Link>
+        </div>
+      </div>
+
+    </AdminLayout>
   );
 };
 
 export default AdminDashboard;
-
 ```
 
 ### 📄 frontend/src/components/VolunteerDashboard.jsx

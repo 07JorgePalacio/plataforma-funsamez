@@ -51,3 +51,13 @@ export const crearConvocatoria = async (formData) => {
         throw error.response ? error.response.data : new Error('Error al conectar con el servidor');
     }
 };
+
+export const obtenerConvocatorias = async () => {
+    try {
+        // Hacemos una petición GET a /api/convocatorias/
+        const response = await axios.get(`${API_URL}/`, getAuthHeader());
+        return response.data;
+    } catch (error) {
+        throw error.response ? error.response.data : new Error('Error al obtener convocatorias');
+    }
+};

@@ -39,3 +39,32 @@ class CrearConvocatoriaView(APIView):
         except Exception as e:
             print(f"❌ Error Interno: {e}") # Dejamos un print pequeño por si acaso
             return Response({"error": "Error interno del servidor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class ListarConvocatoriasView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # 1. Pedimos todas las convocatorias al repositorio
+            convocatorias = Container.convocatoria_repository.listar_todas()
+            
+            # 2. Las empaquetamos en una lista de diccionarios para el Frontend
+            data = []
+            for c in convocatorias:
+                data.append({
+                    "id": c.id,
+                    "titulo": c.titulo,
+                    "descripcion": c.descripcion,
+                    "fecha_inicio": c.fecha_inicio.isoformat() if c.fecha_inicio else None,
+                    "fecha_fin": c.fecha_fin.isoformat() if c.fecha_fin else None,
+                    "cupos_disponibles": c.cupos_disponibles,
+                    "estado": c.estado,
+                    "habilidades_requeridas": c.habilidades_requeridas,
+                    "fecha_creacion": c.fecha_creacion.isoformat() if c.fecha_creacion else None
+                })
+                
+            return Response(data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            print(f"❌ Error al listar convocatorias: {e}")
+            return Response({"error": "Error interno del servidor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
