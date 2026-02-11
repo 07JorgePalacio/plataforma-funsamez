@@ -9,6 +9,8 @@ from core.container import Container
 from core.adapters.api.rest.serializers import RegisterUserSerializer, LoginUserSerializer
 from core.infrastructure.persistence.django.models import UsuarioModel
 
+# backend/core/adapters/api/rest/views/user_views.py
+
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
     
@@ -23,11 +25,15 @@ class RegisterUserView(APIView):
             # Crear usuario usando el manager
             user_model = UsuarioModel.objects.create_user(
                 correo_electronico=data['email'],
-                password=data['password'],  # ⬅️ set_password se llama automáticamente
-                nombre_completo=data['full_name'],
-                numero_telefono=data.get('phone_number'),
-                direccion=data.get('address'),
-                rol=data.get('role', 'voluntario'),
+                password=data['password'],
+                
+                # --- CORRECCIONES AQUÍ (Nombres en español para coincidir con Serializer) ---
+                nombre_completo=data['nombre_completo'], # Antes decía 'full_name'
+                numero_telefono=data.get('telefono'),    # Antes decía 'phone_number'
+                direccion=data.get('direccion'),         # Antes decía 'address'
+                # ---------------------------------------------------------------------------
+                
+                rol='voluntario', # Por defecto es voluntario en el registro público
                 fecha_nacimiento=data.get('fecha_nacimiento'),
                 tipo_documento=data.get('tipo_documento', 'CC'),
                 numero_identificacion=data.get('numero_identificacion'),
@@ -48,7 +54,8 @@ class RegisterUserView(APIView):
 
         except Exception as e:
             print(f"❌ ERROR REGISTRO: {e}")
-            return Response({"error": "Error al crear el usuario"}, status=status.HTTP_400_BAD_REQUEST)
+            # Devolver un error genérico pero informativo para no exponer detalles internos
+            return Response({"error": f"Error interno al crear usuario: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class LoginUserView(APIView):

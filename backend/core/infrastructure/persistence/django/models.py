@@ -114,7 +114,6 @@ class UsuarioModel(AbstractBaseUser):  # ⬅️ CAMBIO AQUÍ: Hereda de Abstract
     def __str__(self):
         return self.correo_electronico
     
-    # ⬇️ NUEVO: Método para compatibilidad con código existente ⬇️
     @property
     def contrasena_hash(self):
         """Alias para compatibilidad con código existente"""
@@ -134,7 +133,7 @@ class ConvocatoriaModel(models.Model):
     usuario_creador = models.ForeignKey(
         'UsuarioModel', 
         on_delete=models.CASCADE, 
-        db_column='id_usuario_creador', # Importante: nombre exacto en tu SQL
+        db_column='id_usuario_creador', 
         related_name='convocatorias_creadas'
     )
     titulo = models.CharField(max_length=255)

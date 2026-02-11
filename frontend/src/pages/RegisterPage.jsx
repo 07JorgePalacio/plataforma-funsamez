@@ -73,6 +73,7 @@ const InputField = ({ label, name, type = "text", required = false, placeholder 
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Estados UI
   const [showPassword, setShowPassword] = useState(false);
@@ -90,6 +91,7 @@ const RegisterPage = () => {
     nombre_completo: '',
     email: '',
     password: '',
+    confirmPassword: '',
     telefono: '', 
     fecha_nacimiento: '',
     tipo_documento: 'CC',
@@ -109,6 +111,26 @@ const RegisterPage = () => {
       }
     }
   }, [errors]);
+
+  //Validación de confirmación de contraseña en tiempo real
+  useEffect(() => {
+    if (formData.confirmPassword.length > 0) {
+      // Si lo que va escribiendo NO es el inicio exacto de la contraseña, lanza error al instante
+      if (!formData.password.startsWith(formData.confirmPassword)) {
+        setErrors(prev => ({ 
+          ...prev, 
+          confirmPassword: "Las contraseñas no coinciden." 
+        }));
+      } else {
+        // Si va escribiendo bien, o si ya la completó exactamente igual, borra el error
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.confirmPassword;
+          return newErrors;
+        });
+      }
+    }
+  }, [formData.password, formData.confirmPassword]);
 
   // Manejador de Inputs con restricción numérica
   const handleChange = (e, numericOnly = false) => {
@@ -145,6 +167,9 @@ const RegisterPage = () => {
     const newErrors = {};
     if (formData.password.length < 8) {
       newErrors.password = ["La contraseña debe tener mínimo 8 caracteres."];
+    }
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = ["Las contraseñas no coinciden."];
     }
     if (!formData.numero_identificacion) {
         newErrors.numero_identificacion = ["El documento es obligatorio."];
@@ -348,16 +373,49 @@ const RegisterPage = () => {
             </div>
           </div>
 
-          <div className="md:col-span-2 space-y-1 relative z-10 scroll-mt-24" id="field-password">
-            <label className="text-sm font-semibold text-on-surface">Contraseña <span className="text-error">*</span></label>
-            <div className="relative">
-              <input name="password" type={showPassword ? "text" : "password"} required value={formData.password} onChange={handleChange} placeholder="Mínimo 8 caracteres"
-                className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all pr-12 ${errors.password ? "border-error bg-error-container text-error" : "border-outline-variant bg-surface-container focus:border-primary text-on-surface"}`} />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant hover:text-primary p-1">
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
+          {/* GRUPO DE CONTRASEÑAS */}
+          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 scroll-mt-24" id="field-password">
+            
+            {/* Contraseña Original */}
+            <div className="space-y-1 relative z-10">
+              <label className="text-sm font-semibold text-on-surface">Contraseña <span className="text-error">*</span></label>
+              <div className="relative">
+                <input 
+                  name="password" 
+                  type={showPassword ? "text" : "password"} 
+                  required 
+                  value={formData.password} 
+                  onChange={handleChange} 
+                  placeholder="Mínimo 8 caracteres"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all pr-12 ${errors.password ? "border-error bg-error-container text-error" : "border-outline-variant bg-surface-container focus:bg-white focus:border-primary text-on-surface"}`} 
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant hover:text-primary p-1">
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              {errors.password && <div className="flex items-center mt-1 text-error animate-pulse"><AlertCircle size={14} className="mr-1" /><span className="text-xs font-bold">{errors.password}</span></div>}
             </div>
-            {errors.password && <div className="flex items-center mt-1 text-error animate-pulse"><AlertCircle size={14} className="mr-1" /><span className="text-xs font-bold">{errors.password}</span></div>}
+
+            {/* Confirmar Contraseña */}
+            <div className="space-y-1 relative z-10" id="field-confirmPassword">
+              <label className="text-sm font-semibold text-on-surface">Confirmar Contraseña <span className="text-error">*</span></label>
+              <div className="relative">
+                <input 
+                  name="confirmPassword" 
+                  type={showConfirmPassword ? "text" : "password"} 
+                  required 
+                  value={formData.confirmPassword} 
+                  onChange={handleChange} 
+                  placeholder="Repite tu contraseña"
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all pr-12 ${errors.confirmPassword ? "border-error bg-error-container text-error focus:ring-4 focus:ring-error/10" : "border-outline-variant bg-surface-container focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 text-on-surface"}`} 
+                />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant hover:text-primary p-1">
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              {errors.confirmPassword && <div className="flex items-center mt-1 text-error animate-pulse"><AlertCircle size={14} className="mr-1" /><span className="text-xs font-bold">{errors.confirmPassword}</span></div>}
+            </div>
+
           </div>
 
           <div className="md:col-span-2 pb-2 border-b border-primary/30 text-primary font-bold uppercase text-sm tracking-wider mt-8">Tu Perfil de Voluntario</div>
