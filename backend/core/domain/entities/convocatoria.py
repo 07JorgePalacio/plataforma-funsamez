@@ -12,8 +12,10 @@ class Convocatoria:
     id_usuario_creador: int
     id: Optional[int] = None
     estado: str = "abierta"
-    habilidades_requeridas: str = "" # Texto plano según tu SQL
+    habilidades_requeridas: str = "" 
     fecha_creacion: Optional[datetime] = None
+    categorias: Optional[list] = None 
+    horario: Optional[dict] = None
 
     def esta_activa(self) -> bool:
         ahora = datetime.now()

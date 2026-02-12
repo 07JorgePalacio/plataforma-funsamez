@@ -27,7 +27,7 @@ class UsuarioManager(BaseUserManager):
         return self.create_user(correo_electronico, password, **extra_fields)
 
 
-# --- USUARIO MODEL (MODIFICADO) ---
+# --- USUARIO MODEL ---
 class UsuarioModel(AbstractBaseUser):  # ⬅️ CAMBIO AQUÍ: Hereda de AbstractBaseUser
     """
     Modelo de Infraestructura (Django ORM).
@@ -79,6 +79,7 @@ class UsuarioModel(AbstractBaseUser):  # ⬅️ CAMBIO AQUÍ: Hereda de Abstract
     # Listas guardadas como JSON
     intereses = models.JSONField(default=list, blank=True) 
     habilidades = models.JSONField(default=list, blank=True)
+    disponibilidad = models.JSONField(default=dict, blank=True)
 
     # ⬇️ CONFIGURACIÓN REQUERIDA POR ABSTRACTBASEUSER ⬇️
     USERNAME_FIELD = 'correo_electronico'  # Campo que se usa para login
@@ -150,6 +151,10 @@ class ConvocatoriaModel(models.Model):
     estado = models.CharField(max_length=20, choices=ESTADOS, default='abierta')
     habilidades_requeridas = models.TextField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    # Listas guardadas como JSON
+    categorias = models.JSONField(default=list, blank=True) 
+    horario = models.JSONField(default=dict, blank=True)
 
     class Meta:
         db_table = 'convocatoria'

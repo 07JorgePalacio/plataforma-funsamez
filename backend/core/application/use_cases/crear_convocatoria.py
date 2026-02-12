@@ -26,7 +26,9 @@ class CrearConvocatoriaUseCase:
             fecha_fin=fecha_fin,
             cupos_disponibles=cupos,
             id_usuario_creador=id_usuario,
-            habilidades_requeridas=habilidades
+            habilidades_requeridas=habilidades,
+            categorias=categorias or [],
+            horario=horario or {}        
         )
 
         # 3. Persistir usando el Puerto

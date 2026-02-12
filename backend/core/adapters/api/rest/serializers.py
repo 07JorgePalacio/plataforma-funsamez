@@ -24,6 +24,7 @@ class RegisterUserSerializer(serializers.Serializer):
     habilidades = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
     )
+    disponibilidad = serializers.DictField(required=False, allow_empty=True)
 
 class LoginUserSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -35,6 +36,7 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'titulo', 'descripcion', 'fecha_inicio', 
             'fecha_fin', 'cupos_disponibles', 'estado', 
-            'habilidades_requeridas', 'fecha_creacion', 'usuario_creador'  # ⬅️ AGREGAR
+            'habilidades_requeridas', 'fecha_creacion', 'usuario_creador',
+            'categorias', 'horario'
         ]
         read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']  # ⬅️ AGREGAR

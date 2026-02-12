@@ -42,6 +42,20 @@ const HABILIDADES_OPCIONES = [
   "Conducción", "Cocina", "Manualidades"
 ];
 
+const DIAS_SEMANA = [
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
+  'Domingo'
+];
+const JORNADAS = [
+  { id: 'manana', label: 'Mañana (8am - 12pm)' },
+  { id: 'tarde', label: 'Tarde (2pm - 6pm)' }
+];
+
 // --- COMPONENTE INPUT AUXILIAR ---
 const InputField = ({ label, name, type = "text", required = false, placeholder = "", formData, handleChange, errors, numericOnly = false }) => (
   <div className="space-y-1 scroll-mt-24" id={`field-${name}`}>
@@ -98,7 +112,8 @@ const RegisterPage = () => {
     numero_identificacion: '',
     profesion: '',
     intereses: [], 
-    habilidades: [] 
+    habilidades: [],
+    disponibilidad: {}
   });
 
   // Efecto Auto-Scroll a errores
@@ -162,6 +177,26 @@ const RegisterPage = () => {
       }
     });
   };
+
+  const toggleAvailability = (day, slotId) => {
+    setFormData(prev => {
+      const currentSchedule = { ...prev.disponibilidad };
+      const daySlots = currentSchedule[day] || [];
+      
+      if (daySlots.includes(slotId)) {
+        // Si ya está, lo quitamos
+        currentSchedule[day] = daySlots.filter(s => s !== slotId);
+        // Limpieza: si el día queda vacío, borramos la llave para ahorrar espacio
+        if (currentSchedule[day].length === 0) delete currentSchedule[day];
+      } else {
+        // Si no está, lo agregamos
+        currentSchedule[day] = [...daySlots, slotId];
+      }
+      
+      return { ...prev, disponibilidad: currentSchedule };
+    });
+  };
+
 
   const validateForm = () => {
     const newErrors = {};
@@ -419,7 +454,64 @@ const RegisterPage = () => {
           </div>
 
           <div className="md:col-span-2 pb-2 border-b border-primary/30 text-primary font-bold uppercase text-sm tracking-wider mt-8">Tu Perfil de Voluntario</div>
-          
+          {/* SECCIÓN: DISPONIBILIDAD DE TIEMPO */}
+          <div className="md:col-span-2 mt-8">
+            <label className="text-sm font-semibold text-on-surface block mb-4 uppercase tracking-wider text-primary">
+              ¿Cuándo puedes ayudarnos?
+            </label>
+            
+            <div className="bg-surface-container/50 rounded-xl border border-outline-variant/50 overflow-hidden">
+              {/* Cabecera de la Tabla */}
+              <div className="grid grid-cols-3 bg-primary/5 border-b border-primary/10 p-3">
+                <div className="font-bold text-primary text-sm">Día</div>
+                {JORNADAS.map(jornada => (
+                  <div key={jornada.id} className="font-bold text-primary text-sm text-center">
+                    {jornada.label.split(' ')[0]} <span className="hidden sm:inline text-xs font-normal opacity-70">{jornada.label.split(' ')[1]}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Cuerpo de la Tabla */}
+              <div className="divide-y divide-outline-variant/30">
+                {DIAS_SEMANA.map(dia => {
+                  const isActiveDay = formData.disponibilidad[dia]?.length > 0;
+                  return (
+                    <div key={dia} className={`grid grid-cols-3 p-3 transition-colors ${isActiveDay ? 'bg-white' : 'hover:bg-white/50'}`}>
+                      <div className={`flex items-center text-sm font-medium ${isActiveDay ? 'text-on-surface' : 'text-on-surface-variant'}`}>
+                        {dia}
+                      </div>
+                      {JORNADAS.map(jornada => {
+                        const isSelected = formData.disponibilidad[dia]?.includes(jornada.id);
+                        return (
+                          <div key={jornada.id} className="flex justify-center">
+                            <button
+                              type="button"
+                              onClick={() => toggleAvailability(dia, jornada.id)}
+                              className={`
+                                w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 border
+                                ${isSelected 
+                                  ? 'bg-primary text-white border-primary shadow-sm scale-110' 
+                                  : 'bg-surface border-outline-variant text-transparent hover:border-primary/50'
+                                }
+                              `}
+                            >
+                              <Check size={18} strokeWidth={3} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="text-xs text-on-surface-variant mt-2 ml-1">
+              * Selecciona los bloques aproximados. Podrás coordinar detalles específicos luego.
+            </p>
+          </div>
+
+          <div className="md:col-span-2 pb-2 border-b border-primary/30 text-primary font-bold uppercase text-sm tracking-wider mt-8">Detalles de Perfil</div>
+
           {renderChipsSection("Áreas de Interés", "intereses", INTERESES_OPCIONES, showAllInterests, setShowAllInterests)}
           {renderChipsSection("Habilidades Destacadas", "habilidades", HABILIDADES_OPCIONES, showAllSkills, setShowAllSkills)}
 

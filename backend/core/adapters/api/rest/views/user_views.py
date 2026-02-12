@@ -26,20 +26,17 @@ class RegisterUserView(APIView):
             user_model = UsuarioModel.objects.create_user(
                 correo_electronico=data['email'],
                 password=data['password'],
-                
-                # --- CORRECCIONES AQUÍ (Nombres en español para coincidir con Serializer) ---
-                nombre_completo=data['nombre_completo'], # Antes decía 'full_name'
-                numero_telefono=data.get('telefono'),    # Antes decía 'phone_number'
-                direccion=data.get('direccion'),         # Antes decía 'address'
-                # ---------------------------------------------------------------------------
-                
+                nombre_completo=data['nombre_completo'], 
+                numero_telefono=data.get('telefono'),    
+                direccion=data.get('direccion'),         
                 rol='voluntario', # Por defecto es voluntario en el registro público
                 fecha_nacimiento=data.get('fecha_nacimiento'),
                 tipo_documento=data.get('tipo_documento', 'CC'),
                 numero_identificacion=data.get('numero_identificacion'),
                 profesion=data.get('profesion'),
                 intereses=data.get('intereses', []),
-                habilidades=data.get('habilidades', [])
+                habilidades=data.get('habilidades', []),
+                disponibilidad=data.get('disponibilidad', {})
             )
 
             return Response({
