@@ -21,7 +21,7 @@ export default function AdminLayout({ children, title, subtitle }) {
 
   return (
     // Agregamos pb-24 (padding-bottom) en móviles para que el dock no tape el contenido
-    <div className="flex min-h-screen bg-surface pb-20 md:pb-0">
+    <div className="flex min-h-screen bg-surface pb-32 md:pb-0">
       
       {/* --- SIDEBAR (PC) --- */}
       <aside className="w-[300px] bg-white border-r border-outline-variant hidden md:flex flex-col fixed h-full z-10 shadow-sm">
@@ -67,16 +67,15 @@ export default function AdminLayout({ children, title, subtitle }) {
       </aside>
 
       {/* --- DOCK DE NAVEGACIÓN (MÓVIL) --- */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/90 backdrop-blur-lg border-t border-outline-variant/30 z-40 flex items-center justify-around px-2 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
-        <MobileNavItem icon={<LayoutDashboard size={24}/>} text="Inicio" active={isActive('/dashboard')} onClick={() => navigate('/dashboard')} />
-        <MobileNavItem icon={<Megaphone size={24}/>} text="Campañas" active={isActive('/admin/campanas')} onClick={() => navigate('/admin/campanas')} />
-        <MobileNavItem icon={<Briefcase size={24}/>} text="Convos" active={isActive('/admin/convocatorias')} onClick={() => navigate('/admin/convocatorias')} />
-        <MobileNavItem icon={<Users size={24}/>} text="Voluntarios" active={isActive('/admin/voluntarios')} onClick={() => navigate('/admin/voluntarios')} />
+      <nav className="md:hidden fixed bottom-6 inset-x-4 bg-surface/80 backdrop-blur-xl border border-white/20 z-40 flex items-center justify-around p-2 rounded-3xl shadow-elevation-4">
+        <MobileNavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/dashboard')} onClick={() => navigate('/dashboard')} />
+        <MobileNavItem icon={<Megaphone size={22}/>} text="Campañas" active={isActive('/admin/campanas')} onClick={() => navigate('/admin/campanas')} />
+        <MobileNavItem icon={<Briefcase size={22}/>} text="Convos" active={isActive('/admin/convocatorias')} onClick={() => navigate('/admin/convocatorias')} />
+        <MobileNavItem icon={<Users size={22}/>} text="Voluntarios" active={isActive('/admin/voluntarios')} onClick={() => navigate('/admin/voluntarios')} />
         
-        {/* Menú para Cerrar Sesión en Móvil */}
-        <button onClick={handleLogout} className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-error transition-colors">
-          <LogOut size={24} />
-          <span className="text-[10px] font-medium">Salir</span>
+        {/* Botón Salir pequeño */}
+        <button onClick={handleLogout} className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-error transition-colors opacity-70 hover:opacity-100">
+          <LogOut size={22} />
         </button>
       </nav>
 

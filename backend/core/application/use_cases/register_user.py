@@ -7,13 +7,20 @@ class RegisterUser:
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
-    def execute(self, nombre_completo: str, email: str, password: str, 
-                tipo_documento: str,  # <--- NUEVO ARGUMENTO OBLIGATORIO
-                numero_identificacion: str, # <--- NUEVO ARGUMENTO OBLIGATORIO
-                telefono: Optional[str] = None, direccion: Optional[str] = None,
+    def execute(self, 
+                nombre_completo: str, 
+                email: str, 
+                password: str, 
+                tipo_documento: str,
+                numero_identificacion: str, 
+                telefono: Optional[str] = None, 
+                direccion: Optional[str] = None,
                 fecha_nacimiento: Optional[str] = None, 
-                profesion: Optional[str] = None, intereses: List[str] = None, 
-                habilidades: List[str] = None) -> User:
+                profesion: Optional[str] = None, 
+                intereses: List[str] = None, 
+                habilidades: List[str] = None,
+                disponibilidad: dict = None  
+                ) -> User:
         
         # 1. Verificar si el CORREO ya existe
         if self.user_repository.get_by_email(email):
@@ -31,13 +38,14 @@ class RegisterUser:
             direccion=direccion,
             rol="voluntario",
             
-            # Nuevos campos
+            # Campos de perfil
             fecha_nacimiento=fecha_nacimiento,
-            tipo_documento=tipo_documento,       # <--- ASIGNAMOS AQUÍ
+            tipo_documento=tipo_documento,       
             numero_identificacion=numero_identificacion,
             profesion=profesion,
             intereses=intereses or [],
-            habilidades=habilidades or []
+            habilidades=habilidades or [],
+            disponibilidad=disponibilidad or {} 
         )
 
         # 4. Guardar

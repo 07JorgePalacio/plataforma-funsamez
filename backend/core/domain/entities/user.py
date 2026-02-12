@@ -23,17 +23,14 @@ class User:
     
     fecha_creacion: Optional[datetime] = None
     ultima_conexion: Optional[datetime] = None
-
-    # --- NUEVOS CAMPOS (HU05-RF-01) ---
     fecha_nacimiento: Optional[str] = None
-    
-    # AGREGADO: Tipo de documento (Por defecto CC para compatibilidad)
     tipo_documento: str = 'CC' 
     
     numero_identificacion: Optional[str] = None
     profesion: Optional[str] = None
     intereses: Optional[List[str]] = None
     habilidades: Optional[List[str]] = None
+    disponibilidad: Optional[dict] = None
 
     def check_password(self, raw_password: str) -> bool:
         return False

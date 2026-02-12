@@ -16,14 +16,13 @@ class PostgresUserRepository(UserRepository):
                 'rol': user.rol,
                 'estado': user.estado,
                 'autenticacion_2fa_habilitada': user.autenticacion_2fa_habilitada,
-                
-                # Campos Nuevos
                 'fecha_nacimiento': user.fecha_nacimiento,
-                'tipo_documento': user.tipo_documento, # <--- AGREGAR AQUÍ
+                'tipo_documento': user.tipo_documento, 
                 'numero_identificacion': user.numero_identificacion,
                 'profesion': user.profesion,
                 'intereses': user.intereses or [],
-                'habilidades': user.habilidades or []
+                'habilidades': user.habilidades or [],
+                'disponibilidad': user.disponibilidad or {}
             }
         )
         return self._to_domain(usuario_model)
@@ -59,9 +58,10 @@ class PostgresUserRepository(UserRepository):
             
             # Campos Nuevos
             fecha_nacimiento=str(model.fecha_nacimiento) if model.fecha_nacimiento else None,
-            tipo_documento=model.tipo_documento, # <--- AGREGAR AQUÍ
+            tipo_documento=model.tipo_documento, 
             numero_identificacion=model.numero_identificacion,
             profesion=model.profesion,
             intereses=model.intereses,
-            habilidades=model.habilidades
+            habilidades=model.habilidades,
+            disponibilidad=model.disponibilidad
         )

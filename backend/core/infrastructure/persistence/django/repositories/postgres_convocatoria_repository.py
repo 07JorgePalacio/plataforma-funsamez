@@ -17,6 +17,8 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             id_usuario_creador=model.usuario_creador.id,
             estado=model.estado,
             habilidades_requeridas=model.habilidades_requeridas,
+            categorias=model.categorias, 
+            horario=model.horario,       
             fecha_creacion=model.fecha_creacion
         )
 
@@ -33,7 +35,9 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             fecha_fin=convocatoria.fecha_fin,
             cupos_disponibles=convocatoria.cupos_disponibles,
             estado=convocatoria.estado,
-            habilidades_requeridas=convocatoria.habilidades_requeridas
+            habilidades_requeridas=convocatoria.habilidades_requeridas,
+            categorias=convocatoria.categorias, 
+            horario=convocatoria.horario        
         )
         return self._to_domain(modelo)
 
