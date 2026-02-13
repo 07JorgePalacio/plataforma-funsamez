@@ -1,5 +1,6 @@
 from datetime import datetime
 from core.domain.entities.convocatoria import Convocatoria
+from typing import List, Dict, Any
 from core.application.ports.output.convocatoria_repository import ConvocatoriaRepository
 
 class CrearConvocatoriaUseCase:
@@ -8,7 +9,8 @@ class CrearConvocatoriaUseCase:
         self.repository = repository
 
     def ejecutar(self, titulo: str, descripcion: str, fecha_inicio: datetime, 
-                 fecha_fin: datetime, cupos: int, id_usuario: int, habilidades: str) -> Convocatoria:
+                 fecha_fin: datetime, cupos: int, id_usuario: int, habilidades: str,
+                 categorias: List[str] = None, horario: Dict[str, Any] = None) -> Convocatoria:
         
         # 1. Validaciones de Negocio (Ejemplo simple)
         if fecha_inicio >= fecha_fin:
