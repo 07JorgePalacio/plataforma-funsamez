@@ -15,29 +15,51 @@ export const AppProvider = ({ children }) => {
     // Iniciamos la lista vacía
     const [convocations, setConvocations] = useState([]);
 
-    // --- MAGIA: FUNCIÓN PARA TRAER DATOS REALES ---
+    // --- FUNCIÓN PARA TRAER DATOS REALES (CORREGIDA) ---
     const fetchConvocations = async () => {
         try {
             const data = await obtenerConvocatorias();
             
-            // "Traducimos" los nombres del backend a los que usa tu diseño frontend
+            console.log('📦 Datos recibidos del backend:', data);
+            
+            // ✅ MANTENER TODOS LOS DATOS DEL BACKEND
+            // Agregamos traducciones al inglés para la UI, pero conservamos los campos originales
             const formattedData = data.map(item => ({
+                // --- IDs y Estados ---
                 id: item.id,
+                status: item.estado === 'abierta' ? 'published' : item.estado === 'cerrada' ? 'closed' : item.estado,
+                
+                // --- CAMPOS DEL BACKEND (originales en español) ---
+                titulo: item.titulo,
+                descripcion: item.descripcion,
+                ubicacion: item.ubicacion,                      // ✅ Mantener
+                link_whatsapp: item.link_whatsapp,              // ✅ Mantener
+                fecha_inicio: item.fecha_inicio,                // ✅ Mantener completa
+                fecha_fin: item.fecha_fin,                      // ✅ Mantener completa
+                cupos_disponibles: item.cupos_disponibles,
+                estado: item.estado,
+                habilidades_requeridas: item.habilidades_requeridas,  // ✅ Mantener
+                fecha_creacion: item.fecha_creacion,
+                categorias: item.categorias || [],              // ✅ Mantener
+                horario: item.horario || {},                    // ✅ Mantener
+                
+                // --- TRADUCCIONES AL INGLÉS (para UI de listado) ---
                 title: item.titulo,
                 description: item.descripcion || 'Sin descripción',
-                status: item.estado === 'abierta' ? 'published' : item.estado === 'cerrada' ? 'closed' : item.estado,
-                applicants: 0, // En un futuro lo conectaremos a las postulaciones reales
+                location: item.ubicacion || 'No especificada',  // ✅ Usar dato real
                 spots: item.cupos_disponibles,
-                location: 'Ver descripción', // Como no lo tenemos separado en BD, ponemos esto
-                locationType: 'presencial', 
-                commitment: 'Ver detalles',
-                startDate: item.fecha_inicio ? item.fecha_inicio.split('T')[0] : '', // Cortamos la hora para dejar solo fecha
-                endDate: item.fecha_fin ? item.fecha_fin.split('T')[0] : ''
+                startDate: item.fecha_inicio ? item.fecha_inicio.split('T')[0] : '',
+                endDate: item.fecha_fin ? item.fecha_fin.split('T')[0] : '',
+                
+                // --- CAMPOS CALCULADOS/EXTRA ---
+                applicants: 0,  // En futuro conectar con postulaciones reales
+
             }));
             
+            console.log('✅ Datos formateados para el contexto:', formattedData);
             setConvocations(formattedData);
         } catch (error) {
-            console.error("Error al cargar convocatorias reales:", error);
+            console.error("❌ Error al cargar convocatorias reales:", error);
         }
     };
 

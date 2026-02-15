@@ -10,6 +10,8 @@ class Convocatoria:
     fecha_fin: datetime
     cupos_disponibles: int
     id_usuario_creador: int
+    ubicacion: str = "" 
+    link_whatsapp: str = ""
     id: Optional[int] = None
     estado: str = "abierta"
     habilidades_requeridas: str = "" 

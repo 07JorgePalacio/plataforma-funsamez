@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from core.infrastructure.persistence.django.models import ConvocatoriaModel
+from core.infrastructure.persistence.django.models import CampanaModel
 
 class RegisterUserSerializer(serializers.Serializer):
     # 1. Credenciales y Datos Básicos
@@ -34,9 +35,36 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConvocatoriaModel
         fields = [
-            'id', 'titulo', 'descripcion', 'fecha_inicio', 
+            'id', 'titulo', 'descripcion',
+            'ubicacion', 'link_whatsapp',
+            'fecha_inicio', 
             'fecha_fin', 'cupos_disponibles', 'estado', 
             'habilidades_requeridas', 'fecha_creacion', 'usuario_creador',
             'categorias', 'horario'
         ]
-        read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']  # ⬅️ AGREGAR
+        read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']
+
+class CampanaSerializer(serializers.ModelSerializer):
+    # Validamos que sean listas de texto
+    objetivos = serializers.ListField(
+        child=serializers.CharField(), 
+        required=False, 
+        allow_empty=True
+    )
+    galeria_imagenes = serializers.ListField(
+        child=serializers.URLField(), 
+        required=False, 
+        allow_empty=True
+    )
+
+    class Meta:
+        model = CampanaModel
+        fields = [
+            'id', 'titulo', 'descripcion', 'fecha_fin', 
+            'monto_objetivo', 'recaudo_actual', 
+            'imagen_url', 'objetivos', 'galeria_imagenes',
+            'categoria', 'tipo_impacto',
+            'permite_donacion_monetaria', 'permite_donacion_especie',
+            'estado', 'usuario_creador', 'fecha_creacion'
+        ]
+        read_only_fields = ['id', 'fecha_creacion', 'usuario_creador', 'recaudo_actual']
