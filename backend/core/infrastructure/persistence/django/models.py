@@ -142,6 +142,8 @@ class ConvocatoriaModel(models.Model):
     fecha_inicio = models.DateTimeField()
     fecha_fin = models.DateTimeField()
     cupos_disponibles = models.IntegerField(default=0)
+    ubicacion = models.CharField(max_length=255, blank=True, null=True)
+    link_whatsapp = models.URLField(max_length=500, blank=True, null=True)
     
     ESTADOS = [
         ('abierta', 'Abierta'),         
@@ -159,3 +161,44 @@ class ConvocatoriaModel(models.Model):
     class Meta:
         db_table = 'convocatoria'
         managed = True 
+
+class CampanaModel(models.Model):
+    """
+    Modelo de Infraestructura (Django ORM).
+    Representa la tabla 'public.campana' de la base de datos PostgreSQL.
+    """
+
+    usuario_creador = models.ForeignKey(UsuarioModel, on_delete=models.CASCADE, related_name="campanas")
+    titulo = models.CharField(max_length=255)
+    descripcion = models.TextField()
+    categoria = models.CharField(max_length=100, blank=True, null=True)
+    tipo_impacto = models.CharField(max_length=100, blank=True, null=True)
+    monto_objetivo = models.BigIntegerField(null=True, blank=True)
+    fecha_fin = models.DateField()
+    recaudo_actual = models.BigIntegerField(default=0)
+    # FOTO PRINCIPAL (Portada)
+    imagen_url = models.URLField(max_length=500, blank=True, null=True)
+    # Guardará una lista de textos: ["Comprar 50 kits", "Transporte a la vereda"]
+    objetivos = models.JSONField(default=list, blank=True) 
+    # Guardará una lista de URLs: ["url1.jpg", "url2.jpg"]
+    galeria_imagenes = models.JSONField(default=list, blank=True)
+    permite_donacion_monetaria = models.BooleanField(default=True)
+    permite_donacion_especie = models.BooleanField(default=True)
+
+    ESTADOS = [
+        ('activa', 'Activa'), 
+        ('pausada', 'Pausada'), 
+        ('completada', 'Completada'), 
+        ('cancelada', 'Cancelada')
+    ]
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='activa')
+    
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'campana'
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return self.titulo

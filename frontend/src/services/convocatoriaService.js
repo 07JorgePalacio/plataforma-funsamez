@@ -9,9 +9,28 @@ const getAuthHeader = () => {
 };
 
 // 1. CREAR
-export const crearConvocatoria = async (data) => {
+export const crearConvocatoria = async (formData) => {
+    // Convertir array de skills a string para la BD
+    const habilidadesString = Array.isArray(formData.skills) 
+        ? formData.skills.join(', ') 
+        : formData.skills;
+
+    // Payload LIMPIO: Cada dato en su campo correspondiente
+    const payload = {
+        titulo: formData.title,
+        descripcion: formData.description,
+        ubicacion: formData.location,           // <--- Campo exclusivo
+        link_whatsapp: formData.whatsappGroupLink, // <--- Campo exclusivo
+        fecha_inicio: formData.startDate,
+        fecha_fin: formData.endDate,
+        cupos_disponibles: parseInt(formData.spots),
+        habilidades_requeridas: habilidadesString,
+        categorias: formData.categorias,
+        horario: formData.horario
+    };
+
     try {
-        const response = await axios.post(`${API_URL}/crear/`, data, getAuthHeader());
+        const response = await axios.post(`${API_URL}/crear/`, payload, getAuthHeader());
         return response.data;
     } catch (error) {
         throw error.response ? error.response.data : new Error('Error al conectar con el servidor');
@@ -29,9 +48,27 @@ export const obtenerConvocatorias = async () => {
 };
 
 // 3. ACTUALIZAR (Para Editar) - FALTABA ESTA
-export const actualizarConvocatoria = async (id, data) => {
+export const actualizarConvocatoria = async (id, formData) => {
+    // Misma lógica de limpieza para editar
+    const habilidadesString = Array.isArray(formData.skills) 
+        ? formData.skills.join(', ') 
+        : formData.skills;
+
+    const payload = {
+        titulo: formData.title,
+        descripcion: formData.description,
+        ubicacion: formData.location,
+        link_whatsapp: formData.whatsappGroupLink,
+        fecha_inicio: formData.startDate,
+        fecha_fin: formData.endDate,
+        cupos_disponibles: parseInt(formData.spots),
+        habilidades_requeridas: habilidadesString,
+        categorias: formData.categorias,
+        horario: formData.horario
+    };
+
     try {
-        const response = await axios.put(`${API_URL}/${id}/`, data, getAuthHeader());
+        const response = await axios.put(`${API_URL}/${id}/`, payload, getAuthHeader());
         return response.data;
     } catch (error) {
         throw error.response ? error.response.data : new Error('Error al actualizar');

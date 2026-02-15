@@ -26,6 +26,8 @@ class CrearConvocatoriaView(APIView):
                 cupos=data['cupos_disponibles'],
                 id_usuario=request.user.id,
                 habilidades=data.get('habilidades_requeridas', ''),
+                ubicacion=data.get('ubicacion', ''),
+                link_whatsapp=data.get('link_whatsapp', ''),
                 categorias=data.get('categorias', []), 
                 horario=data.get('horario', {})        
             )
@@ -58,6 +60,8 @@ class ListarConvocatoriasView(APIView):
                     "id": c.id,
                     "titulo": c.titulo,
                     "descripcion": c.descripcion,
+                    "ubicacion": c.ubicacion,
+                    "link_whatsapp": c.link_whatsapp,
                     "fecha_inicio": c.fecha_inicio.isoformat() if c.fecha_inicio else None,
                     "fecha_fin": c.fecha_fin.isoformat() if c.fecha_fin else None,
                     "cupos_disponibles": c.cupos_disponibles,
