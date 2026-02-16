@@ -6,6 +6,7 @@ from typing import Optional, List
 class Campana:
     titulo: str
     descripcion: str
+    fecha_inicio: datetime
     fecha_fin: date
     id_usuario_creador: int
     
@@ -13,10 +14,6 @@ class Campana:
     monto_objetivo: int
     permite_donacion_monetaria: bool
     permite_donacion_especie: bool
-    
-    # Clasificación
-    categoria: str = "General"
-    tipo_impacto: str = "Social"
 
     # Campos Lógicos
     id: Optional[int] = None
@@ -24,10 +21,14 @@ class Campana:
     imagen_url: str = ""     # FOTO PRINCIPAL (Portada)
     estado: str = "activa"
     fecha_creacion: Optional[datetime] = None
+    fecha_actualizacion: Optional[datetime] = None
 
     # Campos listados
     objetivos: List[str] = field(default_factory=list) 
-    galeria_imagenes: List[str] = field(default_factory=list) # FOTOS ADICIONALES
+    galeria_imagenes: List[str] = field(default_factory=list)
+    necesidades: List[str] = field(default_factory=list)
+    categoria: List[str] = field(default_factory=list)
+    tipo_impacto: List[str] = field(default_factory=list)
 
     @property
     def porcentaje_progreso(self) -> float:

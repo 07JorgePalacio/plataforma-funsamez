@@ -171,19 +171,21 @@ class CampanaModel(models.Model):
     usuario_creador = models.ForeignKey(UsuarioModel, on_delete=models.CASCADE, related_name="campanas")
     titulo = models.CharField(max_length=255)
     descripcion = models.TextField()
-    categoria = models.CharField(max_length=100, blank=True, null=True)
-    tipo_impacto = models.CharField(max_length=100, blank=True, null=True)
     monto_objetivo = models.BigIntegerField(null=True, blank=True)
+    fecha_inicio = models.DateField(default=timezone.now)
     fecha_fin = models.DateField()
     recaudo_actual = models.BigIntegerField(default=0)
     # FOTO PRINCIPAL (Portada)
-    imagen_url = models.URLField(max_length=500, blank=True, null=True)
-    # Guardará una lista de textos: ["Comprar 50 kits", "Transporte a la vereda"]
-    objetivos = models.JSONField(default=list, blank=True) 
-    # Guardará una lista de URLs: ["url1.jpg", "url2.jpg"]
-    galeria_imagenes = models.JSONField(default=list, blank=True)
+    imagen_url = models.URLField(max_length=500, blank=True, null=True)    
     permite_donacion_monetaria = models.BooleanField(default=True)
     permite_donacion_especie = models.BooleanField(default=True)
+
+    # Campos JSON
+    objetivos = models.JSONField(default=list, blank=True) 
+    galeria_imagenes = models.JSONField(default=list, blank=True)
+    necesidades = models.JSONField(default=list, blank=True)
+    categoria = models.JSONField(default=list, blank=True)
+    tipo_impacto = models.JSONField(default=list, blank=True)
 
     ESTADOS = [
         ('activa', 'Activa'), 
