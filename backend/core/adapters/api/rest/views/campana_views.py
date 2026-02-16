@@ -19,17 +19,18 @@ class CrearCampanaView(APIView):
                 nueva_campana = Container.crear_campana_use_case.ejecutar(
                     titulo=data['titulo'],
                     descripcion=data['descripcion'],
+                    fecha_inicio=data['fecha_inicio'],
                     fecha_fin=data['fecha_fin'],
                     id_usuario=request.user.id, # El usuario del token JWT
                     monto_objetivo=data['monto_objetivo'],
                     permite_monetaria=data['permite_donacion_monetaria'],
                     permite_especie=data['permite_donacion_especie'],
-                    # Opcionales
                     categoria=data.get('categoria', ''),
                     tipo_impacto=data.get('tipo_impacto', ''),
                     imagen_url=data.get('imagen_url', ''),
                     objetivos=data.get('objetivos', []),
-                    galeria=data.get('galeria_imagenes', [])
+                    galeria=data.get('galeria_imagenes', []),
+                    necesidades=data.get('necesidades', [])
                 )
                 
                 # 3. Responder
@@ -54,5 +55,27 @@ class ListarCampanasView(APIView):
             serializer = CampanaSerializer(campanas, many=True)
             
             return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class DetalleCampanaView(APIView):
+    permission_classes = [IsAuthenticated] # Solo admins editan/borran
+
+    def put(self, request, pk):
+        try:
+            # Enviamos request.data directo al caso de uso
+            # (Podríamos validar con serializer aquí también si queremos ser estrictos)
+            campana_actualizada = Container.actualizar_campana_use_case.ejecutar(pk, request.data)
+            
+            # Devolvemos los datos actualizados
+            serializer = CampanaSerializer(campana_actualizada)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            Container.eliminar_campana_use_case.ejecutar(pk)
+            return Response({"mensaje": "Campaña eliminada"}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

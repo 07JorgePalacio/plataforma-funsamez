@@ -6,6 +6,8 @@ from core.application.use_cases.crear_convocatoria import CrearConvocatoriaUseCa
 from core.infrastructure.persistence.django.repositories.postgres_campana_repository import PostgresCampanaRepository
 from core.application.use_cases.crear_campana import CrearCampanaUseCase
 from core.application.use_cases.listar_campanas import ListarCampanasUseCase
+from core.application.use_cases.actualizar_campana import ActualizarCampanaUseCase
+from core.application.use_cases.eliminar_campana import EliminarCampanaUseCase
 
 class Container:
     """
@@ -59,3 +61,5 @@ class Container:
     # Inyectamos el repositorio en los casos de uso
     crear_campana_use_case = CrearCampanaUseCase(campana_repository)
     listar_campanas_use_case = ListarCampanasUseCase(campana_repository)
+    actualizar_campana_use_case = ActualizarCampanaUseCase(campana_repository)
+    eliminar_campana_use_case = EliminarCampanaUseCase(campana_repository)

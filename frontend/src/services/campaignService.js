@@ -42,6 +42,15 @@ export const eliminarCampana = async (id) => {
     }
 };
 
+export const actualizarCampana = async (id, data) => {
+    try {
+        const response = await axios.put(`${API_URL}/${id}/`, data, getAuthHeader());
+        return response.data;
+    } catch (error) {
+        throw error.response ? error.response.data : new Error('Error al actualizar campaña');
+    }
+};
+
 // (Opcional) Si en el futuro implementas actualizar o cambiar estado en Backend:
 export const cambiarEstadoCampana = async (id, estado) => {
     console.warn("Endpoint cambiarEstadoCampana no implementado en backend aún.");
