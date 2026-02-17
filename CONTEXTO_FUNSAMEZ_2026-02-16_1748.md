@@ -1,11 +1,11 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-02-14 14:45:37.591360
+📅 Generado: 2026-02-16 17:48:08.349395
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
 ```text
 ├── .gitignore
-├── CONTEXTO_FUNSAMEZ_2026-02-14_1445.md
+├── CONTEXTO_FUNSAMEZ_2026-02-16_1748.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -24,6 +24,7 @@
 │   │   │   │   │   ├── serializers.py
 │   │   │   │   │   └── views/
 │   │   │   │   │       ├── __init__.py
+│   │   │   │   │       ├── campana_views.py
 │   │   │   │   │       ├── convocatoria_views.py
 │   │   │   │   │       └── user_views.py
 │   │   │   │   └── urls.py
@@ -41,7 +42,11 @@
 │   │   │   │       ├── convocatoria_repository.py
 │   │   │   │       └── user_repository.py
 │   │   │   └── use_cases/
+│   │   │       ├── actualizar_campana.py
+│   │   │       ├── crear_campana.py
 │   │   │       ├── crear_convocatoria.py
+│   │   │       ├── eliminar_campana.py
+│   │   │       ├── listar_campanas.py
 │   │   │       ├── login_user.py
 │   │   │       └── register_user.py
 │   │   ├── container.py
@@ -49,6 +54,7 @@
 │   │   │   ├── __init__.py
 │   │   │   ├── entities/
 │   │   │   │   ├── __init__.py
+│   │   │   │   ├── campana.py
 │   │   │   │   ├── convocatoria.py
 │   │   │   │   └── user.py
 │   │   │   ├── exceptions/
@@ -66,6 +72,7 @@
 │   │               ├── models.py
 │   │               └── repositories/
 │   │                   ├── __init__.py
+│   │                   ├── postgres_campana_repository.py
 │   │                   ├── postgres_convocatoria_repository.py
 │   │                   └── postgres_user_repository.py
 │   └── manage.py
@@ -94,16 +101,17 @@
 │   │   ├── index.css
 │   │   ├── main.jsx
 │   │   ├── pages/
+│   │   │   ├── AdminCampaignsPage.jsx
 │   │   │   ├── AdminConvocationsPage.jsx
 │   │   │   ├── DashboardPage.jsx
 │   │   │   ├── LoginPage.jsx
 │   │   │   └── RegisterPage.jsx
 │   │   └── services/
+│   │       ├── campaignService.js
 │   │       └── convocatoriaService.js
 │   ├── tailwind.config.js
 │   └── vite.config.js
-├── generar_contexto.py
-└── probar_todo.py
+└── generar_contexto.py
 ```
 
 ## 2. CÓDIGO FUENTE SELECCIONADO
@@ -276,6 +284,11 @@ from core.application.use_cases.register_user import RegisterUser
 from core.application.use_cases.login_user import LoginUser
 from core.infrastructure.persistence.django.repositories.postgres_convocatoria_repository import PostgresConvocatoriaRepository
 from core.application.use_cases.crear_convocatoria import CrearConvocatoriaUseCase
+from core.infrastructure.persistence.django.repositories.postgres_campana_repository import PostgresCampanaRepository
+from core.application.use_cases.crear_campana import CrearCampanaUseCase
+from core.application.use_cases.listar_campanas import ListarCampanasUseCase
+from core.application.use_cases.actualizar_campana import ActualizarCampanaUseCase
+from core.application.use_cases.eliminar_campana import EliminarCampanaUseCase
 
 class Container:
     """
@@ -306,18 +319,84 @@ class Container:
         """
         return LoginUser(user_repository=Container._user_repository)
     
-    # --- Módulo de Convocatorias ---
+
+    # ==========================================
+    #  MÓDULO DE CONVOCATORIAS
+    # ==========================================
     
     # 1. Instanciamos el Repositorio (Infraestructura)
     convocatoria_repository = PostgresConvocatoriaRepository()
 
     # 2. Inyectamos el Repositorio en el Caso de Uso (Aplicación)
     crear_convocatoria_use_case = CrearConvocatoriaUseCase(repository=convocatoria_repository)
+
+
+    # ==========================================
+    #  MÓDULO DE CAMPAÑAS (DONACIONES)
+    # ==========================================
+    
+    # 1. Repositorio (Capa de Infraestructura)
+    campana_repository = PostgresCampanaRepository()
+
+    # 2. Casos de Uso (Capa de Aplicación)
+    # Inyectamos el repositorio en los casos de uso
+    crear_campana_use_case = CrearCampanaUseCase(campana_repository)
+    listar_campanas_use_case = ListarCampanasUseCase(campana_repository)
+    actualizar_campana_use_case = ActualizarCampanaUseCase(campana_repository)
+    eliminar_campana_use_case = EliminarCampanaUseCase(campana_repository)
 ```
 
 ### 📄 backend/core/domain/entities/__init__.py
 ```python
 
+```
+
+### 📄 backend/core/domain/entities/campana.py
+```python
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from typing import Optional, List
+
+@dataclass
+class Campana:
+    titulo: str
+    descripcion: str
+    fecha_inicio: datetime
+    fecha_fin: date
+    id_usuario_creador: int
+    
+    # Configuración de Donación
+    monto_objetivo: int
+    permite_donacion_monetaria: bool
+    permite_donacion_especie: bool
+
+    # Campos Lógicos
+    id: Optional[int] = None
+    recaudo_actual: int = 0
+    imagen_url: str = ""     # FOTO PRINCIPAL (Portada)
+    estado: str = "activa"
+    fecha_creacion: Optional[datetime] = None
+    fecha_actualizacion: Optional[datetime] = None
+
+    # Campos listados
+    objetivos: List[str] = field(default_factory=list) 
+    galeria_imagenes: List[str] = field(default_factory=list)
+    necesidades: List[str] = field(default_factory=list)
+    categoria: List[str] = field(default_factory=list)
+    tipo_impacto: List[str] = field(default_factory=list)
+
+    @property
+    def porcentaje_progreso(self) -> float:
+        if self.monto_objetivo <= 0:
+            return 0.0
+        return min((self.recaudo_actual / self.monto_objetivo) * 100, 100.0)
+
+    @property
+    def dias_restantes(self) -> int:
+        if not self.fecha_fin:
+            return 0
+        delta = self.fecha_fin - date.today()
+        return max(delta.days, 0)
 ```
 
 ### 📄 backend/core/domain/entities/convocatoria.py
@@ -455,6 +534,71 @@ class UserRepository(ABC):
         pass
 ```
 
+### 📄 backend/core/application/use_cases/actualizar_campana.py
+```python
+from core.domain.entities.campana import Campana
+
+class ActualizarCampanaUseCase:
+    def __init__(self, repository):
+        self.repository = repository
+
+    def ejecutar(self, id: int, datos: dict) -> Campana:
+        # 1. Obtener la campaña actual para comparar
+        # (Nota: Esto requeriría un método 'obtener_por_id' en el repo, 
+        #  si no lo tienes, confiaremos en que el frontend o el repo manejen la lógica,
+        #  pero para hacerlo bien, agreguemos la lógica simple de negocio aquí).
+        
+        # Si estamos actualizando el recaudo, verificamos si se cumplió la meta
+        if 'recaudo_actual' in datos:
+            # Aquí necesitaríamos saber el monto_objetivo. 
+            # Como el repositorio 'actualizar' es genérico, haremos un truco:
+            # Dejaremos que el Frontend decida el estado o el Repositorio.
+            pass 
+            
+        return self.repository.actualizar(id, datos)
+```
+
+### 📄 backend/core/application/use_cases/crear_campana.py
+```python
+from datetime import date
+from typing import List
+from core.domain.entities.campana import Campana
+
+class CrearCampanaUseCase:
+    def __init__(self, repository):
+        self.repository = repository
+
+    def ejecutar(self, titulo: str, descripcion: str, 
+                 fecha_fin: date, fecha_inicio: datetime,
+                 id_usuario: int, monto_objetivo: int,
+                 permite_monetaria: bool, permite_especie: bool,
+                 imagen_url: str = "",
+                 categoria: List[str] = None, tipo_impacto: List[str] = None,
+                 necesidades: List[str] = None, objetivos: List[str] = None,
+                 galeria: List[str] = None) -> Campana:
+        
+        # Aquí podrías validar reglas de negocio (ej: monto > 0)
+        
+        nueva_campana = Campana(
+            titulo=titulo,
+            descripcion=descripcion,
+            fecha_fin=fecha_fin,
+            fecha_inicio=fecha_inicio,
+            id_usuario_creador=id_usuario,
+            monto_objetivo=monto_objetivo,
+            permite_donacion_monetaria=permite_monetaria,
+            permite_donacion_especie=permite_especie,
+            imagen_url=imagen_url,
+            objetivos=objetivos or [],
+            galeria_imagenes=galeria or [],
+            necesidades=necesidades or [],
+            categoria=categoria or [],
+            tipo_impacto=tipo_impacto or [],
+        )
+        
+        return self.repository.crear(nueva_campana)
+```
+
 ### 📄 backend/core/application/use_cases/crear_convocatoria.py
 ```python
 from datetime import datetime
@@ -496,6 +640,29 @@ class CrearConvocatoriaUseCase:
 
         # 3. Persistir usando el Puerto
         return self.repository.crear(nueva_convocatoria)
+```
+
+### 📄 backend/core/application/use_cases/eliminar_campana.py
+```python
+class EliminarCampanaUseCase:
+    def __init__(self, repository):
+        self.repository = repository
+
+    def ejecutar(self, id: int):
+        return self.repository.eliminar(id)
+```
+
+### 📄 backend/core/application/use_cases/listar_campanas.py
+```python
+from typing import List
+from core.domain.entities.campana import Campana
+
+class ListarCampanasUseCase:
+    def __init__(self, repository):
+        self.repository = repository
+
+    def ejecutar(self) -> List[Campana]:
+        return self.repository.obtener_todas()
 ```
 
 ### 📄 backend/core/application/use_cases/login_user.py
@@ -749,11 +916,132 @@ class ConvocatoriaModel(models.Model):
     class Meta:
         db_table = 'convocatoria'
         managed = True 
+
+class CampanaModel(models.Model):
+    """
+    Modelo de Infraestructura (Django ORM).
+    Representa la tabla 'public.campana' de la base de datos PostgreSQL.
+    """
+
+    usuario_creador = models.ForeignKey(UsuarioModel, on_delete=models.CASCADE, related_name="campanas")
+    titulo = models.CharField(max_length=255)
+    descripcion = models.TextField()
+    monto_objetivo = models.BigIntegerField(null=True, blank=True)
+    fecha_inicio = models.DateField(default=timezone.now)
+    fecha_fin = models.DateField()
+    recaudo_actual = models.BigIntegerField(default=0)
+    # FOTO PRINCIPAL (Portada)
+    imagen_url = models.URLField(max_length=500, blank=True, null=True)    
+    permite_donacion_monetaria = models.BooleanField(default=True)
+    permite_donacion_especie = models.BooleanField(default=True)
+
+    # Campos JSON
+    objetivos = models.JSONField(default=list, blank=True) 
+    galeria_imagenes = models.JSONField(default=list, blank=True)
+    necesidades = models.JSONField(default=list, blank=True)
+    categoria = models.JSONField(default=list, blank=True)
+    tipo_impacto = models.JSONField(default=list, blank=True)
+
+    ESTADOS = [
+        ('activa', 'Activa'), 
+        ('pausada', 'Pausada'), 
+        ('completada', 'Completada'), 
+        ('cancelada', 'Cancelada')
+    ]
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='activa')
+    
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'campana'
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return self.titulo
 ```
 
 ### 📄 backend/core/infrastructure/persistence/django/repositories/__init__.py
 ```python
 
+```
+
+### 📄 backend/core/infrastructure/persistence/django/repositories/postgres_campana_repository.py
+```python
+from typing import List, Optional
+from core.domain.entities.campana import Campana
+from core.infrastructure.persistence.django.models import CampanaModel, UsuarioModel
+
+class PostgresCampanaRepository:
+    
+    def _to_domain(self, model: CampanaModel) -> Campana:
+        return Campana(
+            id=model.id,
+            titulo=model.titulo,
+            descripcion=model.descripcion,
+            fecha_fin=model.fecha_fin,
+            fecha_inicio=model.fecha_inicio,
+            id_usuario_creador=model.usuario_creador.id,
+            monto_objetivo=model.monto_objetivo,
+            permite_donacion_monetaria=model.permite_donacion_monetaria,
+            permite_donacion_especie=model.permite_donacion_especie,
+            recaudo_actual=model.recaudo_actual,
+            imagen_url=model.imagen_url or "",
+            estado=model.estado,
+            fecha_creacion=model.fecha_creacion,
+            fecha_actualizacion=model.fecha_actualizacion,
+            # 🔥 Mapeo de listas JSON
+            objetivos=model.objetivos or [],
+            galeria_imagenes=model.galeria_imagenes or [],
+            necesidades=model.necesidades or [],
+            categoria=model.categoria or [],       
+            tipo_impacto=model.tipo_impacto or []
+        )
+
+    def crear(self, campana: Campana) -> Campana:
+        # Obtenemos la instancia del usuario creador
+        usuario_db = UsuarioModel.objects.get(id=campana.id_usuario_creador)
+        
+        modelo = CampanaModel.objects.create(
+            usuario_creador=usuario_db,
+            titulo=campana.titulo,
+            descripcion=campana.descripcion,
+            fecha_fin=campana.fecha_fin,
+            fecha_inicio=campana.fecha_inicio,
+            monto_objetivo=campana.monto_objetivo,
+            permite_donacion_monetaria=campana.permite_donacion_monetaria,
+            permite_donacion_especie=campana.permite_donacion_especie,
+            recaudo_actual=campana.recaudo_actual,
+            imagen_url=campana.imagen_url,
+            estado=campana.estado,
+            # 🔥 Django guarda listas automáticamente en JSONField
+            objetivos=campana.objetivos,
+            galeria_imagenes=campana.galeria_imagenes,
+            necesidades=campana.necesidades,
+            categoria=campana.categoria,
+            tipo_impacto=campana.tipo_impacto, 
+        )
+        return self._to_domain(modelo)
+
+    def obtener_todas(self) -> List[Campana]:
+        qs = CampanaModel.objects.all().order_by('-fecha_creacion')
+        return [self._to_domain(m) for m in qs]
+    
+    def actualizar(self, id: int, datos: dict) -> Campana:
+        modelo = CampanaModel.objects.get(id=id)
+        # Actualizamos campo por campo si viene en los datos
+        for key, value in datos.items():
+            if hasattr(modelo, key):
+                setattr(modelo, key, value)
+        modelo.save()
+        return self._to_domain(modelo)  
+
+    def eliminar(self, id: int):
+        try:
+            modelo = CampanaModel.objects.get(id=id)
+            modelo.delete()
+        except CampanaModel.DoesNotExist:
+            pass # Opcional: lanzar error si no existe
 ```
 
 ### 📄 backend/core/infrastructure/persistence/django/repositories/postgres_convocatoria_repository.py
@@ -892,6 +1180,8 @@ class PostgresUserRepository(UserRepository):
 ```python
 from rest_framework import serializers
 from core.infrastructure.persistence.django.models import ConvocatoriaModel
+from core.infrastructure.persistence.django.models import CampanaModel
+from django.utils import timezone
 
 class RegisterUserSerializer(serializers.Serializer):
     # 1. Credenciales y Datos Básicos
@@ -933,12 +1223,156 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
             'habilidades_requeridas', 'fecha_creacion', 'usuario_creador',
             'categorias', 'horario'
         ]
-        read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']  # ⬅️ AGREGAR
+        read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']
+
+class CampanaSerializer(serializers.ModelSerializer):
+    # Validamos que sean listas de texto
+    objetivos = serializers.ListField(
+        child=serializers.CharField(), 
+        required=False, 
+        allow_empty=True
+    )
+    galeria_imagenes = serializers.ListField(
+        child=serializers.URLField(), 
+        required=False, 
+        allow_empty=True
+    )
+
+    necesidades = serializers.ListField(
+        child=serializers.CharField(), 
+        required=False, 
+        allow_empty=True
+    )
+    
+    categoria = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
+    )
+    
+    tipo_impacto = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
+    )
+
+    class Meta:
+        model = CampanaModel
+        fields = [
+            'id', 'titulo', 'descripcion',
+             'fecha_inicio', 'fecha_fin', 
+            'monto_objetivo', 'recaudo_actual', 
+            'imagen_url', 'objetivos', 'galeria_imagenes', 'necesidades',
+            'categoria', 'tipo_impacto',
+            'categoria', 'tipo_impacto',
+            'permite_donacion_monetaria', 'permite_donacion_especie',
+            'estado', 'usuario_creador', 'fecha_creacion', 'fecha_actualizacion'
+        ]
+        read_only_fields = ['id', 'fecha_creacion', 'usuario_creador', 'recaudo_actual']
+
+    # 2. VALIDACIÓN PERSONALIZADA: Fecha Inicio no puede ser pasado
+    def validate_fecha_inicio(self, value):
+        # Si estamos CREANDO (no hay instancia) o EDITANDO la fecha
+        if value < timezone.now().date():
+            raise serializers.ValidationError("La campaña no puede iniciar en el pasado.")
+        return value
+
+    # 3. VALIDACIÓN EXTRA: Fecha Fin > Fecha Inicio
+    def validate(self, data):
+        if 'fecha_inicio' in data and 'fecha_fin' in data:
+            if data['fecha_fin'] < data['fecha_inicio']:
+                raise serializers.ValidationError({"fecha_fin": "La fecha de fin debe ser posterior al inicio."})
+        return data
 ```
 
 ### 📄 backend/core/adapters/api/rest/views/__init__.py
 ```python
 
+```
+
+### 📄 backend/core/adapters/api/rest/views/campana_views.py
+```python
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from core.container import Container
+from core.adapters.api.rest.serializers import CampanaSerializer
+
+class CrearCampanaView(APIView):
+    permission_classes = [IsAuthenticated] # Solo admins/usuarios logueados crean
+
+    def post(self, request):
+        # 1. Validar datos con Serializer
+        serializer = CampanaSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            
+            try:
+                # 2. Llamar al Caso de Uso a través del Contenedor
+                nueva_campana = Container.crear_campana_use_case.ejecutar(
+                    titulo=data['titulo'],
+                    descripcion=data['descripcion'],
+                    fecha_inicio=data['fecha_inicio'],
+                    fecha_fin=data['fecha_fin'],
+                    id_usuario=request.user.id, # El usuario del token JWT
+                    monto_objetivo=data['monto_objetivo'],
+                    permite_monetaria=data['permite_donacion_monetaria'],
+                    permite_especie=data['permite_donacion_especie'],
+                    categoria=data.get('categoria', ''),
+                    tipo_impacto=data.get('tipo_impacto', ''),
+                    imagen_url=data.get('imagen_url', ''),
+                    objetivos=data.get('objetivos', []),
+                    galeria=data.get('galeria_imagenes', []),
+                    necesidades=data.get('necesidades', [])
+                )
+                
+                # 3. Responder
+                return Response(
+                    {"mensaje": "Campaña creada exitosamente", "id": nueva_campana.id},
+                    status=status.HTTP_201_CREATED
+                )
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ListarCampanasView(APIView):
+    permission_classes = [AllowAny] # Público (para que los donantes vean)
+
+    def get(self, request):
+        try:
+            # 1. Llamar al Caso de Uso
+            campanas = Container.listar_campanas_use_case.ejecutar()
+            
+            # 2. Serializar la lista de entidades
+            serializer = CampanaSerializer(campanas, many=True)
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class DetalleCampanaView(APIView):
+    permission_classes = [IsAuthenticated] # Solo admins editan/borran
+
+    def put(self, request, pk):
+        try:
+            # Enviamos request.data directo al caso de uso
+            # (Podríamos validar con serializer aquí también si queremos ser estrictos)
+            campana_actualizada = Container.actualizar_campana_use_case.ejecutar(pk, request.data)
+            
+            # Devolvemos los datos actualizados
+            serializer = CampanaSerializer(campana_actualizada)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            Container.eliminar_campana_use_case.ejecutar(pk)
+            return Response({"mensaje": "Campaña eliminada"}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 ```
 
 ### 📄 backend/core/adapters/api/rest/views/convocatoria_views.py
@@ -1182,6 +1616,8 @@ class LoginUserView(APIView):
 from django.urls import path
 from core.adapters.api.rest.views.user_views import RegisterUserView, LoginUserView
 from core.adapters.api.rest.views.convocatoria_views import CrearConvocatoriaView, ListarConvocatoriasView, DetalleConvocatoriaView
+from core.adapters.api.rest.views.campana_views import CrearCampanaView, ListarCampanasView, DetalleCampanaView
+
 
 urlpatterns = [
     path('users/register/', RegisterUserView.as_view(), name='register_user'),
@@ -1190,6 +1626,9 @@ urlpatterns = [
     path('convocatorias/crear/', CrearConvocatoriaView.as_view(), name='crear_convocatoria'),
     path('convocatorias/', ListarConvocatoriasView.as_view(), name='listar_convocatorias'),
     path('convocatorias/<int:pk>/', DetalleConvocatoriaView.as_view(), name='detalle_convocatoria'),
+    path('campanas/crear/', CrearCampanaView.as_view(), name='crear_campana'),
+    path('campanas/', ListarCampanasView.as_view(), name='listar_campanas'),
+    path('campanas/<int:pk>/', DetalleCampanaView.as_view(), name='detalle_campana'),
 ]
 ```
 
@@ -1551,6 +1990,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminConvocationsPage from './pages/AdminConvocationsPage';
+import AdminCampaignsPage from './pages/AdminCampaignsPage';
 
 function App() {
   return (
@@ -1562,6 +2002,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/admin/convocatorias" element={<AdminConvocationsPage />} />
+          <Route path="/admin/campanas" element={<AdminCampaignsPage />} />
         </Routes>
       </BrowserRouter>
     </AppProvider> // <--- CIERRE
@@ -1643,8 +2084,7 @@ export const AppProvider = ({ children }) => {
                 
                 // --- CAMPOS CALCULADOS/EXTRA ---
                 applicants: 0,  // En futuro conectar con postulaciones reales
-                locationType: 'presencial',
-                commitment: 'Ver detalles'
+
             }));
             
             console.log('✅ Datos formateados para el contexto:', formattedData);
@@ -1719,6 +2159,68 @@ export const AppProvider = ({ children }) => {
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
+```
+
+### 📄 frontend/src/services/campaignService.js
+```javascript
+import axios from 'axios';
+
+// 1. Definimos la URL exacta del Backend (Igual que en Convocatorias)
+const API_URL = 'http://127.0.0.1:8000/api/campanas';
+
+// 2. Función auxiliar para sacar el Token (Igual que en Convocatorias)
+const getAuthHeader = () => {
+    const token = localStorage.getItem('access_token');
+    return { headers: { Authorization: `Bearer ${token}` } };
+};
+
+// --- FUNCIONES DEL SERVICIO ---
+
+export const obtenerCampanas = async () => {
+    try {
+        // Usamos la URL completa y pasamos el header con el token
+        const response = await axios.get(`${API_URL}/`, getAuthHeader());
+        return response.data;
+    } catch (error) {
+        console.error("Error obteniendo campañas:", error);
+        throw error.response ? error.response.data : new Error('Error de conexión');
+    }
+};
+
+export const crearCampana = async (data) => {
+    try {
+        // Ajustamos la ruta a /crear/ tal como la definiste en Django
+        const response = await axios.post(`${API_URL}/crear/`, data, getAuthHeader());
+        return response.data;
+    } catch (error) {
+        console.error("Error creando campaña:", error);
+        throw error.response ? error.response.data : new Error('Error al crear campaña');
+    }
+};
+
+export const eliminarCampana = async (id) => {
+    try {
+        await axios.delete(`${API_URL}/${id}/`, getAuthHeader());
+        return true;
+    } catch (error) {
+        throw error.response ? error.response.data : new Error('Error al eliminar');
+    }
+};
+
+export const actualizarCampana = async (id, data) => {
+    try {
+        const response = await axios.put(`${API_URL}/${id}/`, data, getAuthHeader());
+        return response.data;
+    } catch (error) {
+        throw error.response ? error.response.data : new Error('Error al actualizar campaña');
+    }
+};
+
+// (Opcional) Si en el futuro implementas actualizar o cambiar estado en Backend:
+export const cambiarEstadoCampana = async (id, estado) => {
+    console.warn("Endpoint cambiarEstadoCampana no implementado en backend aún.");
+    return null;
+};
 ```
 
 ### 📄 frontend/src/services/convocatoriaService.js
@@ -1821,6 +2323,571 @@ export const eliminarConvocatoria = async (id) => {
 };
 ```
 
+### 📄 frontend/src/pages/AdminCampaignsPage.jsx
+```javascript
+import { useState, useEffect } from 'react';
+import { 
+    crearCampana, 
+    obtenerCampanas, 
+    actualizarCampana,
+    eliminarCampana
+} from '../services/campaignService';
+import AdminLayout from '../components/AdminLayout';
+import {
+    Plus, Edit, Trash2, X, Save,
+    Check, DollarSign, Image as ImageIcon, AlertCircle, 
+    Package, Calendar, Info, Archive, Play, Pause, ChevronDown, ChevronUp, 
+    Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Copy, Heart, Inbox
+} from 'lucide-react';
+
+// --- UTILIDADES ---
+const formatCurrency = (value) => {
+    if (!value) return '';
+    return new Intl.NumberFormat('es-CO', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(value);
+};
+
+const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+// --- COMPONENTES UI ---
+const CheckboxM3 = ({ label, checked, onChange, icon: Icon }) => (
+    <label className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${checked ? 'bg-primary/5 border-primary' : 'bg-surface border-outline-variant hover:border-outline'}`}>
+        <div className="flex items-center gap-3">
+            {Icon && <Icon size={20} className={checked ? 'text-primary' : 'text-on-surface-variant'} />}
+            <span className={`text-sm font-medium ${checked ? 'text-primary font-bold' : 'text-on-surface'}`}>{label}</span>
+        </div>
+        <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${checked ? 'bg-primary' : 'border-2 border-on-surface-variant'}`}>
+            {checked && <Check size={14} className="text-white" strokeWidth={3} />}
+        </div>
+        <input type="checkbox" className="hidden" checked={checked} onChange={onChange} />
+    </label>
+);
+
+const DynamicList = ({ label, items, onAdd, onRemove, placeholder, type = 'text', maxItems = 10 }) => {
+    const [newValue, setNewValue] = useState('');
+    const isLimitReached = items.length >= maxItems;
+
+    const handleAdd = () => {
+        if (!newValue.trim()) return;
+        onAdd(newValue);
+        setNewValue('');
+    };
+
+    return (
+        <div className="pt-4 border-t border-outline-variant/30">
+            <div className="flex justify-between items-baseline mb-2">
+                <label className="block text-label-large text-on-surface font-bold text-primary">{label}</label>
+                <span className={`text-xs font-medium ${isLimitReached ? 'text-error' : 'text-on-surface-variant'}`}>{items.length}/{maxItems}</span>
+            </div>
+            <div className="flex gap-2 mb-3">
+                <input 
+                    type={type} 
+                    value={newValue} 
+                    onChange={(e) => setNewValue(e.target.value)} 
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAdd())}
+                    className="input-outlined flex-1 bg-white"
+                    placeholder={isLimitReached ? "Límite alcanzado" : placeholder} 
+                    disabled={isLimitReached}
+                />
+                <button type="button" onClick={handleAdd} disabled={isLimitReached || !newValue.trim()} className="btn-tonal py-2 px-4"><Plus size={18} /></button>
+            </div>
+            {items.length > 0 && (
+                <ul className="space-y-2">
+                    {items.map((item, idx) => (
+                        <li key={idx} className="flex items-center justify-between bg-surface-container/50 p-2 rounded-lg border border-outline-variant/50">
+                            {type === 'url' ? (
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <img src={item} alt="Miniatura" className="w-8 h-8 rounded object-cover bg-surface-container-high" onError={(e) => e.target.src = 'https://via.placeholder.com/32'} />
+                                    <span className="text-xs text-on-surface-variant truncate max-w-[200px]">{item}</span>
+                                </div>
+                            ) : (
+                                <span className="text-sm text-on-surface ml-2 truncate max-w-[200px]">{item}</span>
+                            )}
+                            <button type="button" onClick={() => onRemove(idx)} className="p-1.5 text-error hover:bg-error/10 rounded-full"><Trash2 size={14} /></button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
+
+// --- FORMULARIO MODAL ---
+function CampaignFormModal({ campaign, onSave, onClose }) {
+    const initialValues = {
+        titulo: '', descripcion: '', 
+        fecha_inicio: new Date().toISOString().split('T')[0],
+        fecha_fin: '', 
+        monto_objetivo: 0,
+        permite_donacion_monetaria: true,
+        permite_donacion_especie: true,
+        categoria: [], tipo_impacto: [],
+        imagen_url: '', objetivos: [], galeria_imagenes: [], necesidades: []
+    };
+
+    const [formData, setFormData] = useState(initialValues);
+    const [errors, setErrors] = useState({});
+    const [displayMonto, setDisplayMonto] = useState('');
+
+    useEffect(() => {
+        if (campaign) {
+            setFormData({ ...initialValues, ...campaign });
+            setDisplayMonto(formatCurrency(campaign.monto_objetivo));
+        } else {
+            setFormData(initialValues);
+        }
+    }, [campaign]);
+
+    // Auto-Scroll al error
+    useEffect(() => {
+        const errorKeys = Object.keys(errors);
+        if (errorKeys.length > 0) {
+            const element = document.getElementById(`field-${errorKeys[0]}`);
+            if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [errors]);
+
+    const handleMoneyChange = (e) => {
+        const rawValue = e.target.value.replace(/\D/g, '');
+        setDisplayMonto(formatCurrency(rawValue));
+        setFormData({ ...formData, monto_objetivo: parseInt(rawValue) || 0 });
+        if (errors.monto_objetivo) setErrors({...errors, monto_objetivo: null});
+    };
+
+    // Validación Tiempo Real
+    const handleDateChange = (field, value) => {
+        const newData = { ...formData, [field]: value };
+        setFormData(newData);
+        
+        // Limpiar errores previos
+        setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[field];
+            return newErrors;
+        });
+
+        const start = field === 'fecha_inicio' ? value : formData.fecha_inicio;
+        const end = field === 'fecha_fin' ? value : formData.fecha_fin;
+        const hoy = new Date().toISOString().split('T')[0];
+
+        // Validar Inicio (solo si es nueva campaña)
+        if (field === 'fecha_inicio' && !campaign?.id) { 
+            if (value < hoy) {
+                setErrors(prev => ({...prev, fecha_inicio: "No puede iniciar en el pasado."}));
+            }
+        }
+
+        // Validar Coherencia
+        if (start && end && end < start) {
+            setErrors(prev => ({...prev, fecha_fin: "El cierre debe ser posterior al inicio."}));
+        }
+    };
+
+    const validate = () => {
+        const newErrors = {};
+        if (!formData.titulo?.trim()) newErrors.titulo = "Requerido.";
+        if (!formData.descripcion?.trim()) newErrors.descripcion = "Requerido.";
+        if (!formData.fecha_fin) newErrors.fecha_fin = "Requerido.";
+        if (!formData.permite_donacion_monetaria && !formData.permite_donacion_especie) newErrors.permisos = "Selecciona un tipo.";
+        if (formData.permite_donacion_monetaria && formData.monto_objetivo <= 0) newErrors.monto_objetivo = "Mayor a 0.";
+        
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!validate()) return;
+        onSave(formData);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center isolate" style={{touchAction: 'none'}}>
+            <div className="absolute inset-0 bg-black/60 transition-opacity duration-300 animate-fade-in" onClick={onClose}></div>
+            <div className="relative bg-surface rounded-3xl shadow-elevation-5 w-[90vw] max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-up">
+                <div className="flex items-center justify-between px-6 py-4 bg-surface border-b border-outline-variant/30 z-20 shrink-0">
+                    <h2 className="text-title-large text-on-surface font-bold tracking-tight">{campaign && campaign.id ? 'Editar Campaña' : campaign ? 'Replicar Campaña' : 'Nueva Campaña'}</h2>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant"><X className="w-5 h-5" /></button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 scroll-smooth min-h-[50vh]">
+                    <form id="campaign-form" onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-4">
+                            <div id="field-titulo">
+                                <label className="block text-label-large text-on-surface mb-1.5 font-bold">Título *</label>
+                                <input type="text" value={formData.titulo} onChange={(e) => setFormData({ ...formData, titulo: e.target.value })} className={`input-outlined focus:bg-white ${errors.titulo ? 'border-error bg-error-container text-error' : ''}`} />
+                                {errors.titulo && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.titulo}</p>}
+                            </div>
+                            <div id="field-descripcion">
+                                <label className="block text-label-large text-on-surface mb-1.5 font-bold">Descripción *</label>
+                                <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} className={`input-outlined resize-none focus:bg-white ${errors.descripcion ? 'border-error bg-error-container text-error' : ''}`} rows={3} />
+                                {errors.descripcion && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.descripcion}</p>}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-outline-variant/30">
+                            <div id="field-fecha_inicio">
+                                <label className="block text-label-large text-on-surface mb-1.5 font-bold flex gap-2 items-center"><Calendar size={14}/> Inicio</label>
+                                <input type="date" value={formData.fecha_inicio} onChange={(e) => handleDateChange('fecha_inicio', e.target.value)} className={`input-outlined focus:bg-white ${errors.fecha_inicio ? 'border-error text-error' : ''}`} />
+                                {errors.fecha_inicio && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.fecha_inicio}</p>}
+                            </div>
+                            <div id="field-fecha_fin">
+                                <label className="block text-label-large text-on-surface mb-1.5 font-bold flex gap-2 items-center"><Calendar size={14}/> Cierre</label>
+                                <input type="date" value={formData.fecha_fin} onChange={(e) => handleDateChange('fecha_fin', e.target.value)} className={`input-outlined focus:bg-white ${errors.fecha_fin ? 'border-error text-error' : ''}`} />
+                                {errors.fecha_fin && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.fecha_fin}</p>}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 pt-2" id="field-permisos">
+                            <label className="block text-xs font-bold text-primary uppercase tracking-wide">Tipo de Donación</label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                    <CheckboxM3 label="Recibir Dinero" icon={DollarSign} checked={formData.permite_donacion_monetaria} onChange={(e) => setFormData({...formData, permite_donacion_monetaria: e.target.checked})} />
+                                    {formData.permite_donacion_monetaria && (
+                                        <div className="animate-slide-up bg-surface-container/30 p-3 rounded-xl border border-outline-variant/30" id="field-monto_objetivo">
+                                            <label className="block text-label-small text-on-surface-variant mb-1">Meta ($)</label>
+                                            <input type="text" value={displayMonto} onChange={handleMoneyChange} className={`input-outlined text-right font-mono font-bold ${errors.monto_objetivo ? 'border-error text-error' : ''}`} placeholder="0" />
+                                            {errors.monto_objetivo && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.monto_objetivo}</p>}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="space-y-3">
+                                    <CheckboxM3 label="Recibir Insumos" icon={Package} checked={formData.permite_donacion_especie} onChange={(e) => setFormData({...formData, permite_donacion_especie: e.target.checked})} />
+                                </div>
+                            </div>
+                            {errors.permisos && <p className="text-error text-xs font-bold text-center bg-error/10 rounded py-2 flex items-center justify-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.permisos}</p>}
+                        </div>
+
+                        {formData.permite_donacion_especie && (
+                            <div className="animate-fade-in bg-secondary/5 p-4 rounded-xl border border-secondary/20">
+                                <h3 className="font-bold text-sm text-secondary flex gap-2 mb-2"><Package size={18} /> Lista de Necesidades</h3>
+                                <DynamicList label="" items={formData.necesidades} onAdd={(v)=>setFormData(p=>({...p, necesidades: [...p.necesidades, v]}))} onRemove={(i)=>setFormData(p=>({...p, necesidades: p.necesidades.filter((_,x)=>x!==i)}))} placeholder="Ej: Ropa, Arroz..." />
+                            </div>
+                        )}
+
+                        <DynamicList label="Objetivos" items={formData.objetivos} onAdd={(v)=>setFormData(p=>({...p, objetivos: [...p.objetivos, v]}))} onRemove={(i)=>setFormData(p=>({...p, objetivos: p.objetivos.filter((_,x)=>x!==i)}))} placeholder="Objetivo..." maxItems={5} />
+                        
+                        <div>
+                            <div className="flex justify-between items-center mb-1.5"><label className="block text-label-large text-on-surface">Portada (URL)</label></div>
+                            <input type="url" value={formData.imagen_url} onChange={(e) => setFormData({ ...formData, imagen_url: e.target.value })} className="input-outlined focus:bg-white mb-2" placeholder="https://..." />
+                            {formData.imagen_url && <img src={formData.imagen_url} alt="Preview" className="w-full h-40 object-cover rounded-lg border border-outline-variant bg-surface-container-high" onError={(e) => e.target.style.display = 'none'} />}
+                        </div>
+                        <DynamicList label="Galería" items={formData.galeria_imagenes} onAdd={(v)=>setFormData(p=>({...p, galeria_imagenes: [...p.galeria_imagenes, v]}))} onRemove={(i)=>setFormData(p=>({...p, galeria_imagenes: p.galeria_imagenes.filter((_,x)=>x!==i)}))} placeholder="https://..." type="url" maxItems={6} />
+                    </form>
+                </div>
+
+                <div className="flex gap-3 px-6 py-4 bg-surface border-t border-outline-variant/30 shrink-0 z-20">
+                    <button type="button" onClick={onClose} className="btn-outlined flex-1 font-bold">Cancelar</button>
+                    <button type="submit" form="campaign-form" className="btn-filled flex-1 font-bold shadow-primary/30 shadow-lg"><Save className="w-4 h-4" /> Guardar</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// --- PÁGINA PRINCIPAL ---
+export default function AdminCampaignsPage() {
+    const [campaigns, setCampaigns] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingCampaign, setEditingCampaign] = useState(null);
+    const [loading, setLoading] = useState(true);
+    
+    // Estados de UI
+    const [activeTab, setActiveTab] = useState('activas');
+    
+    // Filtros
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all'); 
+    const [sortBy, setSortBy] = useState('newest');
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 6;
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const data = await obtenerCampanas();
+            setCampaigns(data || []);
+        } catch (error) {
+            console.error("Error cargando campañas", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { loadData(); }, []);
+    useEffect(() => { setCurrentPage(1); }, [searchQuery, activeTab, sortBy, statusFilter]);
+
+    const handleSave = async (data) => {
+        try {
+            if (editingCampaign && editingCampaign.id) {
+                await actualizarCampana(editingCampaign.id, data);
+            } else {
+                await crearCampana(data);
+            }
+            setIsModalOpen(false);
+            setEditingCampaign(null);
+            loadData();
+        } catch (error) {
+            console.error("Error saving", error);
+            alert("❌ Error al guardar.");
+        }
+    };
+
+    const handleChangeStatus = async (id, nuevoEstado) => {
+        if (!confirm(`¿Cambiar estado a: ${nuevoEstado}?`)) return;
+        try {
+            await actualizarCampana(id, { estado: nuevoEstado });
+            loadData();
+        } catch (error) {
+            alert("❌ Error cambiando estado");
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (confirm('¿Eliminar definitivamente? Esta acción no se puede deshacer.')) {
+            try {
+                await eliminarCampana(id);
+                loadData();
+            } catch (error) {
+                alert("❌ Error al eliminar");
+            }
+        }
+    };
+
+    const handleReplicate = (camp) => {
+        const replica = { 
+            ...camp, 
+            id: null, 
+            titulo: `${camp.titulo} (Copia)`, 
+            recaudo_actual: 0,
+            fecha_inicio: new Date().toISOString().split('T')[0],
+            fecha_fin: '' 
+        };
+        setEditingCampaign(replica);
+        setIsModalOpen(true);
+    };
+
+    // --- LÓGICA DE FILTRADO ---
+    const rawList = activeTab === 'activas' 
+        ? campaigns.filter(c => c.estado === 'activa' || c.estado === 'pausada') 
+        : campaigns.filter(c => c.estado === 'completada' || c.estado === 'cancelada');
+
+    const filteredList = rawList.filter(c => {
+        const matchesSearch = c.titulo.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || c.estado === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const sortedList = [...filteredList].sort((a, b) => {
+        if (sortBy === 'newest') return new Date(b.fecha_creacion) - new Date(a.fecha_creacion);
+        if (sortBy === 'oldest') return new Date(a.fecha_creacion) - new Date(b.fecha_creacion);
+        if (sortBy === 'progress') return (b.recaudo_actual / b.monto_objetivo) - (a.recaudo_actual / a.monto_objetivo);
+        if (sortBy === 'alpha') return a.titulo.localeCompare(b.titulo); 
+        if (sortBy === 'alpha_desc') return b.titulo.localeCompare(a.titulo); 
+        return 0;
+    });
+
+    const paginatedList = sortedList.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(sortedList.length / ITEMS_PER_PAGE);
+
+    // 🔥 Mensajes de Estado Vacío (Empty States)
+    const renderEmptyState = () => {
+        if (rawList.length === 0) {
+            // Caso 1: No hay campañas en esta pestaña
+            if (activeTab === 'activas') {
+                return (
+                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
+                        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                            <Heart className="w-10 h-10 text-primary" fill="currentColor" fillOpacity={0.2} />
+                        </div>
+                        <h3 className="text-title-large text-on-surface font-bold mb-2">¡Haz realidad un sueño!</h3>
+                        <p className="text-body-large text-on-surface-variant max-w-md mb-6">
+                            No tienes campañas activas en este momento. Crea una nueva campaña para empezar a recaudar fondos.
+                        </p>
+                        <button onClick={() => { setEditingCampaign(null); setIsModalOpen(true); }} className="btn-filled shadow-lg shadow-primary/20">
+                            <Plus className="w-5 h-5 mr-2" /> Crear Nueva Campaña
+                        </button>
+                    </div>
+                );
+            } else {
+                return (
+                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in opacity-70">
+                        <Inbox className="w-16 h-16 text-on-surface-variant mb-4" />
+                        <h3 className="text-title-medium text-on-surface font-bold">Historial Vacío</h3>
+                        <p className="text-body-medium text-on-surface-variant">Aquí aparecerán las campañas completadas o canceladas.</p>
+                    </div>
+                );
+            }
+        } 
+        
+        if (paginatedList.length === 0) {
+            // Caso 2: El filtro no arrojó resultados
+            return (
+                <div className="card text-center py-12 border-2 border-dashed border-outline-variant/50 bg-transparent animate-fade-in">
+                    <Search className="w-12 h-12 text-on-surface-variant mx-auto mb-3 opacity-50" />
+                    <h3 className="text-title-medium text-on-surface mb-1">No se encontraron resultados</h3>
+                    <p className="text-body-small text-on-surface-variant">Intenta ajustar tu búsqueda o los filtros.</p>
+                    <button onClick={() => { setSearchQuery(''); setStatusFilter('all'); }} className="btn-text mt-2 text-primary font-bold">Limpiar filtros</button>
+                </div>
+            );
+        }
+
+        return null;
+    };
+
+    return (
+        <AdminLayout title="Gestión de Campañas" subtitle="Administra las campañas de donación.">
+            
+            {/* Header: Pestañas (CORREGIDO: w-fit) */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit">
+                    <button 
+                        onClick={() => setActiveTab('activas')} 
+                        className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'activas' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                    >
+                        Activas ({campaigns.filter(c => c.estado === 'activa' || c.estado === 'pausada').length})
+                    </button>
+                    
+                    <button 
+                        onClick={() => setActiveTab('historial')} 
+                        className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'historial' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                    >
+                        Historial ({campaigns.filter(c => c.estado === 'completada' || c.estado === 'cancelada').length})
+                    </button>
+                </div>
+
+                <button onClick={() => { setEditingCampaign(null); setIsModalOpen(true); }} className="btn-filled hidden sm:flex shadow-primary/20">
+                    <Plus className="w-4 h-4" /> Nueva Campaña
+                </button>
+            </div>
+
+            {/* Barra de Herramientas (Solo visible si hay datos o filtros activos) */}
+            {(rawList.length > 0 || searchQuery || statusFilter !== 'all') && (
+                <div className="flex flex-col md:flex-row gap-3 mb-6">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+                        <input type="text" placeholder="Buscar campaña..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input-outlined pl-10 w-full bg-white/80 focus:bg-white" />
+                    </div>
+                    
+                    <div className="flex gap-2 overflow-x-auto">
+                        {activeTab === 'activas' && (
+                            <div className="relative min-w-[140px]">
+                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
+                                    <option value="all">Estado: Todos</option>
+                                    <option value="activa">Activas</option>
+                                    <option value="pausada">Pausadas</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                            </div>
+                        )}
+
+                        <div className="relative min-w-[180px]">
+                            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
+                                <option value="newest">Más Recientes</option>
+                                <option value="oldest">Más Antiguas</option>
+                                <option value="progress">Mayor Progreso</option>
+                                <option value="alpha">A - Z</option>
+                                <option value="alpha_desc">Z - A</option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* GRID DE TARJETAS */}
+            <div className="min-h-[400px]">
+                {paginatedList.length === 0 ? renderEmptyState() : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {paginatedList.map(camp => (
+                            <div key={camp.id} className={`card-elevated flex flex-col h-full animate-fade-in group hover:-translate-y-1 transition-transform duration-300 ${activeTab === 'historial' ? 'grayscale opacity-90 hover:grayscale-0 hover:opacity-100' : ''}`}>
+                                <div className="h-40 w-full bg-surface-container-high relative overflow-hidden rounded-t-xl">
+                                    {camp.imagen_url ? (
+                                        <img src={camp.imagen_url} alt={camp.titulo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-on-surface-variant"><ImageIcon size={32} opacity={0.5}/></div>
+                                    )}
+                                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-bold shadow-sm capitalize ${camp.estado === 'activa' ? 'bg-success-container text-success' : camp.estado === 'pausada' ? 'bg-warning-container text-warning' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                                        {camp.estado}
+                                    </div>
+                                </div>
+
+                                <div className="p-4 flex-1 flex flex-col">
+                                    <div className="flex justify-between text-[10px] text-on-surface-variant font-medium mb-2 uppercase tracking-wide">
+                                        <span>Creada: {formatDate(camp.fecha_creacion)}</span>
+                                    </div>
+
+                                    <h3 className="text-title-medium font-bold text-on-surface mb-2 line-clamp-1">{camp.titulo}</h3>
+                                    <p className="text-body-small text-on-surface-variant line-clamp-2 mb-4 flex-1">{camp.descripcion}</p>
+                                    
+                                    {/* Progreso */}
+                                    {camp.permite_donacion_monetaria && (
+                                        <div className="mb-4">
+                                            <div className="flex justify-between text-xs font-bold mb-1">
+                                                <span className="text-primary">${formatCurrency(camp.recaudo_actual || 0)}</span>
+                                                <span className="text-on-surface-variant">Meta: ${formatCurrency(camp.monto_objetivo)}</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+                                                <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${Math.min(((camp.recaudo_actual || 0) / camp.monto_objetivo) * 100, 100)}%` }} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Acciones */}
+                                    <div className="flex gap-2 mt-auto pt-3 border-t border-outline-variant/20">
+                                        {activeTab === 'activas' ? (
+                                            <>
+                                                <button onClick={() => { setEditingCampaign(camp); setIsModalOpen(true); }} className="btn-tonal py-2 flex-1 text-xs justify-center"><Edit size={16} className="mr-1"/> Editar</button>
+                                                
+                                                {camp.estado === 'activa' ? (
+                                                    <button onClick={() => handleChangeStatus(camp.id, 'pausada')} className="btn-outlined py-2 px-2 text-warning border-warning hover:bg-warning/10" title="Pausar"><Pause size={16}/></button>
+                                                ) : (
+                                                    <button onClick={() => handleChangeStatus(camp.id, 'activa')} className="btn-outlined py-2 px-2 text-success border-success hover:bg-success/10" title="Activar"><Play size={16}/></button>
+                                                )}
+                                                <button onClick={() => handleChangeStatus(camp.id, 'completada')} className="btn-outlined py-2 px-2 text-primary border-primary hover:bg-primary/10" title="Completar"><Check size={16}/></button>
+                                                <button onClick={() => handleChangeStatus(camp.id, 'cancelada')} className="btn-outlined py-2 px-2 text-error border-error hover:bg-error/10" title="Terminar (Cancelar)"><Archive size={16}/></button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => handleReplicate(camp)} className="btn-tonal py-2 flex-1 text-xs justify-center bg-secondary-container text-secondary-on-container"><Copy size={16} className="mr-1"/> Replicar</button>
+                                                <button onClick={() => handleDelete(camp.id)} className="btn-outlined py-2 px-2 text-error border-error hover:bg-error/10"><Trash2 size={16}/></button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Paginación */}
+            {sortedList.length > ITEMS_PER_PAGE && (
+                <div className="flex justify-center items-center gap-4 mt-8 pb-8">
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-full hover:bg-surface-container-high disabled:opacity-30"><ChevronLeft className="w-6 h-6 text-primary" /></button>
+                    <span className="text-sm font-medium text-on-surface-variant">Página <span className="text-primary font-bold">{currentPage}</span> de {totalPages}</span>
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-2 rounded-full hover:bg-surface-container-high disabled:opacity-30"><ChevronRight className="w-6 h-6 text-primary" /></button>
+                </div>
+            )}
+
+            <button onClick={() => { setEditingCampaign(null); setIsModalOpen(true); }} className="sm:hidden fixed bottom-32 right-4 z-30 w-14 h-14 bg-primary text-white rounded-2xl shadow-elevation-4 flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-transform"><Plus className="w-6 h-6" /></button>
+
+            {loading && <div className="text-center py-10 opacity-50 flex flex-col items-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-2"></div>Cargando...</div>}
+            {isModalOpen && <CampaignFormModal campaign={editingCampaign} onSave={handleSave} onClose={() => setIsModalOpen(false)} />}
+        </AdminLayout>
+    );
+}
+```
+
 ### 📄 frontend/src/pages/AdminConvocationsPage.jsx
 ```javascript
 import { useState, useEffect } from 'react';
@@ -1836,8 +2903,8 @@ import TimePickerMD3 from '../components/TimePickerMD3';
 import {
     Plus, Edit, Trash2, X, Save, MapPin, Users,
     Briefcase, Pause, Play, Archive, Search, Filter, ChevronDown, 
-    Check, ChevronUp, Clock3, RotateCcw, AlertCircle, ArrowUpDown, 
-    ChevronLeft, ChevronRight, CalendarDays, Copy
+    Check, ChevronUp, Clock3, AlertCircle, ArrowUpDown, 
+    ChevronLeft, ChevronRight, CalendarDays, Copy, Inbox
 } from 'lucide-react';
 
 // --- LISTAS MAESTRAS ---
@@ -1859,11 +2926,10 @@ const HABILIDADES_OPCIONES = [
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-// --- FUNCIÓN MAPPER: Convierte datos del Backend al formato del Formulario ---
+// --- MAPPER AUXILIAR ---
 const mapBackendToForm = (convocation) => {
     if (!convocation) return null;
     
-    // Procesar habilidades (string → array o mantener array)
     let skillsArray = [];
     if (convocation.habilidades_requeridas) {
         skillsArray = typeof convocation.habilidades_requeridas === 'string'
@@ -1871,7 +2937,6 @@ const mapBackendToForm = (convocation) => {
             : convocation.habilidades_requeridas;
     }
     
-    // Procesar horario para determinar tipo y extraer datos
     const horarioData = convocation.horario || {};
     let tipoHorario = 'unico';
     let fechaEvento = '';
@@ -1888,6 +2953,7 @@ const mapBackendToForm = (convocation) => {
     }
     
     return {
+        id: convocation.id, 
         title: convocation.titulo || '',
         description: convocation.descripcion || '',
         location: convocation.ubicacion || '',
@@ -1908,9 +2974,8 @@ const mapBackendToForm = (convocation) => {
     };
 };
 
-// --- COMPONENTE DEL FORMULARIO (MODAL) ---
+// --- FORMULARIO MODAL ---
 function ConvocationFormModal({ convocation, onSave, onClose }) {
-    // 1. VALORES POR DEFECTO
     const initialValues = {
         title: '', description: '', 
         location: '', locationType: 'presencial', spots: 1, whatsappGroupLink: '',
@@ -1924,29 +2989,18 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
 
     const [formData, setFormData] = useState(initialValues);
     const [errors, setErrors] = useState({});
+    const [matrixErrors, setMatrixErrors] = useState({});
     const [showAllCats, setShowAllCats] = useState(false);
     const [showAllSkills, setShowAllSkills] = useState(false);
 
-    // 🔥 CARGA DE DATOS: El mapeo ya se hace en handleEdit/handleReplicate
     useEffect(() => {
-        console.log('🎨 ===== FORMULARIO: useEffect Ejecutado =====');
-        console.log('📦 Convocation prop recibida:', JSON.stringify(convocation, null, 2));
-        
         if (convocation) {
-            // El convocation ya viene mapeado desde handleEdit/handleReplicate
-            // Solo hacemos merge con initialValues
-            const mergedData = { ...initialValues, ...convocation };
-            console.log('🔀 Datos después del merge:', JSON.stringify(mergedData, null, 2));
-            setFormData(mergedData);
+            setFormData({ ...initialValues, ...convocation });
         } else {
-            console.log('🆕 Modo creación - usando initialValues');
             setFormData(initialValues);
         }
-        
-        console.log('🎨 ===== FIN useEffect =====');
     }, [convocation]);
 
-    // Auto-Scroll a errores
     useEffect(() => {
         const errorKeys = Object.keys(errors);
         if (errorKeys.length > 0) {
@@ -1958,21 +3012,9 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
     const toggleSelection = (field, item, max) => {
         setFormData(prev => {
             const list = prev[field] || [];
-            if (list.includes(item)) { return { ...prev, [field]: list.filter(i => i !== item) }; } 
-            else { if (max && list.length >= max) return prev; return { ...prev, [field]: [...list, item] }; }
-        });
-    };
-
-    const toggleDay = (day) => {
-        setFormData(prev => {
-            const newHorario = { ...(prev.horario || {}) };
-            if (newHorario[day]) { 
-                delete newHorario[day]; 
-            } else {
-                const existingDay = Object.values(newHorario).find(h => h.start && h.end);
-                newHorario[day] = existingDay ? { ...existingDay } : { start: '08:00', end: '12:00' };
-            }
-            return { ...prev, horario: newHorario };
+            if (list.includes(item)) return { ...prev, [field]: list.filter(i => i !== item) };
+            if (max && list.length >= max) return prev;
+            return { ...prev, [field]: [...list, item] };
         });
     };
 
@@ -1982,13 +3024,56 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         return (h * 60) + m; 
     };
 
-    // Validación silenciosa de hora (sin alert)
+    const findTemplateDay = (currentSchedule) => {
+        return Object.values(currentSchedule).find(day => {
+            if (!day.start || !day.end) return false;
+            return toMinutes(day.end) > toMinutes(day.start);
+        });
+    };
+
+    const toggleDay = (day) => {
+        setFormData(prev => {
+            const newHorario = { ...(prev.horario || {}) };
+            if (newHorario[day]) { 
+                delete newHorario[day];
+                setMatrixErrors(prevE => { const n = {...prevE}; delete n[day]; return n; });
+            } else {
+                const template = findTemplateDay(newHorario);
+                newHorario[day] = template ? { ...template } : { start: '08:00', end: '12:00' };
+            }
+            return { ...prev, horario: newHorario };
+        });
+    };
+
+    const handleDayTimeChange = (day, field, value) => {
+        const currentDay = { ...(formData.horario[day] || { start: '', end: '' }) };
+        currentDay[field === 'start' ? 'start' : 'end'] = value;
+
+        let errorMsg = null;
+        if (currentDay.start && currentDay.end) {
+             const startMins = toMinutes(currentDay.start);
+             const endMins = toMinutes(currentDay.end);
+             if (endMins <= startMins) {
+                 errorMsg = "La hora final debe ser posterior.";
+                 currentDay.end = ''; 
+             }
+        }
+
+        setMatrixErrors(prev => {
+            const newErrs = { ...prev };
+            if (errorMsg) newErrs[day] = errorMsg;
+            else delete newErrs[day];
+            return newErrs;
+        });
+
+        setFormData(prev => ({ ...prev, horario: { ...prev.horario, [day]: currentDay } }));
+    };
+
     const handleUniqueTimeChange = (field, value) => {
         setFormData(prev => {
             const newState = { ...prev, [field]: value };
             const start = field === 'horaInicio' ? value : prev.horaInicio;
             const end = field === 'horaFin' ? value : prev.horaFin;
-
             if (start && end && toMinutes(start) >= toMinutes(end)) {
                 setErrors(e => ({ ...e, hora: "La hora fin debe ser después del inicio" }));
             } else {
@@ -1998,12 +3083,48 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         });
     };
 
-    const handleDayTimeChange = (day, field, value) => {
-        setFormData(prev => {
-            const currentDay = { ...(prev.horario[day] || { start: '', end: '' }) };
-            currentDay[field === 'start' ? 'start' : 'end'] = value;
-            return { ...prev, horario: { ...prev.horario, [day]: currentDay } };
+    // 🔥🔥 NUEVA: VALIDACIÓN DE FECHA ÚNICA (NO PASADO) 🔥🔥
+    const handleUniqueDateChange = (value) => {
+        setFormData({ ...formData, fechaEvento: value });
+        
+        // Limpiar error previo
+        setErrors(prev => { const n = {...prev}; delete n.fecha; return n; });
+
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Solo validamos si es NUEVA convocatoria (no tiene ID)
+        if (!convocation?.id && value < today) {
+            setErrors(prev => ({...prev, fecha: "No puede ser en el pasado."}));
+        }
+    };
+
+    const handleDateChange = (field, value) => {
+        const newData = { ...formData, [field]: value };
+        setFormData(newData);
+        setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[field]; 
+            delete newErrors.fechas;
+            return newErrors;
         });
+
+        const hoy = new Date().toISOString().split('T')[0];
+        const start = field === 'startDate' ? value : formData.startDate;
+        const end = field === 'endDate' ? value : formData.endDate;
+
+        if (field === 'startDate' && !convocation?.id) { 
+            if (value < hoy) {
+                setErrors(prev => ({...prev, startDate: "No puede iniciar en el pasado."}));
+            }
+        }
+
+        if (start && end) {
+            if (end < start) {
+                setErrors(prev => ({...prev, endDate: "El cierre debe ser posterior al inicio."}));
+            } else {
+                setErrors(prev => { const n = {...prev}; delete n.endDate; return n; });
+            }
+        }
     };
 
     const validate = () => {
@@ -2015,12 +3136,13 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         if (formData.tipoHorario === 'unico') {
             if (!formData.fechaEvento) newErrors.fecha = "Selecciona una fecha.";
             if (!formData.horaInicio || !formData.horaFin) newErrors.hora = "Define el horario completo.";
-            if (formData.horaInicio && formData.horaFin && toMinutes(formData.horaInicio) >= toMinutes(formData.horaFin)) {
-                newErrors.hora = "Hora fin inválida.";
-            }
+            if (errors.hora) newErrors.hora = errors.hora; 
+            if (errors.fecha) newErrors.fecha = errors.fecha; // Persistir error de fecha pasada
         } else {
             if (Object.keys(formData.horario).length === 0) newErrors.horario = "Selecciona al menos un día.";
-            if (!formData.startDate || !formData.endDate) newErrors.fechas = "Define el rango de fechas.";
+            if (Object.keys(matrixErrors).length > 0) newErrors.horario = "Corrige los errores en los horarios.";
+            if (!formData.startDate) newErrors.startDate = "Define fecha de inicio.";
+            if (!formData.endDate) newErrors.endDate = "Define fecha de cierre.";
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -2028,82 +3150,53 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!validate()) return; 
-
-        // 1. FORMATO DE FECHAS (con segundos para Django)
+        if (!validate()) return;
+        
         let startDate = '', endDate = '';
+        let horarioFinal = {};
+
         if (formData.tipoHorario === 'unico') {
              startDate = `${formData.fechaEvento}T${formData.horaInicio || '00:00'}:00`;
              endDate = `${formData.fechaEvento}T${formData.horaFin || '23:59'}:00`;
+             horarioFinal = { tipo: 'unico', fecha: formData.fechaEvento, horaInicio: formData.horaInicio, horaFin: formData.horaFin };
         } else {
              startDate = `${formData.startDate}T00:00:00`;
              endDate = `${formData.endDate}T23:59:59`;
+             horarioFinal = { tipo: 'recurrente', ...formData.horario };
         }
 
-        // 🔥 CORRECCIÓN CLAVE: Enviamos un objeto con las claves en INGLÉS
-        // Esto es lo que 'convocatoriaService.js' espera recibir en 'formData' para hacer su trabajo.
-        
-        // Construir el objeto horario según el tipo seleccionado
-        let horarioFinal = {};
-        if (formData.tipoHorario === 'unico') {
-            horarioFinal = {
-                tipo: 'unico',
-                fecha: formData.fechaEvento,
-                horaInicio: formData.horaInicio,
-                horaFin: formData.horaFin
-            };
-        } else {
-            // Para horario recurrente, incluimos el tipo y los días con horarios
-            horarioFinal = { 
-                tipo: 'recurrente',
-                ...formData.horario 
-            };
-        }
-        
-        const payloadForService = {
+        const payload = {
             title: formData.title,
             description: formData.description,
-            location: formData.location,           // ✅ ¡Ahora sí se envía!
-            whatsappGroupLink: formData.whatsappGroupLink, // ✅ ¡Ahora sí se envía!
-            startDate: startDate,
-            endDate: endDate,
+            location: formData.location,
+            whatsappGroupLink: formData.whatsappGroupLink,
+            startDate, endDate,
             spots: parseInt(formData.spots) || 1,
             skills: formData.skills || [],
             categorias: formData.categorias || [],
-            horario: horarioFinal,  // ✅ Horario estructurado correctamente
-            requirements: formData.requirements || [],
-            benefits: formData.benefits || []
+            horario: horarioFinal
         };
-        
-        onSave(payloadForService);
+        onSave(payload);
     };
 
-    const renderChipsSection = (title, field, options, showAll, setShowAll, max) => {
-        const visibleOptions = showAll ? options : options.slice(0, 8);
-        const currentList = formData[field] || [];
-        const selectedCount = currentList.length; 
-        
-        return (
-            <div className="pt-4 border-t border-outline-variant/30">
-                <div className="flex justify-between items-baseline mb-2">
-                    <label className="block text-label-large text-on-surface font-bold text-primary">{title}</label>
-                    <span className={`text-xs font-medium ${max && selectedCount >= max ? 'text-primary' : 'text-on-surface-variant'}`}>({selectedCount}{max ? `/${max}` : ''} seleccionados)</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {visibleOptions.map(opt => (
-                        <button key={opt} type="button" onClick={() => toggleSelection(field, opt, max)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1 ${currentList.includes(opt) ? 'bg-primary text-white border-primary' : 'bg-surface text-on-surface-variant border-outline-variant hover:border-primary/50'}`}>
-                            {currentList.includes(opt) && <Check size={12} />} {opt}
-                        </button>
-                    ))}
-                </div>
-                {options.length > 8 && (
-                    <button type="button" onClick={() => setShowAll(!showAll)} className="mt-2 text-xs text-primary font-bold flex items-center hover:underline">
-                        {showAll ? <><ChevronUp size={14} className="mr-1"/> Ver menos</> : <><ChevronDown size={14} className="mr-1"/> Ver más ({options.length - 8} restantes)</>}
-                    </button>
-                )}
+    const renderChipsSection = (title, field, options, showAll, setShowAll, max) => (
+        <div className="pt-4 border-t border-outline-variant/30">
+            <div className="flex justify-between items-baseline mb-2">
+                <label className="block text-label-large text-on-surface font-bold text-primary">{title}</label>
+                <span className={`text-xs font-medium ${max && formData[field].length >= max ? 'text-primary' : 'text-on-surface-variant'}`}>({formData[field].length}{max ? `/${max}` : ''})</span>
             </div>
-        );
-    };
+            <div className="flex flex-wrap gap-2">
+                {(showAll ? options : options.slice(0, 8)).map(opt => (
+                    <button key={opt} type="button" onClick={() => toggleSelection(field, opt, max)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex items-center gap-1 ${formData[field].includes(opt) ? 'bg-primary text-white border-primary' : 'bg-surface text-on-surface-variant border-outline-variant hover:border-primary/50'}`}>
+                        {formData[field].includes(opt) && <Check size={12}/>} {opt}
+                    </button>
+                ))}
+            </div>
+            {options.length > 8 && <button type="button" onClick={() => setShowAll(!showAll)} className="mt-2 text-xs text-primary font-bold flex items-center hover:underline">
+                {showAll ? <><ChevronUp size={14} className="mr-1"/> Ver menos</> : <><ChevronDown size={14} className="mr-1"/> Ver más ({options.length - 8} restantes)</>}
+            </button>}
+        </div>
+    );
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center isolate" style={{touchAction: 'none'}}>
@@ -2116,8 +3209,8 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                 <div className="flex-1 overflow-y-auto p-6 scroll-smooth min-h-[50vh]">
                     <form id="convocation-form" onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-4">
-                            <div id="field-title"><label className="block text-label-large text-on-surface mb-1.5">Título *</label><input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={`input-outlined focus:bg-white ${errors.title ? 'border-error bg-error-container text-error' : ''}`} placeholder="Ej: Jornada de Vacunación" />{errors.title && <p className="text-error text-xs mt-1 font-bold flex items-center"><AlertCircle size={12} className="mr-1"/>{errors.title}</p>}</div>
-                            <div id="field-description"><label className="block text-label-large text-on-surface mb-1.5">Descripción *</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={`input-outlined resize-none focus:bg-white ${errors.description ? 'border-error bg-error-container text-error' : ''}`} rows={3} />{errors.description && <p className="text-error text-xs mt-1 font-bold flex items-center"><AlertCircle size={12} className="mr-1"/>{errors.description}</p>}</div>
+                            <div id="field-title"><label className="block text-label-large text-on-surface mb-1.5">Título *</label><input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={`input-outlined focus:bg-white ${errors.title ? 'border-error bg-error-container text-error' : ''}`} placeholder="Ej: Jornada de Vacunación" />{errors.title && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.title}</p>}</div>
+                            <div id="field-description"><label className="block text-label-large text-on-surface mb-1.5">Descripción *</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={`input-outlined resize-none focus:bg-white ${errors.description ? 'border-error bg-error-container text-error' : ''}`} rows={3} />{errors.description && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.description}</p>}</div>
                         </div>
                         
                         {renderChipsSection("Categoría de la Convocatoria", "categorias", CATEGORIAS_INTERES, showAllCats, setShowAllCats, 3)}
@@ -2131,14 +3224,26 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                                 <button type="button" onClick={() => setFormData({...formData, tipoHorario: 'recurrente'})} className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${formData.tipoHorario === 'recurrente' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>Recurrente</button>
                             </div>
                             
-                            {errors.horario && <p className="text-error text-sm mb-2 font-bold flex items-center"><AlertCircle size={14} className="mr-1"/>{errors.horario}</p>}
+                            {errors.horario && <p className="text-error text-sm mb-2 font-bold flex items-center animate-pulse"><AlertCircle size={14} className="mr-1"/>{errors.horario}</p>}
                             
                             {formData.tipoHorario === 'unico' ? (
                                 <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="md:col-span-3" id="field-fecha"><label className="text-xs font-bold text-primary uppercase tracking-wide mb-1 block">Fecha</label><input type="date" value={formData.fechaEvento} onChange={(e) => setFormData({...formData, fechaEvento: e.target.value})} className={`input-outlined bg-white ${errors.fecha ? 'border-error' : ''}`} /></div>
-                                    <div id="field-hora"><TimePickerMD3 label="Hora Inicio" value={formData.horaInicio} onChange={(val) => handleUniqueTimeChange('horaInicio', val)} /></div>
-                                    <div><TimePickerMD3 label="Hora Fin" value={formData.horaFin} onChange={(val) => handleUniqueTimeChange('horaFin', val)} /></div>
-                                    {errors.hora && <p className="col-span-3 text-error text-xs font-bold text-center bg-error/10 py-1 rounded">{errors.hora}</p>}
+                                    <div className="md:col-span-3" id="field-fecha">
+                                        <label className="text-xs font-bold text-primary uppercase tracking-wide mb-1 block">Fecha</label>
+                                        {/* 🔥 UPDATED: Usamos handleUniqueDateChange */}
+                                        <input type="date" value={formData.fechaEvento} onChange={(e) => handleUniqueDateChange(e.target.value)} className={`input-outlined bg-white ${errors.fecha ? 'border-error' : ''}`} />
+                                        {/* 🔥 UPDATED: Mensaje de error para fecha pasada */}
+                                        {errors.fecha && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.fecha}</p>}
+                                    </div>
+                                    <div id="field-hora"><TimePickerMD3 label="Inicio" value={formData.horaInicio} onChange={(val) => handleUniqueTimeChange('horaInicio', val)} /></div>
+                                    <div><TimePickerMD3 label="Fin" value={formData.horaFin} onChange={(val) => handleUniqueTimeChange('horaFin', val)} /></div>
+                                    
+                                    {errors.hora && (
+                                        <div className="col-span-3 bg-error/10 text-error text-xs font-bold py-2 px-3 rounded-xl border border-error/20 flex items-center justify-center animate-pulse">
+                                            <AlertCircle size={14} className="mr-1.5" />
+                                            {errors.hora}
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="bg-surface-container/30 rounded-xl border border-outline-variant/50 overflow-hidden divide-y divide-outline-variant/20">
@@ -2151,11 +3256,21 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                                                         <button type="button" onClick={() => toggleDay(dia)} className={`w-10 h-6 rounded-full p-1 transition-colors relative ${isSelected ? 'bg-primary' : 'bg-outline-variant'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${isSelected ? 'translate-x-4' : 'translate-x-0'}`} /></button>
                                                         <span className={`text-sm font-medium ${isSelected ? 'text-on-surface' : 'text-on-surface-variant'}`}>{dia}</span>
                                                     </div>
+                                                    
                                                     {isSelected && (
-                                                        <div className="flex items-center gap-2 flex-1 pl-2 animate-fade-in">
-                                                            <div className="flex-1 min-w-[100px]"><TimePickerMD3 label="Inicio" value={formData.horario[dia].start} onChange={(val) => handleDayTimeChange(dia, 'start', val)} /></div>
-                                                            <span className="text-on-surface-variant text-lg font-bold mx-1">:</span>
-                                                            <div className="flex-1 min-w-[100px]"><TimePickerMD3 label="Fin" value={formData.horario[dia].end} onChange={(val) => handleDayTimeChange(dia, 'end', val)} /></div>
+                                                        <div className="flex-1 flex flex-col gap-2 animate-fade-in pl-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex-1 min-w-[100px]"><TimePickerMD3 label="Inicio" value={formData.horario[dia].start} onChange={(val) => handleDayTimeChange(dia, 'start', val)} /></div>
+                                                                <span className="text-on-surface-variant text-lg font-bold mx-1">:</span>
+                                                                <div className="flex-1 min-w-[100px]"><TimePickerMD3 label="Fin" value={formData.horario[dia].end} onChange={(val) => handleDayTimeChange(dia, 'end', val)} /></div>
+                                                            </div>
+                                                            
+                                                            {matrixErrors[dia] && (
+                                                                <div className="mt-1 w-full bg-error/10 text-error text-[11px] font-bold py-2 px-3 rounded-xl border border-error/20 flex items-center justify-center animate-pulse">
+                                                                    <AlertCircle size={12} className="mr-1.5 shrink-0" />
+                                                                    {matrixErrors[dia]}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -2168,19 +3283,31 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-outline-variant/30">
                             {formData.tipoHorario === 'recurrente' && (
                                 <>
-                                    <div id="field-fechas"><label className="block text-label-large text-on-surface mb-1.5">Inicio</label><input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} className={`input-outlined focus:bg-white ${errors.fechas ? 'border-error' : ''}`} /></div>
-                                    <div><label className="block text-label-large text-on-surface mb-1.5">Cierre</label><input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} className={`input-outlined focus:bg-white ${errors.fechas ? 'border-error' : ''}`} /></div>
+                                    <div id="field-startDate">
+                                        <label className="block text-label-large font-bold mb-1.5">Inicio</label>
+                                        <input type="date" value={formData.startDate} onChange={(e) => handleDateChange('startDate',e.target.value)} className={`input-outlined focus:bg-white ${errors.startDate?'border-error bg-error-container text-error':''}`}/>
+                                        {errors.startDate && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.startDate}</p>}
+                                    </div>
+                                    <div id="field-endDate">
+                                        <label className="block text-label-large font-bold mb-1.5">Cierre</label>
+                                        <input type="date" value={formData.endDate} onChange={(e) => handleDateChange('endDate',e.target.value)} className={`input-outlined focus:bg-white ${errors.endDate?'border-error bg-error-container text-error':''}`}/>
+                                        {errors.endDate && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.endDate}</p>}
+                                    </div>
                                 </>
                             )}
-                            <div id="field-location"><label className="block text-label-large text-on-surface mb-1.5">Ubicación *</label><input type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} className={`input-outlined focus:bg-white ${errors.location ? 'border-error bg-error-container text-error' : ''}`} placeholder="Ej: Sede Principal" />{errors.location && <p className="text-error text-xs mt-1 font-bold">{errors.location}</p>}</div>
-                            <div><label className="block text-label-large text-on-surface mb-1.5">Vacantes</label><input type="number" min="1" value={formData.spots} onChange={(e) => setFormData({ ...formData, spots: e.target.value })} className="input-outlined text-center focus:bg-white" /></div>
+                            <div id="field-location"><label className="block text-label-large font-bold mb-1.5">Ubicación *</label><input type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} className={`input-outlined focus:bg-white ${errors.location ? 'border-error bg-error-container text-error' : ''}`} placeholder="Ej: Sede Principal" />{errors.location && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.location}</p>}</div>
+                            <div><label className="block text-label-large font-bold mb-1.5">Vacantes</label><input type="number" min="1" value={formData.spots} onChange={(e) => setFormData({ ...formData, spots: e.target.value })} className="input-outlined text-center focus:bg-white" /></div>
                         </div>
-                        <div className="pt-2"><label className="block text-label-large text-on-surface mb-1.5">Grupo WhatsApp</label><input type="url" value={formData.whatsappGroupLink} onChange={(e) => setFormData({ ...formData, whatsappGroupLink: e.target.value })} className="input-outlined focus:bg-white" placeholder="https://..." /></div>
+                        <div className="pt-2"><label className="block text-label-large font-bold mb-1.5">Grupo WhatsApp</label><input type="url" value={formData.whatsappGroupLink} onChange={(e) => setFormData({ ...formData, whatsappGroupLink: e.target.value })} className="input-outlined focus:bg-white" placeholder="https://..." /></div>
                     </form>
                 </div>
                 <div className="flex gap-3 px-6 py-4 bg-surface border-t border-outline-variant/30 shrink-0 z-20">
                     <button type="button" onClick={onClose} className="btn-outlined flex-1 font-bold">Cancelar</button>
-                    <button type="submit" form="convocation-form" className="btn-filled flex-1 font-bold shadow-primary/30 shadow-lg"><Save className="w-4 h-4" /> Publicar</button>
+                    {/* 🔥 BOTÓN DINÁMICO: GUARDAR O PUBLICAR */}
+                    <button type="submit" form="convocation-form" className="btn-filled flex-1 font-bold shadow-primary/30 shadow-lg">
+                        <Save className="w-4 h-4 mr-2" /> 
+                        {convocation && convocation.id ? 'Guardar' : 'Publicar'}
+                    </button>
                 </div>
             </div>
         </div>
@@ -2231,174 +3358,52 @@ export default function AdminConvocationsPage() {
     const totalPages = Math.ceil(sortedConvocations.length / ITEMS_PER_PAGE);
     const paginatedConvocations = sortedConvocations.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-    // 🔥 TRADUCTOR FORENSE (Recarga datos al Editar) - VERSIÓN MEJORADA
     const mapToForm = (convocation) => {
-        if (!convocation) return null;
-        
-        console.log('🔍 ===== MAPEO INICIADO =====');
-        console.log('📦 Convocatoria recibida:', JSON.stringify(convocation, null, 2));
-        
-        // 1. Datos básicos (Backend ESP -> Frontend ENG)
-        const titulo = convocation.title || convocation.titulo || '';
-        const descripcion = convocation.description || convocation.descripcion || '';
-        const cupos = convocation.spots || convocation.cupos_disponibles || 1;
-        
-        // 🔥 MAPEO DIRECTO DE CAMPOS NUEVOS
-        const ubicacion = convocation.ubicacion || convocation.location || '';
-        const whatsapp = convocation.link_whatsapp || convocation.whatsappGroupLink || '';
-        
-        // 2. Procesar horario
-        const horarioData = convocation.horario || {};
-        let tipoHorario = 'unico';
-        let fechaEvento = '';
-        let horaInicio = '';
-        let horaFin = '';
-        let startDate = '';
-        let endDate = '';
-        
-        // Determinar si es horario único o recurrente
-        if (horarioData.tipo === 'unico' && horarioData.fecha) {
-            // Horario único: los datos están en el objeto horario
-            tipoHorario = 'unico';
-            fechaEvento = horarioData.fecha;
-            horaInicio = horarioData.horaInicio || '';
-            horaFin = horarioData.horaFin || '';
-        } else if (Object.keys(horarioData).some(key => DIAS_SEMANA.includes(key))) {
-            // Horario recurrente: hay días de la semana en el objeto
-            tipoHorario = 'recurrente';
-            const rawInicio = convocation.fecha_inicio || convocation.startDate || '';
-            const rawFin = convocation.fecha_fin || convocation.endDate || '';
-            startDate = rawInicio ? rawInicio.split('T')[0] : '';
-            endDate = rawFin ? rawFin.split('T')[0] : '';
-        } else {
-            // Fallback: intentar extraer de fecha_inicio/fecha_fin
-            const rawInicio = convocation.fecha_inicio || convocation.startDate || '';
-            const rawFin = convocation.fecha_fin || convocation.endDate || '';
-            
-            if (rawInicio && rawInicio.includes('T')) {
-                const parts = rawInicio.split('T');
-                fechaEvento = parts[0];
-                horaInicio = parts[1]?.substring(0, 5) || '';
-            }
-            if (rawFin && rawFin.includes('T')) {
-                const parts = rawFin.split('T');
-                horaFin = parts[1]?.substring(0, 5) || '';
-            }
-        }
-
-        // 3. Arrays
-        let skillsArray = [];
-        if (Array.isArray(convocation.skills)) {
-            skillsArray = convocation.skills;
-        } else if (convocation.habilidades_requeridas) {
-            skillsArray = typeof convocation.habilidades_requeridas === 'string'
-                ? convocation.habilidades_requeridas.split(',').map(s => s.trim()).filter(Boolean)
-                : convocation.habilidades_requeridas;
-        }
-
-        const result = {
-            id: convocation.id,
-            title: titulo,
-            description: descripcion,
-            location: ubicacion, // ✅ Mapeado
-            whatsappGroupLink: whatsapp, // ✅ Mapeado
-            spots: cupos, // ✅ Corregido
-            startDate,
-            endDate,
-            categorias: convocation.categorias || [],
-            skills: skillsArray,
-            requirements: [], 
-            benefits: [], 
-            tipoHorario: tipoHorario,
-            fechaEvento,
-            horaInicio,
-            horaFin,
-            horario: horarioData
-        };
-        
-        console.log('✅ Datos mapeados:', JSON.stringify(result, null, 2));
-        console.log('🔍 ===== FIN MAPEO =====');
-        
-        return result;
+        return mapBackendToForm(convocation);
     };
 
-    // 🔥 MANEJO DE ERRORES DETALLADO
     const handleSave = async (data) => {
         try {
-            if (editingConvocation && editingConvocation.id) {
-                await actualizarConvocatoria(editingConvocation.id, data);
-                alert("✅ Actualizado correctamente");
-            } else {
-                await crearConvocatoria(data);
-                alert("✅ Creado correctamente");
-            }
-            window.location.reload(); 
-        } catch (error) {
-            console.error("Error completo:", error);
-            
-            let msg = "Error desconocido";
-            if (error.response && error.response.data) {
-                const data = error.response.data;
-                if (data.error) msg = data.error;
-                else if (data.detail) msg = data.detail;
-                // Si el backend devuelve un objeto de errores {campo: [error]}
-                else {
-                    msg = Object.entries(data)
-                        .map(([k, v]) => `${k}: ${v}`)
-                        .join('\n');
-                }
-            } else if (error.message) {
-                msg = error.message;
-            }
-            
-            alert(`❌ No se pudo guardar:\n${msg}`);
-        }
+            if (editingConvocation && editingConvocation.id) await actualizarConvocatoria(editingConvocation.id, data);
+            else await crearConvocatoria(data);
+            setIsModalOpen(false); setEditingConvocation(null); window.location.reload();
+        } catch (error) { alert("❌ Error al guardar."); }
     };
 
     const handleDelete = async (id) => {
-        if (confirm('¿Eliminar esta convocatoria?')) {
-            try {
-                await eliminarConvocatoria(id);
-                window.location.reload();
-            } catch (error) {
-                alert("❌ Error al eliminar");
-            }
+        if (confirm('¿Eliminar definitivamente?')) {
+            try { await eliminarConvocatoria(id); window.location.reload(); } 
+            catch (error) { alert("Error al eliminar"); }
         }
     };
 
-    const handleStatusChange = async (id, nuevoEstado) => {
-        if(!confirm(`¿Cambiar estado a: ${nuevoEstado}?`)) return;
-        try {
-            await cambiarEstadoConvocatoria(id, nuevoEstado);
-            window.location.reload();
-        } catch (error) {
-            alert("❌ Error al cambiar estado.");
-        }
+    const handleStatusChange = async (id, status) => {
+        if(!confirm(`¿Cambiar estado?`)) return;
+        try { await cambiarEstadoConvocatoria(id, status); window.location.reload(); } 
+        catch (error) { alert("Error al cambiar estado"); }
     };
 
     const handleReplicate = (convocation) => {
         const formData = mapToForm(convocation);
         if(formData) {
-            const replica = { ...formData, id: null, title: `${formData.title} (Copia)` };
+            const replica = { 
+                ...formData, 
+                id: null, 
+                title: `${formData.title} (Copia)`,
+                startDate: '',
+                endDate: '',
+                fechaEvento: '',
+            };
             setEditingConvocation(replica);
             setIsModalOpen(true);
         }
     };
 
     const handleEdit = (convocation) => {
-        console.log('✏️ ===== EDITANDO CONVOCATORIA =====');
-        console.log('📥 Convocatoria entrante:', JSON.stringify(convocation, null, 2));
-        
         const formData = mapToForm(convocation);
-        
-        console.log('📝 FormData después de mapeo:', JSON.stringify(formData, null, 2));
-        
         if(formData) {
             setEditingConvocation(formData);
-            console.log('✅ EditingConvocation establecido, abriendo modal');
             setIsModalOpen(true);
-        } else {
-            console.error('❌ mapToForm devolvió null o undefined');
         }
     };
 
@@ -2417,102 +3422,143 @@ export default function AdminConvocationsPage() {
         return <span className={`px-3 py-1 rounded-full text-label-small font-medium ${styles[normalized]}`}>{labels[normalized]}</span>;
     };
 
+    const renderEmptyState = () => {
+        if (rawConvocations.length === 0) {
+            if (activeTab === 'active') {
+                return (
+                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
+                        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                            <Briefcase className="w-10 h-10 text-primary" />
+                        </div>
+                        <h3 className="text-title-large text-on-surface font-bold mb-2">¡Comienza tu impacto!</h3>
+                        <p className="text-body-large text-on-surface-variant max-w-md mb-6">
+                            Aún no tienes convocatorias activas. Crea una nueva oportunidad para que los voluntarios se sumen.
+                        </p>
+                        <button onClick={() => { setEditingConvocation(null); setIsModalOpen(true); }} className="btn-filled shadow-lg shadow-primary/20">
+                            <Plus className="w-5 h-5 mr-2" /> Crear Primera Convocatoria
+                        </button>
+                    </div>
+                );
+            } else {
+                return (
+                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in opacity-70">
+                        <Inbox className="w-16 h-16 text-on-surface-variant mb-4" />
+                        <h3 className="text-title-medium text-on-surface font-bold">Historial Vacío</h3>
+                        <p className="text-body-medium text-on-surface-variant">Aquí aparecerán las convocatorias que cierres o terminen.</p>
+                    </div>
+                );
+            }
+        } 
+        
+        if (paginatedConvocations.length === 0) {
+            return (
+                <div className="card text-center py-12 border-2 border-dashed border-outline-variant/50 bg-transparent animate-fade-in">
+                    <Search className="w-12 h-12 text-on-surface-variant mx-auto mb-3 opacity-50" />
+                    <h3 className="text-title-medium text-on-surface mb-1">No se encontraron resultados</h3>
+                    <p className="text-body-small text-on-surface-variant">Intenta ajustar tu búsqueda o filtros.</p>
+                    <button onClick={() => { setSearchQuery(''); setStatusFilter('all'); }} className="btn-text mt-2 text-primary font-bold">Limpiar filtros</button>
+                </div>
+            );
+        }
+
+        return null;
+    };
+
     return (
-        <AdminLayout title="Gestión de Convocatorias" subtitle="Crea, edita y administra las convocatorias.">
-            {/* Header Actions & Tabs */}
+        <AdminLayout title="Gestión de Convocatorias" subtitle="Crea y administra las oportunidades.">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-                <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                    <button onClick={() => setActiveTab('active')} className={`whitespace-nowrap px-5 py-2.5 rounded-full text-label-large transition-all ${activeTab === 'active' ? 'bg-primary text-white shadow-md' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}>
+                <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit"> {/* 🔥 CORREGIDO: w-fit */}
+                    <button onClick={() => setActiveTab('active')} className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'active' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
                         Activas ({getActiveConvocations().length})
                     </button>
-                    <button onClick={() => setActiveTab('history')} className={`whitespace-nowrap px-5 py-2.5 rounded-full text-label-large transition-all ${activeTab === 'history' ? 'bg-primary text-white shadow-md' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}>
-                        <Archive className="w-4 h-4 inline mr-1" /> Historial ({getClosedConvocations().length})
+                    <button onClick={() => setActiveTab('history')} className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'history' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
+                        Historial ({getClosedConvocations().length})
                     </button>
                 </div>
-                <button onClick={() => { setEditingConvocation(null); setIsModalOpen(true); }} className="btn-filled hidden sm:flex shadow-primary/20">
+                {/* 🔥 CORREGIDO: hidden sm:flex para ocultar en móvil */}
+                <button onClick={() => { setEditingConvocation(null); setIsModalOpen(true); }} className="btn-filled shadow-primary/20 hidden sm:flex">
                     <Plus className="w-4 h-4" /> Nueva Convocatoria
                 </button>
             </div>
 
-            {/* BARRA DE HERRAMIENTAS */}
-            <div className="sticky top-0 z-10 bg-surface/95 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent border-b border-transparent sm:border-none">
-                <div className="flex flex-col md:flex-row gap-3">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                        <input type="text" placeholder="Buscar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input-outlined pl-10 w-full bg-white/80 focus:bg-white" />
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto">
-                        {activeTab === 'active' && (
-                            <div className="relative min-w-[140px]">
-                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
-                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
-                                    <option value="all">Estado: Todos</option>
-                                    <option value="abierta">Abiertas</option>
-                                    <option value="pausada">Pausadas</option>
+            {/* BARRA HERRAMIENTAS */}
+            {rawConvocations.length > 0 && (
+                <div className="sticky top-0 z-10 bg-surface/95 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent border-b border-transparent sm:border-none">
+                    <div className="flex flex-col md:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+                            <input type="text" placeholder="Buscar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input-outlined pl-10 w-full bg-white/80 focus:bg-white" />
+                        </div>
+                        <div className="flex gap-2 overflow-x-auto">
+                            {activeTab === 'active' && (
+                                <div className="relative min-w-[140px]">
+                                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
+                                        <option value="all">Todos</option>
+                                        <option value="abierta">Abiertas</option>
+                                        <option value="pausada">Pausadas</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                                </div>
+                            )}
+                            <div className="relative min-w-[160px]">
+                                <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
+                                    <option value="newest">Más Recientes</option>
+                                    <option value="oldest">Más Antiguas</option>
+                                    <option value="alpha">A - Z</option>
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
                             </div>
-                        )}
-                        <div className="relative min-w-[160px]">
-                            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
-                            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
-                                <option value="newest">Más Recientes</option>
-                                <option value="oldest">Más Antiguas</option>
-                                <option value="alpha">A - Z</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* --- LISTA DE CONVOCATORIAS --- */}
+            {/* GRID */}
             <div className="space-y-4 pt-2 min-h-[400px]">
-                {paginatedConvocations.length === 0 ? (
-                    <div className="card text-center py-12 border-2 border-dashed border-outline-variant/50 bg-transparent">
-                        <Briefcase className="w-16 h-16 text-on-surface-variant mx-auto mb-4 opacity-50" />
-                        <h3 className="text-title-large text-on-surface">No se encontraron resultados</h3>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 gap-4">
+                {paginatedConvocations.length === 0 ? renderEmptyState() : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {paginatedConvocations.map(convocation => {
                             const isPublished = convocation.estado === 'abierta' || convocation.status === 'published';
                             
                             return (
-                                <div key={convocation.id} className={`card-elevated animate-fade-in ${activeTab === 'history' ? 'grayscale opacity-80 hover:grayscale-0 hover:opacity-100' : ''}`}>
-                                    <div className="flex flex-col lg:flex-row gap-4">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start mb-2 gap-2">
-                                                <h3 className="text-title-medium sm:text-title-large font-bold truncate text-primary">{convocation.title || convocation.titulo}</h3>
-                                                <span className="px-3 py-1 bg-secondary/10 text-secondary rounded-full text-xs sm:text-sm font-bold flex items-center shrink-0">
-                                                    <Users className="w-3 h-3 mr-1"/> {convocation.applicants || 0} / {convocation.spots || convocation.cupos_disponibles}
-                                                </span>
-                                            </div>
-                                            <div className="flex gap-2 mb-3">{getStatusBadge(convocation.estado || convocation.status)}</div>
-                                            <p className="text-body-small sm:text-body-medium text-on-surface-variant mb-3 line-clamp-2">{convocation.description || convocation.descripcion}</p>
-                                            <div className="flex flex-wrap gap-3 text-xs sm:text-body-small text-on-surface-variant font-medium">
-                                                <span className="flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5"/> Inicio: {new Date(convocation.fecha_inicio || convocation.startDate).toLocaleDateString()}</span>
-                                                <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5"/> {convocation.location || convocation.ubicacion || 'Sede Principal'}</span>
+                                <div key={convocation.id} className={`card-elevated flex flex-col h-full animate-fade-in group hover:-translate-y-1 transition-transform duration-300 ${activeTab === 'history' ? 'grayscale opacity-80 hover:grayscale-0 hover:opacity-100' : ''}`}>
+                                    <div className="p-5 flex-1 flex flex-col">
+                                        <div className="flex justify-between items-start mb-3">
+                                            {getStatusBadge(convocation.estado || convocation.status)}
+                                            <div className="text-xs text-on-surface-variant font-medium flex items-center gap-1">
+                                                <Clock3 size={12}/> {new Date(convocation.fecha_creacion).toLocaleDateString()}
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-wrap lg:flex-col gap-2 lg:w-40 mt-2 lg:mt-0 justify-center">
+                                        <h3 className="text-title-medium font-bold text-on-surface mb-2 line-clamp-1">{convocation.title || convocation.titulo}</h3>
+                                        <p className="text-body-small text-on-surface-variant line-clamp-2 mb-4 flex-1">{convocation.description || convocation.descripcion}</p>
+                                        
+                                        <div className="space-y-2 mb-4">
+                                            <div className="flex items-center gap-2 text-sm text-on-surface-variant"><MapPin size={16} className="text-primary"/> {convocation.location || convocation.ubicacion || 'Sede Principal'}</div>
+                                            <div className="flex items-center gap-2 text-sm text-on-surface-variant"><Users size={16} className="text-primary"/> {convocation.spots || convocation.cupos_disponibles} cupos</div>
+                                        </div>
+
+                                        <div className="flex gap-2 mt-auto pt-3 border-t border-outline-variant/20">
                                             {activeTab === 'active' ? (
                                                 <>
-                                                    <button onClick={() => handleEdit(convocation)} className="btn-tonal py-2 sm:py-2.5 flex-1 lg:w-full justify-center text-sm"><Edit className="w-4 h-4" /> Editar</button>
+                                                    <button onClick={() => handleEdit(convocation)} className="btn-tonal py-2 flex-1 text-xs justify-center"><Edit size={16} className="mr-1"/> Editar</button>
                                                     
                                                     {isPublished ? (
-                                                        <button onClick={() => handleStatusChange(convocation.id, 'pausada')} className="btn-outlined border-warning text-warning hover:bg-warning/10 py-2 sm:py-2.5 flex-1 lg:w-full justify-center text-sm"><Pause className="w-4 h-4" /> Pausar</button>
+                                                        <button onClick={() => handleStatusChange(convocation.id, 'pausada')} className="btn-outlined py-2 px-2 text-warning border-warning hover:bg-warning/10" title="Pausar"><Pause size={16}/></button>
                                                     ) : (
-                                                        <button onClick={() => handleStatusChange(convocation.id, 'abierta')} className="btn-outlined border-success text-success hover:bg-success/10 py-2 sm:py-2.5 flex-1 lg:w-full justify-center text-sm"><Play className="w-4 h-4" /> Publicar</button>
+                                                        <button onClick={() => handleStatusChange(convocation.id, 'abierta')} className="btn-outlined py-2 px-2 text-success border-success hover:bg-success/10" title="Publicar"><Play size={16}/></button>
                                                     )}
                                                     
-                                                    <button onClick={() => handleStatusChange(convocation.id, 'cerrada')} className="btn-outlined py-2 sm:py-2.5 flex-1 lg:w-full justify-center text-sm hover:bg-surface-container-highest"><Archive className="w-4 h-4" /> Cerrar</button>
+                                                    <button onClick={() => handleStatusChange(convocation.id, 'cerrada')} className="btn-outlined py-2 px-2 text-error border-error hover:bg-error/10" title="Terminar (Cerrar)"><Archive size={16}/></button>
                                                 </>
                                             ) : (
-                                                <button onClick={() => handleReplicate(convocation)} className="btn-tonal py-2 text-primary font-bold shadow-sm flex-1 lg:w-full justify-center text-sm"><Copy className="w-4 h-4" /> Replicar</button>
+                                                <>
+                                                    <button onClick={() => handleReplicate(convocation)} className="btn-tonal py-2 flex-1 text-xs justify-center bg-secondary-container text-secondary-on-container"><Copy size={16} className="mr-1"/> Replicar</button>
+                                                    <button onClick={() => handleDelete(convocation.id)} className="btn-outlined py-2 px-2 text-error border-error hover:bg-error/10"><Trash2 size={16}/></button>
+                                                </>
                                             )}
-                                            <button onClick={() => handleDelete(convocation.id)} className="btn-outlined border-error text-error hover:bg-error/10 py-2 sm:py-2.5 flex-1 lg:w-full justify-center text-sm"><Trash2 className="w-4 h-4" /> Eliminar</button>
                                         </div>
                                     </div>
                                 </div>
@@ -2522,6 +3568,7 @@ export default function AdminConvocationsPage() {
                 )}
             </div>
 
+            {/* Paginación */}
             {sortedConvocations.length > ITEMS_PER_PAGE && (
                 <div className="flex justify-center items-center gap-4 mt-8 pb-8">
                     <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-full hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><ChevronLeft className="w-6 h-6 text-primary" /></button>

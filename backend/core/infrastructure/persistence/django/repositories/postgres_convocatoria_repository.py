@@ -55,3 +55,29 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
     def listar_todas(self) -> List[Convocatoria]:
         modelos = ConvocatoriaModel.objects.all().order_by('-fecha_creacion')
         return [self._to_domain(m) for m in modelos]
+
+    # --- 🔥 NUEVOS MÉTODOS AÑADIDOS PARA COMPLETAR LA ARQUITECTURA 🔥 ---
+
+    def actualizar(self, id: int, datos: dict) -> Convocatoria:
+        """
+        Actualiza una convocatoria existente campo por campo.
+        """
+        modelo = ConvocatoriaModel.objects.get(id=id)
+        
+        # Iteramos sobre los datos recibidos y actualizamos el modelo si el campo existe
+        for key, value in datos.items():
+            if hasattr(modelo, key):
+                setattr(modelo, key, value)
+        
+        modelo.save()
+        return self._to_domain(modelo)
+
+    def eliminar(self, id: int):
+        """
+        Elimina físicamente el registro de la BD.
+        """
+        try:
+            modelo = ConvocatoriaModel.objects.get(id=id)
+            modelo.delete()
+        except ConvocatoriaModel.DoesNotExist:
+            pass # Si no existe, no hacemos nada (idempotencia)
