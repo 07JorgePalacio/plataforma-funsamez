@@ -12,7 +12,7 @@ import {
     Plus, Edit, Trash2, X, Save, MapPin, Users,
     Briefcase, Pause, Play, Archive, Search, Filter, ChevronDown, 
     Check, ChevronUp, Clock3, AlertCircle, ArrowUpDown, 
-    ChevronLeft, ChevronRight, CalendarDays, Copy
+    ChevronLeft, ChevronRight, CalendarDays, Copy, Inbox
 } from 'lucide-react';
 
 // --- LISTAS MAESTRAS ---
@@ -61,6 +61,7 @@ const mapBackendToForm = (convocation) => {
     }
     
     return {
+        id: convocation.id, 
         title: convocation.titulo || '',
         description: convocation.descripcion || '',
         location: convocation.ubicacion || '',
@@ -108,7 +109,6 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         }
     }, [convocation]);
 
-    // Auto-Scroll
     useEffect(() => {
         const errorKeys = Object.keys(errors);
         if (errorKeys.length > 0) {
@@ -126,15 +126,12 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         });
     };
 
-    // Helper: Convertir "HH:MM" a minutos para comparar
     const toMinutes = (timeStr) => { 
         if (!timeStr) return -1; 
         const [h, m] = timeStr.split(':').map(Number); 
         return (h * 60) + m; 
     };
 
-    // --- LÓGICA DE HERENCIA INTELIGENTE ---
-    // Busca el primer día que tenga horarios VÁLIDOS (Fin > Inicio)
     const findTemplateDay = (currentSchedule) => {
         return Object.values(currentSchedule).find(day => {
             if (!day.start || !day.end) return false;
@@ -142,54 +139,34 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         });
     };
 
-    // 🔥 1. TOGGLE DAY CON HERENCIA
     const toggleDay = (day) => {
         setFormData(prev => {
             const newHorario = { ...(prev.horario || {}) };
-            
             if (newHorario[day]) { 
-                // Desactivar día
                 delete newHorario[day];
-                // Limpiar error asociado
                 setMatrixErrors(prevE => { const n = {...prevE}; delete n[day]; return n; });
             } else {
-                // Activar día: Intentar heredar de otro válido
                 const template = findTemplateDay(newHorario);
-                
-                newHorario[day] = template 
-                    ? { ...template } // Heredar horas válidas
-                    : { start: '08:00', end: '12:00' }; // Default
+                newHorario[day] = template ? { ...template } : { start: '08:00', end: '12:00' };
             }
             return { ...prev, horario: newHorario };
         });
     };
 
-    // 🔥 2. CAMBIO DE HORA CON LIMPIEZA AUTOMÁTICA
     const handleDayTimeChange = (day, field, value) => {
-        // Obtenemos el estado actual del día (o default)
         const currentDay = { ...(formData.horario[day] || { start: '', end: '' }) };
-        
-        // Actualizamos el campo que cambió (start o end)
         currentDay[field === 'start' ? 'start' : 'end'] = value;
 
         let errorMsg = null;
-        
-        // Validamos solo si ambos campos tienen datos
         if (currentDay.start && currentDay.end) {
              const startMins = toMinutes(currentDay.start);
              const endMins = toMinutes(currentDay.end);
-             
              if (endMins <= startMins) {
                  errorMsg = "La hora final debe ser posterior.";
-                 
-                 // 🔥 LÓGICA DE LIMPIEZA: Si es inválido, borramos el Fin.
-                 // Esto obliga al usuario a reingresarlo y evita guardar datos basura.
-                 // Mantenemos el error visual para que sepa por qué se borró.
                  currentDay.end = ''; 
              }
         }
 
-        // Gestionamos el mensaje de error visual
         setMatrixErrors(prev => {
             const newErrs = { ...prev };
             if (errorMsg) newErrs[day] = errorMsg;
@@ -197,14 +174,9 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
             return newErrs;
         });
 
-        // Guardamos el estado (con el campo 'end' borrado si hubo error)
-        setFormData(prev => ({ 
-            ...prev, 
-            horario: { ...prev.horario, [day]: currentDay } 
-        }));
+        setFormData(prev => ({ ...prev, horario: { ...prev.horario, [day]: currentDay } }));
     };
 
-    // --- Resto de Validaciones ---
     const handleUniqueTimeChange = (field, value) => {
         setFormData(prev => {
             const newState = { ...prev, [field]: value };
@@ -217,6 +189,21 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
             }
             return newState;
         });
+    };
+
+    // 🔥🔥 NUEVA: VALIDACIÓN DE FECHA ÚNICA (NO PASADO) 🔥🔥
+    const handleUniqueDateChange = (value) => {
+        setFormData({ ...formData, fechaEvento: value });
+        
+        // Limpiar error previo
+        setErrors(prev => { const n = {...prev}; delete n.fecha; return n; });
+
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Solo validamos si es NUEVA convocatoria (no tiene ID)
+        if (!convocation?.id && value < today) {
+            setErrors(prev => ({...prev, fecha: "No puede ser en el pasado."}));
+        }
     };
 
     const handleDateChange = (field, value) => {
@@ -233,7 +220,7 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         const start = field === 'startDate' ? value : formData.startDate;
         const end = field === 'endDate' ? value : formData.endDate;
 
-        if (field === 'startDate' && !convocation) {
+        if (field === 'startDate' && !convocation?.id) { 
             if (value < hoy) {
                 setErrors(prev => ({...prev, startDate: "No puede iniciar en el pasado."}));
             }
@@ -258,6 +245,7 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
             if (!formData.fechaEvento) newErrors.fecha = "Selecciona una fecha.";
             if (!formData.horaInicio || !formData.horaFin) newErrors.hora = "Define el horario completo.";
             if (errors.hora) newErrors.hora = errors.hora; 
+            if (errors.fecha) newErrors.fecha = errors.fecha; // Persistir error de fecha pasada
         } else {
             if (Object.keys(formData.horario).length === 0) newErrors.horario = "Selecciona al menos un día.";
             if (Object.keys(matrixErrors).length > 0) newErrors.horario = "Corrige los errores en los horarios.";
@@ -348,7 +336,13 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                             
                             {formData.tipoHorario === 'unico' ? (
                                 <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="md:col-span-3" id="field-fecha"><label className="text-xs font-bold text-primary uppercase tracking-wide mb-1 block">Fecha</label><input type="date" value={formData.fechaEvento} onChange={(e) => setFormData({...formData, fechaEvento: e.target.value})} className={`input-outlined bg-white ${errors.fecha ? 'border-error' : ''}`} /></div>
+                                    <div className="md:col-span-3" id="field-fecha">
+                                        <label className="text-xs font-bold text-primary uppercase tracking-wide mb-1 block">Fecha</label>
+                                        {/* 🔥 UPDATED: Usamos handleUniqueDateChange */}
+                                        <input type="date" value={formData.fechaEvento} onChange={(e) => handleUniqueDateChange(e.target.value)} className={`input-outlined bg-white ${errors.fecha ? 'border-error' : ''}`} />
+                                        {/* 🔥 UPDATED: Mensaje de error para fecha pasada */}
+                                        {errors.fecha && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.fecha}</p>}
+                                    </div>
                                     <div id="field-hora"><TimePickerMD3 label="Inicio" value={formData.horaInicio} onChange={(val) => handleUniqueTimeChange('horaInicio', val)} /></div>
                                     <div><TimePickerMD3 label="Fin" value={formData.horaFin} onChange={(val) => handleUniqueTimeChange('horaFin', val)} /></div>
                                     
@@ -379,7 +373,6 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                                                                 <div className="flex-1 min-w-[100px]"><TimePickerMD3 label="Fin" value={formData.horario[dia].end} onChange={(val) => handleDayTimeChange(dia, 'end', val)} /></div>
                                                             </div>
                                                             
-                                                            {/* 🔥 ERROR MATRIZ MEJORADO Y REDONDEADO */}
                                                             {matrixErrors[dia] && (
                                                                 <div className="mt-1 w-full bg-error/10 text-error text-[11px] font-bold py-2 px-3 rounded-xl border border-error/20 flex items-center justify-center animate-pulse">
                                                                     <AlertCircle size={12} className="mr-1.5 shrink-0" />
@@ -418,7 +411,11 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                 </div>
                 <div className="flex gap-3 px-6 py-4 bg-surface border-t border-outline-variant/30 shrink-0 z-20">
                     <button type="button" onClick={onClose} className="btn-outlined flex-1 font-bold">Cancelar</button>
-                    <button type="submit" form="convocation-form" className="btn-filled flex-1 font-bold shadow-primary/30 shadow-lg"><Save className="w-4 h-4" /> Publicar</button>
+                    {/* 🔥 BOTÓN DINÁMICO: GUARDAR O PUBLICAR */}
+                    <button type="submit" form="convocation-form" className="btn-filled flex-1 font-bold shadow-primary/30 shadow-lg">
+                        <Save className="w-4 h-4 mr-2" /> 
+                        {convocation && convocation.id ? 'Guardar' : 'Publicar'}
+                    </button>
                 </div>
             </div>
         </div>
@@ -497,7 +494,14 @@ export default function AdminConvocationsPage() {
     const handleReplicate = (convocation) => {
         const formData = mapToForm(convocation);
         if(formData) {
-            const replica = { ...formData, id: null, title: `${formData.title} (Copia)` };
+            const replica = { 
+                ...formData, 
+                id: null, 
+                title: `${formData.title} (Copia)`,
+                startDate: '',
+                endDate: '',
+                fechaEvento: '',
+            };
             setEditingConvocation(replica);
             setIsModalOpen(true);
         }
@@ -526,10 +530,52 @@ export default function AdminConvocationsPage() {
         return <span className={`px-3 py-1 rounded-full text-label-small font-medium ${styles[normalized]}`}>{labels[normalized]}</span>;
     };
 
+    const renderEmptyState = () => {
+        if (rawConvocations.length === 0) {
+            if (activeTab === 'active') {
+                return (
+                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
+                        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                            <Briefcase className="w-10 h-10 text-primary" />
+                        </div>
+                        <h3 className="text-title-large text-on-surface font-bold mb-2">¡Comienza tu impacto!</h3>
+                        <p className="text-body-large text-on-surface-variant max-w-md mb-6">
+                            Aún no tienes convocatorias activas. Crea una nueva oportunidad para que los voluntarios se sumen.
+                        </p>
+                        <button onClick={() => { setEditingConvocation(null); setIsModalOpen(true); }} className="btn-filled shadow-lg shadow-primary/20">
+                            <Plus className="w-5 h-5 mr-2" /> Crear Primera Convocatoria
+                        </button>
+                    </div>
+                );
+            } else {
+                return (
+                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in opacity-70">
+                        <Inbox className="w-16 h-16 text-on-surface-variant mb-4" />
+                        <h3 className="text-title-medium text-on-surface font-bold">Historial Vacío</h3>
+                        <p className="text-body-medium text-on-surface-variant">Aquí aparecerán las convocatorias que cierres o terminen.</p>
+                    </div>
+                );
+            }
+        } 
+        
+        if (paginatedConvocations.length === 0) {
+            return (
+                <div className="card text-center py-12 border-2 border-dashed border-outline-variant/50 bg-transparent animate-fade-in">
+                    <Search className="w-12 h-12 text-on-surface-variant mx-auto mb-3 opacity-50" />
+                    <h3 className="text-title-medium text-on-surface mb-1">No se encontraron resultados</h3>
+                    <p className="text-body-small text-on-surface-variant">Intenta ajustar tu búsqueda o filtros.</p>
+                    <button onClick={() => { setSearchQuery(''); setStatusFilter('all'); }} className="btn-text mt-2 text-primary font-bold">Limpiar filtros</button>
+                </div>
+            );
+        }
+
+        return null;
+    };
+
     return (
         <AdminLayout title="Gestión de Convocatorias" subtitle="Crea y administra las oportunidades.">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-                <div className="flex gap-2 bg-surface-container rounded-full p-1">
+                <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit"> {/* 🔥 CORREGIDO: w-fit */}
                     <button onClick={() => setActiveTab('active')} className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'active' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
                         Activas ({getActiveConvocations().length})
                     </button>
@@ -537,49 +583,49 @@ export default function AdminConvocationsPage() {
                         Historial ({getClosedConvocations().length})
                     </button>
                 </div>
-                <button onClick={() => { setEditingConvocation(null); setIsModalOpen(true); }} className="btn-filled shadow-primary/20">
+                {/* 🔥 CORREGIDO: hidden sm:flex para ocultar en móvil */}
+                <button onClick={() => { setEditingConvocation(null); setIsModalOpen(true); }} className="btn-filled shadow-primary/20 hidden sm:flex">
                     <Plus className="w-4 h-4" /> Nueva Convocatoria
                 </button>
             </div>
 
-            <div className="sticky top-0 z-10 bg-surface/95 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent border-b border-transparent sm:border-none">
-                <div className="flex flex-col md:flex-row gap-3">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                        <input type="text" placeholder="Buscar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input-outlined pl-10 w-full bg-white/80 focus:bg-white" />
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto">
-                        {activeTab === 'active' && (
-                            <div className="relative min-w-[140px]">
-                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
-                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
-                                    <option value="all">Todos</option>
-                                    <option value="abierta">Abiertas</option>
-                                    <option value="pausada">Pausadas</option>
+            {/* BARRA HERRAMIENTAS */}
+            {rawConvocations.length > 0 && (
+                <div className="sticky top-0 z-10 bg-surface/95 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static sm:bg-transparent border-b border-transparent sm:border-none">
+                    <div className="flex flex-col md:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+                            <input type="text" placeholder="Buscar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input-outlined pl-10 w-full bg-white/80 focus:bg-white" />
+                        </div>
+                        <div className="flex gap-2 overflow-x-auto">
+                            {activeTab === 'active' && (
+                                <div className="relative min-w-[140px]">
+                                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
+                                        <option value="all">Todos</option>
+                                        <option value="abierta">Abiertas</option>
+                                        <option value="pausada">Pausadas</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                                </div>
+                            )}
+                            <div className="relative min-w-[160px]">
+                                <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
+                                    <option value="newest">Más Recientes</option>
+                                    <option value="oldest">Más Antiguas</option>
+                                    <option value="alpha">A - Z</option>
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
                             </div>
-                        )}
-                        <div className="relative min-w-[160px]">
-                            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
-                            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
-                                <option value="newest">Más Recientes</option>
-                                <option value="oldest">Más Antiguas</option>
-                                <option value="alpha">A - Z</option>
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
+            {/* GRID */}
             <div className="space-y-4 pt-2 min-h-[400px]">
-                {paginatedConvocations.length === 0 ? (
-                    <div className="card text-center py-12 border-2 border-dashed border-outline-variant/50 bg-transparent">
-                        <Briefcase className="w-16 h-16 text-on-surface-variant mx-auto mb-4 opacity-50" />
-                        <h3 className="text-title-large text-on-surface">No se encontraron resultados</h3>
-                    </div>
-                ) : (
+                {paginatedConvocations.length === 0 ? renderEmptyState() : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {paginatedConvocations.map(convocation => {
                             const isPublished = convocation.estado === 'abierta' || convocation.status === 'published';
@@ -630,6 +676,7 @@ export default function AdminConvocationsPage() {
                 )}
             </div>
 
+            {/* Paginación */}
             {sortedConvocations.length > ITEMS_PER_PAGE && (
                 <div className="flex justify-center items-center gap-4 mt-8 pb-8">
                     <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-full hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors"><ChevronLeft className="w-6 h-6 text-primary" /></button>

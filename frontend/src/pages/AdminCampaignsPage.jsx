@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
     crearCampana, 
     obtenerCampanas, 
-    actualizarCampana, 
+    actualizarCampana,
     eliminarCampana
 } from '../services/campaignService';
 import AdminLayout from '../components/AdminLayout';
@@ -10,7 +10,7 @@ import {
     Plus, Edit, Trash2, X, Save,
     Check, DollarSign, Image as ImageIcon, AlertCircle, 
     Package, Calendar, Info, Archive, Play, Pause, ChevronDown, ChevronUp, 
-    Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Copy
+    Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Copy, Heart, Inbox
 } from 'lucide-react';
 
 // --- UTILIDADES ---
@@ -149,9 +149,11 @@ function CampaignFormModal({ campaign, onSave, onClose }) {
         const end = field === 'fecha_fin' ? value : formData.fecha_fin;
         const hoy = new Date().toISOString().split('T')[0];
 
-        // Validar Inicio (solo si es nueva)
-        if (field === 'fecha_inicio' && !campaign && value < hoy) {
-            setErrors(prev => ({...prev, fecha_inicio: "No puede iniciar en el pasado."}));
+        // Validar Inicio (solo si es nueva campaña)
+        if (field === 'fecha_inicio' && !campaign?.id) { 
+            if (value < hoy) {
+                setErrors(prev => ({...prev, fecha_inicio: "No puede iniciar en el pasado."}));
+            }
         }
 
         // Validar Coherencia
@@ -193,13 +195,11 @@ function CampaignFormModal({ campaign, onSave, onClose }) {
                             <div id="field-titulo">
                                 <label className="block text-label-large text-on-surface mb-1.5 font-bold">Título *</label>
                                 <input type="text" value={formData.titulo} onChange={(e) => setFormData({ ...formData, titulo: e.target.value })} className={`input-outlined focus:bg-white ${errors.titulo ? 'border-error bg-error-container text-error' : ''}`} />
-                                {/* 🔥 Se agrega el ícono AlertCircle para consistencia */}
                                 {errors.titulo && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.titulo}</p>}
                             </div>
                             <div id="field-descripcion">
                                 <label className="block text-label-large text-on-surface mb-1.5 font-bold">Descripción *</label>
                                 <textarea value={formData.descripcion} onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })} className={`input-outlined resize-none focus:bg-white ${errors.descripcion ? 'border-error bg-error-container text-error' : ''}`} rows={3} />
-                                {/* 🔥 SE AGREGA EL MENSAJE DE ERROR QUE FALTABA */}
                                 {errors.descripcion && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.descripcion}</p>}
                             </div>
                         </div>
@@ -226,7 +226,7 @@ function CampaignFormModal({ campaign, onSave, onClose }) {
                                         <div className="animate-slide-up bg-surface-container/30 p-3 rounded-xl border border-outline-variant/30" id="field-monto_objetivo">
                                             <label className="block text-label-small text-on-surface-variant mb-1">Meta ($)</label>
                                             <input type="text" value={displayMonto} onChange={handleMoneyChange} className={`input-outlined text-right font-mono font-bold ${errors.monto_objetivo ? 'border-error text-error' : ''}`} placeholder="0" />
-                                            {errors.monto_objetivo && <p className="text-error text-xs mt-1 font-bold flex items-center"><AlertCircle size={12} className="mr-1"/>{errors.monto_objetivo}</p>}
+                                            {errors.monto_objetivo && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.monto_objetivo}</p>}
                                         </div>
                                     )}
                                 </div>
@@ -234,7 +234,7 @@ function CampaignFormModal({ campaign, onSave, onClose }) {
                                     <CheckboxM3 label="Recibir Insumos" icon={Package} checked={formData.permite_donacion_especie} onChange={(e) => setFormData({...formData, permite_donacion_especie: e.target.checked})} />
                                 </div>
                             </div>
-                            {errors.permisos && <p className="text-error text-xs font-bold text-center bg-error/10 rounded py-2 flex items-center justify-center"><AlertCircle size={12} className="mr-1"/>{errors.permisos}</p>}
+                            {errors.permisos && <p className="text-error text-xs font-bold text-center bg-error/10 rounded py-2 flex items-center justify-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.permisos}</p>}
                         </div>
 
                         {formData.permite_donacion_especie && (
@@ -370,12 +370,57 @@ export default function AdminCampaignsPage() {
     const paginatedList = sortedList.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const totalPages = Math.ceil(sortedList.length / ITEMS_PER_PAGE);
 
+    // 🔥 Mensajes de Estado Vacío (Empty States)
+    const renderEmptyState = () => {
+        if (rawList.length === 0) {
+            // Caso 1: No hay campañas en esta pestaña
+            if (activeTab === 'activas') {
+                return (
+                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
+                        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                            <Heart className="w-10 h-10 text-primary" fill="currentColor" fillOpacity={0.2} />
+                        </div>
+                        <h3 className="text-title-large text-on-surface font-bold mb-2">¡Haz realidad un sueño!</h3>
+                        <p className="text-body-large text-on-surface-variant max-w-md mb-6">
+                            No tienes campañas activas en este momento. Crea una nueva campaña para empezar a recaudar fondos.
+                        </p>
+                        <button onClick={() => { setEditingCampaign(null); setIsModalOpen(true); }} className="btn-filled shadow-lg shadow-primary/20">
+                            <Plus className="w-5 h-5 mr-2" /> Crear Nueva Campaña
+                        </button>
+                    </div>
+                );
+            } else {
+                return (
+                    <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in opacity-70">
+                        <Inbox className="w-16 h-16 text-on-surface-variant mb-4" />
+                        <h3 className="text-title-medium text-on-surface font-bold">Historial Vacío</h3>
+                        <p className="text-body-medium text-on-surface-variant">Aquí aparecerán las campañas completadas o canceladas.</p>
+                    </div>
+                );
+            }
+        } 
+        
+        if (paginatedList.length === 0) {
+            // Caso 2: El filtro no arrojó resultados
+            return (
+                <div className="card text-center py-12 border-2 border-dashed border-outline-variant/50 bg-transparent animate-fade-in">
+                    <Search className="w-12 h-12 text-on-surface-variant mx-auto mb-3 opacity-50" />
+                    <h3 className="text-title-medium text-on-surface mb-1">No se encontraron resultados</h3>
+                    <p className="text-body-small text-on-surface-variant">Intenta ajustar tu búsqueda o los filtros.</p>
+                    <button onClick={() => { setSearchQuery(''); setStatusFilter('all'); }} className="btn-text mt-2 text-primary font-bold">Limpiar filtros</button>
+                </div>
+            );
+        }
+
+        return null;
+    };
+
     return (
         <AdminLayout title="Gestión de Campañas" subtitle="Administra las campañas de donación.">
             
-            {/* Header: Pestañas */}
+            {/* Header: Pestañas (CORREGIDO: w-fit) */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-                <div className="flex gap-2 bg-surface-container rounded-full p-1">
+                <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit">
                     <button 
                         onClick={() => setActiveTab('activas')} 
                         className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'activas' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
@@ -396,100 +441,106 @@ export default function AdminCampaignsPage() {
                 </button>
             </div>
 
-            {/* Barra de Herramientas */}
-            <div className="flex flex-col md:flex-row gap-3 mb-6">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
-                    <input type="text" placeholder="Buscar campaña..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input-outlined pl-10 w-full bg-white/80 focus:bg-white" />
-                </div>
-                
-                <div className="flex gap-2 overflow-x-auto">
-                    {activeTab === 'activas' && (
-                        <div className="relative min-w-[140px]">
-                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
-                            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
-                                <option value="all">Estado: Todos</option>
-                                <option value="activa">Activas</option>
-                                <option value="pausada">Pausadas</option>
+            {/* Barra de Herramientas (Solo visible si hay datos o filtros activos) */}
+            {(rawList.length > 0 || searchQuery || statusFilter !== 'all') && (
+                <div className="flex flex-col md:flex-row gap-3 mb-6">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant" />
+                        <input type="text" placeholder="Buscar campaña..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="input-outlined pl-10 w-full bg-white/80 focus:bg-white" />
+                    </div>
+                    
+                    <div className="flex gap-2 overflow-x-auto">
+                        {activeTab === 'activas' && (
+                            <div className="relative min-w-[140px]">
+                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
+                                    <option value="all">Estado: Todos</option>
+                                    <option value="activa">Activas</option>
+                                    <option value="pausada">Pausadas</option>
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                            </div>
+                        )}
+
+                        <div className="relative min-w-[180px]">
+                            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
+                                <option value="newest">Más Recientes</option>
+                                <option value="oldest">Más Antiguas</option>
+                                <option value="progress">Mayor Progreso</option>
+                                <option value="alpha">A - Z</option>
+                                <option value="alpha_desc">Z - A</option>
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
                         </div>
-                    )}
-
-                    <div className="relative min-w-[180px]">
-                        <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
-                        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="input-outlined pl-9 pr-8 appearance-none bg-white/80 focus:bg-white text-sm h-full">
-                            <option value="newest">Más Recientes</option>
-                            <option value="oldest">Más Antiguas</option>
-                            <option value="progress">Mayor Progreso</option>
-                            <option value="alpha">A - Z</option>
-                            <option value="alpha_desc">Z - A</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* GRID DE TARJETAS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 min-h-[300px]">
-                {paginatedList.map(camp => (
-                    <div key={camp.id} className={`card-elevated flex flex-col h-full animate-fade-in group hover:-translate-y-1 transition-transform duration-300 ${activeTab === 'historial' ? 'grayscale opacity-90 hover:grayscale-0 hover:opacity-100' : ''}`}>
-                        <div className="h-40 w-full bg-surface-container-high relative overflow-hidden rounded-t-xl">
-                            {camp.imagen_url ? (
-                                <img src={camp.imagen_url} alt={camp.titulo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-on-surface-variant"><ImageIcon size={32} opacity={0.5}/></div>
-                            )}
-                            <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-bold shadow-sm capitalize ${camp.estado === 'activa' ? 'bg-success-container text-success' : camp.estado === 'pausada' ? 'bg-warning-container text-warning' : 'bg-surface-container-high text-on-surface-variant'}`}>
-                                {camp.estado}
-                            </div>
-                        </div>
-
-                        <div className="p-4 flex-1 flex flex-col">
-                            <div className="flex justify-between text-[10px] text-on-surface-variant font-medium mb-2 uppercase tracking-wide">
-                                <span>Creada: {formatDate(camp.fecha_creacion)}</span>
-                            </div>
-
-                            <h3 className="text-title-medium font-bold text-on-surface mb-2 line-clamp-1">{camp.titulo}</h3>
-                            <p className="text-body-small text-on-surface-variant line-clamp-2 mb-4 flex-1">{camp.descripcion}</p>
-                            
-                            {/* Progreso */}
-                            {camp.permite_donacion_monetaria && (
-                                <div className="mb-4">
-                                    <div className="flex justify-between text-xs font-bold mb-1">
-                                        <span className="text-primary">${formatCurrency(camp.recaudo_actual || 0)}</span>
-                                        <span className="text-on-surface-variant">Meta: ${formatCurrency(camp.monto_objetivo)}</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
-                                        <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${Math.min(((camp.recaudo_actual || 0) / camp.monto_objetivo) * 100, 100)}%` }} />
+            <div className="min-h-[400px]">
+                {paginatedList.length === 0 ? renderEmptyState() : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {paginatedList.map(camp => (
+                            <div key={camp.id} className={`card-elevated flex flex-col h-full animate-fade-in group hover:-translate-y-1 transition-transform duration-300 ${activeTab === 'historial' ? 'grayscale opacity-90 hover:grayscale-0 hover:opacity-100' : ''}`}>
+                                <div className="h-40 w-full bg-surface-container-high relative overflow-hidden rounded-t-xl">
+                                    {camp.imagen_url ? (
+                                        <img src={camp.imagen_url} alt={camp.titulo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-on-surface-variant"><ImageIcon size={32} opacity={0.5}/></div>
+                                    )}
+                                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-bold shadow-sm capitalize ${camp.estado === 'activa' ? 'bg-success-container text-success' : camp.estado === 'pausada' ? 'bg-warning-container text-warning' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                                        {camp.estado}
                                     </div>
                                 </div>
-                            )}
 
-                            {/* Acciones */}
-                            <div className="flex gap-2 mt-auto pt-3 border-t border-outline-variant/20">
-                                {activeTab === 'activas' ? (
-                                    <>
-                                        <button onClick={() => { setEditingCampaign(camp); setIsModalOpen(true); }} className="btn-tonal py-2 flex-1 text-xs justify-center"><Edit size={16} className="mr-1"/> Editar</button>
-                                        
-                                        {camp.estado === 'activa' ? (
-                                            <button onClick={() => handleChangeStatus(camp.id, 'pausada')} className="btn-outlined py-2 px-2 text-warning border-warning hover:bg-warning/10" title="Pausar"><Pause size={16}/></button>
+                                <div className="p-4 flex-1 flex flex-col">
+                                    <div className="flex justify-between text-[10px] text-on-surface-variant font-medium mb-2 uppercase tracking-wide">
+                                        <span>Creada: {formatDate(camp.fecha_creacion)}</span>
+                                    </div>
+
+                                    <h3 className="text-title-medium font-bold text-on-surface mb-2 line-clamp-1">{camp.titulo}</h3>
+                                    <p className="text-body-small text-on-surface-variant line-clamp-2 mb-4 flex-1">{camp.descripcion}</p>
+                                    
+                                    {/* Progreso */}
+                                    {camp.permite_donacion_monetaria && (
+                                        <div className="mb-4">
+                                            <div className="flex justify-between text-xs font-bold mb-1">
+                                                <span className="text-primary">${formatCurrency(camp.recaudo_actual || 0)}</span>
+                                                <span className="text-on-surface-variant">Meta: ${formatCurrency(camp.monto_objetivo)}</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+                                                <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${Math.min(((camp.recaudo_actual || 0) / camp.monto_objetivo) * 100, 100)}%` }} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Acciones */}
+                                    <div className="flex gap-2 mt-auto pt-3 border-t border-outline-variant/20">
+                                        {activeTab === 'activas' ? (
+                                            <>
+                                                <button onClick={() => { setEditingCampaign(camp); setIsModalOpen(true); }} className="btn-tonal py-2 flex-1 text-xs justify-center"><Edit size={16} className="mr-1"/> Editar</button>
+                                                
+                                                {camp.estado === 'activa' ? (
+                                                    <button onClick={() => handleChangeStatus(camp.id, 'pausada')} className="btn-outlined py-2 px-2 text-warning border-warning hover:bg-warning/10" title="Pausar"><Pause size={16}/></button>
+                                                ) : (
+                                                    <button onClick={() => handleChangeStatus(camp.id, 'activa')} className="btn-outlined py-2 px-2 text-success border-success hover:bg-success/10" title="Activar"><Play size={16}/></button>
+                                                )}
+                                                <button onClick={() => handleChangeStatus(camp.id, 'completada')} className="btn-outlined py-2 px-2 text-primary border-primary hover:bg-primary/10" title="Completar"><Check size={16}/></button>
+                                                <button onClick={() => handleChangeStatus(camp.id, 'cancelada')} className="btn-outlined py-2 px-2 text-error border-error hover:bg-error/10" title="Terminar (Cancelar)"><Archive size={16}/></button>
+                                            </>
                                         ) : (
-                                            <button onClick={() => handleChangeStatus(camp.id, 'activa')} className="btn-outlined py-2 px-2 text-success border-success hover:bg-success/10" title="Activar"><Play size={16}/></button>
+                                            <>
+                                                <button onClick={() => handleReplicate(camp)} className="btn-tonal py-2 flex-1 text-xs justify-center bg-secondary-container text-secondary-on-container"><Copy size={16} className="mr-1"/> Replicar</button>
+                                                <button onClick={() => handleDelete(camp.id)} className="btn-outlined py-2 px-2 text-error border-error hover:bg-error/10"><Trash2 size={16}/></button>
+                                            </>
                                         )}
-                                        <button onClick={() => handleChangeStatus(camp.id, 'completada')} className="btn-outlined py-2 px-2 text-primary border-primary hover:bg-primary/10" title="Completar"><Check size={16}/></button>
-                                        <button onClick={() => handleChangeStatus(camp.id, 'cancelada')} className="btn-outlined py-2 px-2 text-error border-error hover:bg-error/10" title="Terminar (Cancelar)"><Archive size={16}/></button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <button onClick={() => handleReplicate(camp)} className="btn-tonal py-2 flex-1 text-xs justify-center bg-secondary-container text-secondary-on-container"><Copy size={16} className="mr-1"/> Replicar</button>
-                                        <button onClick={() => handleDelete(camp.id)} className="btn-outlined py-2 px-2 text-error border-error hover:bg-error/10"><Trash2 size={16}/></button>
-                                    </>
-                                )}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        ))}
                     </div>
-                ))}
+                )}
             </div>
 
             {/* Paginación */}
