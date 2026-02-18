@@ -137,6 +137,7 @@ class ConvocatoriaModel(models.Model):
         db_column='id_usuario_creador', 
         related_name='convocatorias_creadas'
     )
+
     titulo = models.CharField(max_length=255)
     descripcion = models.TextField(blank=True, null=True)
     fecha_inicio = models.DateTimeField()
@@ -151,6 +152,14 @@ class ConvocatoriaModel(models.Model):
         ('finalizada', 'Finalizada'),
     ]
     estado = models.CharField(max_length=20, choices=ESTADOS, default='abierta')
+
+    MODALIDAD_CHOICES = [
+        ('presencial', 'Presencial'),
+        ('virtual', 'Virtual'),
+    ]
+    modalidad = models.CharField(max_length=20, choices=MODALIDAD_CHOICES, default='presencial')
+    
+    beneficios = models.JSONField(default=list, blank=True)
     habilidades_requeridas = models.TextField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -163,40 +172,38 @@ class ConvocatoriaModel(models.Model):
         managed = True 
 
 class CampanaModel(models.Model):
-    """
-    Modelo de Infraestructura (Django ORM).
-    Representa la tabla 'public.campana' de la base de datos PostgreSQL.
-    """
-
+    # 1. Identificación
     usuario_creador = models.ForeignKey(UsuarioModel, on_delete=models.CASCADE, related_name="campanas")
+    
+    # 2. Información Básica
     titulo = models.CharField(max_length=255)
     descripcion = models.TextField()
-    monto_objetivo = models.BigIntegerField(null=True, blank=True)
+    imagen_url = models.URLField(max_length=500, blank=True, null=True)
+
+    # 3. Tiempos y Estado
     fecha_inicio = models.DateField(default=timezone.now)
     fecha_fin = models.DateField()
+    
+    ESTADOS = [
+        ('activa', 'Activa'), ('pausada', 'Pausada'), 
+        ('completada', 'Completada'), ('cancelada', 'Cancelada')
+    ]
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='activa')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    # 4. Configuración Financiera
+    monto_objetivo = models.BigIntegerField(null=True, blank=True)
     recaudo_actual = models.BigIntegerField(default=0)
-    # FOTO PRINCIPAL (Portada)
-    imagen_url = models.URLField(max_length=500, blank=True, null=True)    
     permite_donacion_monetaria = models.BooleanField(default=True)
     permite_donacion_especie = models.BooleanField(default=True)
 
-    # Campos JSON
+    # 5. Listas y JSON
     objetivos = models.JSONField(default=list, blank=True) 
     galeria_imagenes = models.JSONField(default=list, blank=True)
     necesidades = models.JSONField(default=list, blank=True)
     categoria = models.JSONField(default=list, blank=True)
     tipo_impacto = models.JSONField(default=list, blank=True)
-
-    ESTADOS = [
-        ('activa', 'Activa'), 
-        ('pausada', 'Pausada'), 
-        ('completada', 'Completada'), 
-        ('cancelada', 'Cancelada')
-    ]
-    estado = models.CharField(max_length=20, choices=ESTADOS, default='activa')
-    
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'campana'

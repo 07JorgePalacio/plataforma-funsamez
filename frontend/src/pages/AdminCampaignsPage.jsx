@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useApp } from '../context/AppContext';
 import { 
     crearCampana, 
-    obtenerCampanas, 
     actualizarCampana,
     eliminarCampana
 } from '../services/campaignService';
@@ -9,11 +9,10 @@ import AdminLayout from '../components/AdminLayout';
 import {
     Plus, Edit, Trash2, X, Save,
     Check, DollarSign, Image as ImageIcon, AlertCircle, 
-    Package, Calendar, Info, Archive, Play, Pause, ChevronDown, ChevronUp, 
+    Package, Calendar, Archive, Play, Pause, ChevronDown, 
     Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, Copy, Heart, Inbox
 } from 'lucide-react';
 
-// --- UTILIDADES ---
 const formatCurrency = (value) => {
     if (!value) return '';
     return new Intl.NumberFormat('es-CO', {
@@ -28,7 +27,6 @@ const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-// --- COMPONENTES UI ---
 const CheckboxM3 = ({ label, checked, onChange, icon: Icon }) => (
     <label className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${checked ? 'bg-primary/5 border-primary' : 'bg-surface border-outline-variant hover:border-outline'}`}>
         <div className="flex items-center gap-3">
@@ -91,7 +89,6 @@ const DynamicList = ({ label, items, onAdd, onRemove, placeholder, type = 'text'
     );
 };
 
-// --- FORMULARIO MODAL ---
 function CampaignFormModal({ campaign, onSave, onClose }) {
     const initialValues = {
         titulo: '', descripcion: '', 
@@ -117,7 +114,6 @@ function CampaignFormModal({ campaign, onSave, onClose }) {
         }
     }, [campaign]);
 
-    // Auto-Scroll al error
     useEffect(() => {
         const errorKeys = Object.keys(errors);
         if (errorKeys.length > 0) {
@@ -133,12 +129,10 @@ function CampaignFormModal({ campaign, onSave, onClose }) {
         if (errors.monto_objetivo) setErrors({...errors, monto_objetivo: null});
     };
 
-    // Validación Tiempo Real
     const handleDateChange = (field, value) => {
         const newData = { ...formData, [field]: value };
         setFormData(newData);
         
-        // Limpiar errores previos
         setErrors(prev => {
             const newErrors = { ...prev };
             delete newErrors[field];
@@ -149,14 +143,12 @@ function CampaignFormModal({ campaign, onSave, onClose }) {
         const end = field === 'fecha_fin' ? value : formData.fecha_fin;
         const hoy = new Date().toISOString().split('T')[0];
 
-        // Validar Inicio (solo si es nueva campaña)
         if (field === 'fecha_inicio' && !campaign?.id) { 
             if (value < hoy) {
                 setErrors(prev => ({...prev, fecha_inicio: "No puede iniciar en el pasado."}));
             }
         }
 
-        // Validar Coherencia
         if (start && end && end < start) {
             setErrors(prev => ({...prev, fecha_fin: "El cierre debe ser posterior al inicio."}));
         }
@@ -264,17 +256,19 @@ function CampaignFormModal({ campaign, onSave, onClose }) {
     );
 }
 
-// --- PÁGINA PRINCIPAL ---
 export default function AdminCampaignsPage() {
-    const [campaigns, setCampaigns] = useState([]);
+    const { 
+        campaigns, 
+        fetchCampaigns, 
+        getActiveCampaigns, 
+        getClosedCampaigns,
+        loading 
+    } = useApp();
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCampaign, setEditingCampaign] = useState(null);
-    const [loading, setLoading] = useState(true);
     
-    // Estados de UI
     const [activeTab, setActiveTab] = useState('activas');
-    
-    // Filtros
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all'); 
     const [sortBy, setSortBy] = useState('newest');
@@ -282,19 +276,6 @@ export default function AdminCampaignsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 6;
 
-    const loadData = async () => {
-        setLoading(true);
-        try {
-            const data = await obtenerCampanas();
-            setCampaigns(data || []);
-        } catch (error) {
-            console.error("Error cargando campañas", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { loadData(); }, []);
     useEffect(() => { setCurrentPage(1); }, [searchQuery, activeTab, sortBy, statusFilter]);
 
     const handleSave = async (data) => {
@@ -306,7 +287,7 @@ export default function AdminCampaignsPage() {
             }
             setIsModalOpen(false);
             setEditingCampaign(null);
-            loadData();
+            fetchCampaigns(); 
         } catch (error) {
             console.error("Error saving", error);
             alert("❌ Error al guardar.");
@@ -317,7 +298,7 @@ export default function AdminCampaignsPage() {
         if (!confirm(`¿Cambiar estado a: ${nuevoEstado}?`)) return;
         try {
             await actualizarCampana(id, { estado: nuevoEstado });
-            loadData();
+            fetchCampaigns(); 
         } catch (error) {
             alert("❌ Error cambiando estado");
         }
@@ -327,7 +308,7 @@ export default function AdminCampaignsPage() {
         if (confirm('¿Eliminar definitivamente? Esta acción no se puede deshacer.')) {
             try {
                 await eliminarCampana(id);
-                loadData();
+                fetchCampaigns();
             } catch (error) {
                 alert("❌ Error al eliminar");
             }
@@ -347,10 +328,7 @@ export default function AdminCampaignsPage() {
         setIsModalOpen(true);
     };
 
-    // --- LÓGICA DE FILTRADO ---
-    const rawList = activeTab === 'activas' 
-        ? campaigns.filter(c => c.estado === 'activa' || c.estado === 'pausada') 
-        : campaigns.filter(c => c.estado === 'completada' || c.estado === 'cancelada');
+    const rawList = activeTab === 'activas' ? getActiveCampaigns() : getClosedCampaigns();
 
     const filteredList = rawList.filter(c => {
         const matchesSearch = c.titulo.toLowerCase().includes(searchQuery.toLowerCase());
@@ -370,10 +348,8 @@ export default function AdminCampaignsPage() {
     const paginatedList = sortedList.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     const totalPages = Math.ceil(sortedList.length / ITEMS_PER_PAGE);
 
-    // 🔥 Mensajes de Estado Vacío (Empty States)
     const renderEmptyState = () => {
         if (rawList.length === 0) {
-            // Caso 1: No hay campañas en esta pestaña
             if (activeTab === 'activas') {
                 return (
                     <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
@@ -401,7 +377,6 @@ export default function AdminCampaignsPage() {
         } 
         
         if (paginatedList.length === 0) {
-            // Caso 2: El filtro no arrojó resultados
             return (
                 <div className="card text-center py-12 border-2 border-dashed border-outline-variant/50 bg-transparent animate-fade-in">
                     <Search className="w-12 h-12 text-on-surface-variant mx-auto mb-3 opacity-50" />
@@ -411,28 +386,25 @@ export default function AdminCampaignsPage() {
                 </div>
             );
         }
-
         return null;
     };
 
     return (
         <AdminLayout title="Gestión de Campañas" subtitle="Administra las campañas de donación.">
-            
-            {/* Header: Pestañas (CORREGIDO: w-fit) */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                 <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit">
                     <button 
                         onClick={() => setActiveTab('activas')} 
                         className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'activas' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
                     >
-                        Activas ({campaigns.filter(c => c.estado === 'activa' || c.estado === 'pausada').length})
+                        Activas ({getActiveCampaigns().length})
                     </button>
                     
                     <button 
                         onClick={() => setActiveTab('historial')} 
                         className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'historial' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
                     >
-                        Historial ({campaigns.filter(c => c.estado === 'completada' || c.estado === 'cancelada').length})
+                        Historial ({getClosedCampaigns().length})
                     </button>
                 </div>
 
@@ -441,7 +413,6 @@ export default function AdminCampaignsPage() {
                 </button>
             </div>
 
-            {/* Barra de Herramientas (Solo visible si hay datos o filtros activos) */}
             {(rawList.length > 0 || searchQuery || statusFilter !== 'all') && (
                 <div className="flex flex-col md:flex-row gap-3 mb-6">
                     <div className="relative flex-1">
@@ -477,7 +448,6 @@ export default function AdminCampaignsPage() {
                 </div>
             )}
 
-            {/* GRID DE TARJETAS */}
             <div className="min-h-[400px]">
                 {paginatedList.length === 0 ? renderEmptyState() : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -502,7 +472,6 @@ export default function AdminCampaignsPage() {
                                     <h3 className="text-title-medium font-bold text-on-surface mb-2 line-clamp-1">{camp.titulo}</h3>
                                     <p className="text-body-small text-on-surface-variant line-clamp-2 mb-4 flex-1">{camp.descripcion}</p>
                                     
-                                    {/* Progreso */}
                                     {camp.permite_donacion_monetaria && (
                                         <div className="mb-4">
                                             <div className="flex justify-between text-xs font-bold mb-1">
@@ -515,7 +484,6 @@ export default function AdminCampaignsPage() {
                                         </div>
                                     )}
 
-                                    {/* Acciones */}
                                     <div className="flex gap-2 mt-auto pt-3 border-t border-outline-variant/20">
                                         {activeTab === 'activas' ? (
                                             <>
@@ -543,7 +511,6 @@ export default function AdminCampaignsPage() {
                 )}
             </div>
 
-            {/* Paginación */}
             {sortedList.length > ITEMS_PER_PAGE && (
                 <div className="flex justify-center items-center gap-4 mt-8 pb-8">
                     <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded-full hover:bg-surface-container-high disabled:opacity-30"><ChevronLeft className="w-6 h-6 text-primary" /></button>
