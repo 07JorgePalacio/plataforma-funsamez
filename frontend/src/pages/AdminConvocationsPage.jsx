@@ -12,11 +12,13 @@ import {
     Plus, Edit, Trash2, X, Save, MapPin, Users,
     Briefcase, Pause, Play, Archive, Search, Filter, ChevronDown, 
     Check, ChevronUp, Clock3, AlertCircle, ArrowUpDown, 
-    ChevronLeft, ChevronRight, CalendarDays, Copy, Inbox
+    ChevronLeft, ChevronRight, CalendarDays, Copy, Inbox,
+    Video, Laptop, Home, Gift, GraduationCap, Stethoscope // Iconos nuevos para el contexto FUNSAMEZ
 } from 'lucide-react';
 
-// --- LISTAS MAESTRAS ---
+// --- 1. LISTAS MAESTRAS ACTUALIZADAS (CONTEXTO FUNSAMEZ) ---
 const CATEGORIAS_INTERES = [
+  "Salud", "Capacitación / Cursos", "Estética y Belleza", // Nuevos
   "Educación Infantil", "Medio Ambiente", "Adulto Mayor", 
   "Salud y Bienestar", "Tecnología Social", "Arte y Cultura", 
   "Logística de Eventos", "Deportes y Recreación", "Atención Psicosocial",
@@ -24,6 +26,7 @@ const CATEGORIAS_INTERES = [
 ];
 
 const HABILIDADES_OPCIONES = [
+  "Sin Experiencia Previa", "Disponibilidad de Tiempo",
   "Liderazgo", "Trabajo en Equipo", "Comunicación Asertiva",
   "Inglés Básico", "Inglés Avanzado", "Excel / Office", 
   "Diseño Gráfico", "Programación / IT", 
@@ -32,12 +35,21 @@ const HABILIDADES_OPCIONES = [
   "Conducción", "Cocina", "Manualidades"
 ];
 
+const BENEFICIOS_OPCIONES = [
+  "Certificado de Curso/Diplomado", "Materiales Incluidos",
+  "Certificado de Voluntariado", "Refrigerio / Alimentación", 
+  "Transporte", "Camiseta / Uniforme", "Capacitación Certificada",
+  "Experiencia Laboral", "Red de Contactos", "Bonificación",
+  "Créditos Académicos", "Seguro de Accidentes"
+];
+
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-// --- MAPPER AUXILIAR ---
+// --- MAPPER: Backend -> Formulario ---
 const mapBackendToForm = (convocation) => {
     if (!convocation) return null;
     
+    // Procesar Habilidades (String -> Array para chips)
     let skillsArray = [];
     if (convocation.habilidades_requeridas) {
         skillsArray = typeof convocation.habilidades_requeridas === 'string'
@@ -45,6 +57,7 @@ const mapBackendToForm = (convocation) => {
             : convocation.habilidades_requeridas;
     }
     
+    // Procesar Horario
     const horarioData = convocation.horario || {};
     let tipoHorario = 'unico';
     let fechaEvento = '';
@@ -60,20 +73,25 @@ const mapBackendToForm = (convocation) => {
         tipoHorario = 'recurrente';
     }
     
+    // Objeto Formulario Estandarizado
     return {
         id: convocation.id, 
+        // 2. Info Básica
         title: convocation.titulo || '',
         description: convocation.descripcion || '',
+        // 3. Logística
         location: convocation.ubicacion || '',
-        locationType: 'presencial',
-        spots: convocation.cupos_disponibles || 1,
         whatsappGroupLink: convocation.link_whatsapp || '',
+        modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', // 🟢 Garantizar valor
+        // 4. Tiempos y Cupos
+        spots: convocation.cupos_disponibles || 1,
         startDate: convocation.fecha_inicio ? convocation.fecha_inicio.split('T')[0] : '',
         endDate: convocation.fecha_fin ? convocation.fecha_fin.split('T')[0] : '',
+        // 6. JSON/Listas
         categorias: convocation.categorias || [],
         skills: skillsArray,
-        requirements: [],
-        benefits: [],
+        beneficios: convocation.beneficios || [], // 🟢 Garantizar array
+        // Auxiliares de formulario
         tipoHorario: tipoHorario,
         fechaEvento: fechaEvento,
         horaInicio: horaInicio,
@@ -86,13 +104,13 @@ const mapBackendToForm = (convocation) => {
 function ConvocationFormModal({ convocation, onSave, onClose }) {
     const initialValues = {
         title: '', description: '', 
-        location: '', locationType: 'presencial', spots: 1, whatsappGroupLink: '',
+        location: '', whatsappGroupLink: '',
+        modalidad: 'presencial', // 🟢 Default explícito
+        spots: 1, 
         startDate: '', endDate: '',
-        categorias: [], skills: [],
-        requirements: [], benefits: [], 
-        tipoHorario: 'unico', 
-        fechaEvento: '', horaInicio: '', horaFin: '',
-        horario: {} 
+        categorias: [], skills: [], 
+        beneficios: [], // 🟢 Inicializar vacío
+        tipoHorario: 'unico', fechaEvento: '', horaInicio: '', horaFin: '', horario: {} 
     };
 
     const [formData, setFormData] = useState(initialValues);
@@ -100,6 +118,7 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
     const [matrixErrors, setMatrixErrors] = useState({});
     const [showAllCats, setShowAllCats] = useState(false);
     const [showAllSkills, setShowAllSkills] = useState(false);
+    const [showAllBenefits, setShowAllBenefits] = useState(false);
 
     useEffect(() => {
         if (convocation) {
@@ -132,6 +151,7 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         return (h * 60) + m; 
     };
 
+    // ... (Lógica de horarios igual) ...
     const findTemplateDay = (currentSchedule) => {
         return Object.values(currentSchedule).find(day => {
             if (!day.start || !day.end) return false;
@@ -156,7 +176,6 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
     const handleDayTimeChange = (day, field, value) => {
         const currentDay = { ...(formData.horario[day] || { start: '', end: '' }) };
         currentDay[field === 'start' ? 'start' : 'end'] = value;
-
         let errorMsg = null;
         if (currentDay.start && currentDay.end) {
              const startMins = toMinutes(currentDay.start);
@@ -166,14 +185,12 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                  currentDay.end = ''; 
              }
         }
-
         setMatrixErrors(prev => {
             const newErrs = { ...prev };
             if (errorMsg) newErrs[day] = errorMsg;
             else delete newErrs[day];
             return newErrs;
         });
-
         setFormData(prev => ({ ...prev, horario: { ...prev.horario, [day]: currentDay } }));
     };
 
@@ -191,16 +208,10 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         });
     };
 
-    // 🔥🔥 NUEVA: VALIDACIÓN DE FECHA ÚNICA (NO PASADO) 🔥🔥
     const handleUniqueDateChange = (value) => {
         setFormData({ ...formData, fechaEvento: value });
-        
-        // Limpiar error previo
         setErrors(prev => { const n = {...prev}; delete n.fecha; return n; });
-
         const today = new Date().toISOString().split('T')[0];
-        
-        // Solo validamos si es NUEVA convocatoria (no tiene ID)
         if (!convocation?.id && value < today) {
             setErrors(prev => ({...prev, fecha: "No puede ser en el pasado."}));
         }
@@ -215,23 +226,14 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
             delete newErrors.fechas;
             return newErrors;
         });
-
         const hoy = new Date().toISOString().split('T')[0];
         const start = field === 'startDate' ? value : formData.startDate;
         const end = field === 'endDate' ? value : formData.endDate;
-
-        if (field === 'startDate' && !convocation?.id) { 
-            if (value < hoy) {
-                setErrors(prev => ({...prev, startDate: "No puede iniciar en el pasado."}));
-            }
+        if (field === 'startDate' && !convocation?.id && value < hoy) {
+            setErrors(prev => ({...prev, startDate: "No puede iniciar en el pasado."}));
         }
-
-        if (start && end) {
-            if (end < start) {
-                setErrors(prev => ({...prev, endDate: "El cierre debe ser posterior al inicio."}));
-            } else {
-                setErrors(prev => { const n = {...prev}; delete n.endDate; return n; });
-            }
+        if (start && end && end < start) {
+            setErrors(prev => ({...prev, endDate: "El cierre debe ser posterior al inicio."}));
         }
     };
 
@@ -239,13 +241,17 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         const newErrors = {};
         if (!formData.title?.trim()) newErrors.title = "El título es obligatorio.";
         if (!formData.description?.trim()) newErrors.description = "La descripción es obligatoria.";
-        if (!formData.location?.trim()) newErrors.location = "La ubicación es obligatoria.";
+        
+        // Validación condicional de ubicación
+        if (!formData.location?.trim()) {
+             newErrors.location = formData.modalidad === 'virtual' ? "El enlace es obligatorio." : "La dirección es obligatoria.";
+        }
         
         if (formData.tipoHorario === 'unico') {
             if (!formData.fechaEvento) newErrors.fecha = "Selecciona una fecha.";
             if (!formData.horaInicio || !formData.horaFin) newErrors.hora = "Define el horario completo.";
             if (errors.hora) newErrors.hora = errors.hora; 
-            if (errors.fecha) newErrors.fecha = errors.fecha; // Persistir error de fecha pasada
+            if (errors.fecha) newErrors.fecha = errors.fecha; 
         } else {
             if (Object.keys(formData.horario).length === 0) newErrors.horario = "Selecciona al menos un día.";
             if (Object.keys(matrixErrors).length > 0) newErrors.horario = "Corrige los errores en los horarios.";
@@ -274,14 +280,20 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         }
 
         const payload = {
+            // 2. Info Básica
             title: formData.title,
             description: formData.description,
+            // 3. Logística
             location: formData.location,
             whatsappGroupLink: formData.whatsappGroupLink,
+            modalidad: formData.modalidad, // 🟢 Se envía el estado actual
+            // 4. Tiempos
             startDate, endDate,
             spots: parseInt(formData.spots) || 1,
+            // 6. Listas
             skills: formData.skills || [],
             categorias: formData.categorias || [],
+            beneficios: formData.beneficios || [], // 🟢 Se envía la lista
             horario: horarioFinal
         };
         onSave(payload);
@@ -317,13 +329,48 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                 <div className="flex-1 overflow-y-auto p-6 scroll-smooth min-h-[50vh]">
                     <form id="convocation-form" onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-4">
-                            <div id="field-title"><label className="block text-label-large text-on-surface mb-1.5">Título *</label><input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={`input-outlined focus:bg-white ${errors.title ? 'border-error bg-error-container text-error' : ''}`} placeholder="Ej: Jornada de Vacunación" />{errors.title && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.title}</p>}</div>
+                            <div id="field-title"><label className="block text-label-large text-on-surface mb-1.5">Título *</label><input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={`input-outlined focus:bg-white ${errors.title ? 'border-error bg-error-container text-error' : ''}`} placeholder="Ej: Jornada de Salud Oral" />{errors.title && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.title}</p>}</div>
                             <div id="field-description"><label className="block text-label-large text-on-surface mb-1.5">Descripción *</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={`input-outlined resize-none focus:bg-white ${errors.description ? 'border-error bg-error-container text-error' : ''}`} rows={3} />{errors.description && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.description}</p>}</div>
                         </div>
                         
-                        {renderChipsSection("Categoría de la Convocatoria", "categorias", CATEGORIAS_INTERES, showAllCats, setShowAllCats, 3)}
-                        {renderChipsSection("Habilidades Requeridas", "skills", HABILIDADES_OPCIONES, showAllSkills, setShowAllSkills, null)}
-                        
+                        {renderChipsSection("Categoría / Tipo de Oportunidad", "categorias", CATEGORIAS_INTERES, showAllCats, setShowAllCats, 3)}
+                        {renderChipsSection("Requisitos / Habilidades", "skills", HABILIDADES_OPCIONES, showAllSkills, setShowAllSkills, null)}
+                        {renderChipsSection("Beneficios Ofrecidos", "beneficios", BENEFICIOS_OPCIONES, showAllBenefits, setShowAllBenefits, null)}
+
+                        {/* CORRECCIÓN LAYOUT: MODALIDAD Y UBICACIÓN */}
+                        <div className="pt-4 border-t border-outline-variant/30 space-y-4">
+                            <div>
+                                <label className="block text-label-large text-on-surface mb-2 font-bold">Modalidad</label>
+                                <div className="flex bg-surface-container rounded-lg p-1 w-full">
+                                    <button type="button" onClick={() => setFormData({...formData, modalidad: 'presencial'})} className={`flex-1 py-2 rounded-md text-sm font-medium transition-all flex justify-center items-center gap-2 ${formData.modalidad === 'presencial' ? 'bg-white text-primary shadow-sm ring-1 ring-black/5' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'}`}>
+                                        <Home size={18} /> Presencial
+                                    </button>
+                                    <button type="button" onClick={() => setFormData({...formData, modalidad: 'virtual'})} className={`flex-1 py-2 rounded-md text-sm font-medium transition-all flex justify-center items-center gap-2 ${formData.modalidad === 'virtual' ? 'bg-white text-primary shadow-sm ring-1 ring-black/5' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'}`}>
+                                        <Video size={18} /> Virtual
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="field-location">
+                                <label className="block text-label-large text-on-surface mb-2 font-bold">
+                                    {formData.modalidad === 'presencial' ? 'Dirección del Evento *' : 'Enlace de Reunión (Meet/Zoom/Teams) *'}
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                                        {formData.modalidad === 'presencial' ? <MapPin size={20} /> : <Laptop size={20} />}
+                                    </div>
+                                    <input 
+                                        type={formData.modalidad === 'virtual' ? 'url' : 'text'}
+                                        value={formData.location} 
+                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })} 
+                                        className={`input-outlined pl-10 w-full focus:bg-white ${errors.location ? 'border-error bg-error-container text-error' : ''}`} 
+                                        placeholder={formData.modalidad === 'presencial' ? "Ej: Calle 10 # 5-20, Barrio Comuneros" : "Ej: https://meet.google.com/abc-xyz-123"} 
+                                    />
+                                </div>
+                                {errors.location && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.location}</p>}
+                            </div>
+                        </div>
+
                         <div className="pt-6 border-t border-outline-variant/30" id="field-horario">
                             <label className="block text-label-large text-on-surface mb-3 font-bold text-primary flex items-center gap-2"><Clock3 size={18} /> Disponibilidad Requerida</label>
                             
@@ -338,9 +385,7 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                                 <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div className="md:col-span-3" id="field-fecha">
                                         <label className="text-xs font-bold text-primary uppercase tracking-wide mb-1 block">Fecha</label>
-                                        {/* 🔥 UPDATED: Usamos handleUniqueDateChange */}
                                         <input type="date" value={formData.fechaEvento} onChange={(e) => handleUniqueDateChange(e.target.value)} className={`input-outlined bg-white ${errors.fecha ? 'border-error' : ''}`} />
-                                        {/* 🔥 UPDATED: Mensaje de error para fecha pasada */}
                                         {errors.fecha && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.fecha}</p>}
                                     </div>
                                     <div id="field-hora"><TimePickerMD3 label="Inicio" value={formData.horaInicio} onChange={(val) => handleUniqueTimeChange('horaInicio', val)} /></div>
@@ -403,10 +448,9 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                                     </div>
                                 </>
                             )}
-                            <div id="field-location"><label className="block text-label-large font-bold mb-1.5">Ubicación *</label><input type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} className={`input-outlined focus:bg-white ${errors.location ? 'border-error bg-error-container text-error' : ''}`} placeholder="Ej: Sede Principal" />{errors.location && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.location}</p>}</div>
-                            <div><label className="block text-label-large font-bold mb-1.5">Vacantes</label><input type="number" min="1" value={formData.spots} onChange={(e) => setFormData({ ...formData, spots: e.target.value })} className="input-outlined text-center focus:bg-white" /></div>
+                            <div><label className="block text-label-large font-bold mb-1.5">Cupos / Vacantes</label><input type="number" min="1" value={formData.spots} onChange={(e) => setFormData({ ...formData, spots: e.target.value })} className="input-outlined text-center focus:bg-white" /></div>
+                            <div className="pt-0"><label className="block text-label-large font-bold mb-1.5">Grupo WhatsApp (Opcional)</label><input type="url" value={formData.whatsappGroupLink} onChange={(e) => setFormData({ ...formData, whatsappGroupLink: e.target.value })} className="input-outlined focus:bg-white" placeholder="https://..." /></div>
                         </div>
-                        <div className="pt-2"><label className="block text-label-large font-bold mb-1.5">Grupo WhatsApp</label><input type="url" value={formData.whatsappGroupLink} onChange={(e) => setFormData({ ...formData, whatsappGroupLink: e.target.value })} className="input-outlined focus:bg-white" placeholder="https://..." /></div>
                     </form>
                 </div>
                 <div className="flex gap-3 px-6 py-4 bg-surface border-t border-outline-variant/30 shrink-0 z-20">
@@ -575,7 +619,7 @@ export default function AdminConvocationsPage() {
     return (
         <AdminLayout title="Gestión de Convocatorias" subtitle="Crea y administra las oportunidades.">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-                <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit"> {/* 🔥 CORREGIDO: w-fit */}
+                <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit">
                     <button onClick={() => setActiveTab('active')} className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'active' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>
                         Activas ({getActiveConvocations().length})
                     </button>
@@ -583,7 +627,6 @@ export default function AdminConvocationsPage() {
                         Historial ({getClosedConvocations().length})
                     </button>
                 </div>
-                {/* 🔥 CORREGIDO: hidden sm:flex para ocultar en móvil */}
                 <button onClick={() => { setEditingConvocation(null); setIsModalOpen(true); }} className="btn-filled shadow-primary/20 hidden sm:flex">
                     <Plus className="w-4 h-4" /> Nueva Convocatoria
                 </button>
@@ -635,8 +678,11 @@ export default function AdminConvocationsPage() {
                                     <div className="p-5 flex-1 flex flex-col">
                                         <div className="flex justify-between items-start mb-3">
                                             {getStatusBadge(convocation.estado || convocation.status)}
-                                            <div className="text-xs text-on-surface-variant font-medium flex items-center gap-1">
-                                                <Clock3 size={12}/> {new Date(convocation.fecha_creacion).toLocaleDateString()}
+                                            <div className="flex items-center gap-2">                                            
+                                                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm ${convocation.modalidad === 'virtual' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-orange-100 text-orange-700 border border-orange-200'}`}>
+                                                    {convocation.modalidad === 'virtual' ? <Video size={12}/> : <Home size={12}/>}
+                                                    {convocation.modalidad || 'Presencial'}
+                                                </div>
                                             </div>
                                         </div>
 
@@ -644,7 +690,10 @@ export default function AdminConvocationsPage() {
                                         <p className="text-body-small text-on-surface-variant line-clamp-2 mb-4 flex-1">{convocation.description || convocation.descripcion}</p>
                                         
                                         <div className="space-y-2 mb-4">
-                                            <div className="flex items-center gap-2 text-sm text-on-surface-variant"><MapPin size={16} className="text-primary"/> {convocation.location || convocation.ubicacion || 'Sede Principal'}</div>
+                                            <div className="flex items-center gap-2 text-sm text-on-surface-variant truncate">
+                                                {convocation.modalidad === 'virtual' ? <Laptop size={16} className="text-indigo-500"/> : <MapPin size={16} className="text-orange-500"/>} 
+                                                <span className="truncate">{convocation.location || convocation.ubicacion || (convocation.modalidad === 'virtual' ? 'Enlace de conexión' : 'Sede Principal')}</span>
+                                            </div>
                                             <div className="flex items-center gap-2 text-sm text-on-surface-variant"><Users size={16} className="text-primary"/> {convocation.spots || convocation.cupos_disponibles} cupos</div>
                                         </div>
 

@@ -33,20 +33,31 @@ class LoginUserSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 class ConvocatoriaSerializer(serializers.ModelSerializer):
+    
+    beneficios = serializers.ListField(
+        child=serializers.CharField(), required=False, allow_empty=True
+    )
+    
     class Meta:
         model = ConvocatoriaModel
         fields = [
-            'id', 'titulo', 'descripcion',
-            'ubicacion', 'link_whatsapp',
-            'fecha_inicio', 
-            'fecha_fin', 'cupos_disponibles', 'estado', 
-            'habilidades_requeridas', 'fecha_creacion', 'usuario_creador',
-            'categorias', 'horario'
+            # 1. Identificación
+            'id', 'usuario_creador',
+            # 2. Info Básica
+            'titulo', 'descripcion',
+            # 3. Logística
+            'ubicacion', 'link_whatsapp', 'modalidad', # 🟢
+            # 4. Tiempos y Cupos
+            'fecha_inicio', 'fecha_fin', 'cupos_disponibles',
+            # 5. Estado
+            'estado', 'fecha_creacion',
+            # 6. JSON/Listas
+            'habilidades_requeridas', 'categorias', 'horario', 'beneficios' # 🟢
         ]
         read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']
 
 class CampanaSerializer(serializers.ModelSerializer):
-    # Validamos que sean listas de texto
+    
     objetivos = serializers.ListField(
         child=serializers.CharField(), 
         required=False, 
@@ -79,25 +90,25 @@ class CampanaSerializer(serializers.ModelSerializer):
     class Meta:
         model = CampanaModel
         fields = [
-            'id', 'titulo', 'descripcion',
-             'fecha_inicio', 'fecha_fin', 
+            # 1. Identificación
+            'id', 'usuario_creador',
+            # 2. Info Básica
+            'titulo', 'descripcion', 'imagen_url',
+            # 3. Tiempos y Estado
+            'fecha_inicio', 'fecha_fin', 'estado', 'fecha_creacion', 'fecha_actualizacion',
+            # 4. Financiero
             'monto_objetivo', 'recaudo_actual', 
-            'imagen_url', 'objetivos', 'galeria_imagenes', 'necesidades',
-            'categoria', 'tipo_impacto',
-            'categoria', 'tipo_impacto',
             'permite_donacion_monetaria', 'permite_donacion_especie',
-            'estado', 'usuario_creador', 'fecha_creacion', 'fecha_actualizacion'
+            # 5. Listas JSON
+            'objetivos', 'galeria_imagenes', 'necesidades', 'categoria', 'tipo_impacto'
         ]
         read_only_fields = ['id', 'fecha_creacion', 'usuario_creador', 'recaudo_actual']
 
-    # 2. VALIDACIÓN PERSONALIZADA: Fecha Inicio no puede ser pasado
     def validate_fecha_inicio(self, value):
-        # Si estamos CREANDO (no hay instancia) o EDITANDO la fecha
         if value < timezone.now().date():
             raise serializers.ValidationError("La campaña no puede iniciar en el pasado.")
         return value
 
-    # 3. VALIDACIÓN EXTRA: Fecha Fin > Fecha Inicio
     def validate(self, data):
         if 'fecha_inicio' in data and 'fecha_fin' in data:
             if data['fecha_fin'] < data['fecha_inicio']:

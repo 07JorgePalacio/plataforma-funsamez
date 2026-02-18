@@ -1,128 +1,134 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+// Importamos Servicios de Convocatorias
 import { obtenerConvocatorias } from '../services/convocatoriaService';
+// Importamos Servicios de Campañas
+import { obtenerCampanas } from '../services/campaignService';
 
 const AppContext = createContext();
 
 export const useApp = () => {
     const context = useContext(AppContext);
-    if (!context) {
-        throw new Error('useApp debe ser usado dentro de un AppProvider');
-    }
+    if (!context) throw new Error('useApp debe ser usado dentro de un AppProvider');
     return context;
 };
 
 export const AppProvider = ({ children }) => {
-    // Iniciamos la lista vacía
+    // --- ESTADOS GLOBALES ---
     const [convocations, setConvocations] = useState([]);
+    const [campaigns, setCampaigns] = useState([]); // 🟢 Nuevo estado para Campañas
+    const [loading, setLoading] = useState(true);
 
-    // --- FUNCIÓN PARA TRAER DATOS REALES (CORREGIDA) ---
+    // ==========================================
+    // 1. MÓDULO CONVOCATORIAS
+    // ==========================================
     const fetchConvocations = async () => {
         try {
             const data = await obtenerConvocatorias();
+            console.log('📦 Convocatorias recibidas:', data);
             
-            console.log('📦 Datos recibidos del backend:', data);
-            
-            // ✅ MANTENER TODOS LOS DATOS DEL BACKEND
-            // Agregamos traducciones al inglés para la UI, pero conservamos los campos originales
             const formattedData = data.map(item => ({
-                // --- IDs y Estados ---
-                id: item.id,
-                status: item.estado === 'abierta' ? 'published' : item.estado === 'cerrada' ? 'closed' : item.estado,
-                
-                // --- CAMPOS DEL BACKEND (originales en español) ---
-                titulo: item.titulo,
-                descripcion: item.descripcion,
-                ubicacion: item.ubicacion,                      // ✅ Mantener
-                link_whatsapp: item.link_whatsapp,              // ✅ Mantener
-                fecha_inicio: item.fecha_inicio,                // ✅ Mantener completa
-                fecha_fin: item.fecha_fin,                      // ✅ Mantener completa
-                cupos_disponibles: item.cupos_disponibles,
-                estado: item.estado,
-                habilidades_requeridas: item.habilidades_requeridas,  // ✅ Mantener
-                fecha_creacion: item.fecha_creacion,
-                categorias: item.categorias || [],              // ✅ Mantener
-                horario: item.horario || {},                    // ✅ Mantener
-                
-                // --- TRADUCCIONES AL INGLÉS (para UI de listado) ---
+                ...item, // Mantenemos todo lo original
+                // Aseguramos alias para UI si es necesario
                 title: item.titulo,
                 description: item.descripcion || 'Sin descripción',
-                location: item.ubicacion || 'No especificada',  // ✅ Usar dato real
-                spots: item.cupos_disponibles,
-                startDate: item.fecha_inicio ? item.fecha_inicio.split('T')[0] : '',
-                endDate: item.fecha_fin ? item.fecha_fin.split('T')[0] : '',
-                
-                // --- CAMPOS CALCULADOS/EXTRA ---
-                applicants: 0,  // En futuro conectar con postulaciones reales
-
+                status: item.estado === 'abierta' ? 'published' : item.estado === 'cerrada' ? 'closed' : item.estado,
+                // Garantizamos tipos de datos
+                categorias: item.categorias || [],
+                horario: item.horario || {},
+                beneficios: item.beneficios || [],
+                modalidad: item.modalidad || 'presencial'
             }));
             
-            console.log('✅ Datos formateados para el contexto:', formattedData);
             setConvocations(formattedData);
         } catch (error) {
-            console.error("❌ Error al cargar convocatorias reales:", error);
+            console.error("❌ Error cargando convocatorias:", error);
         }
     };
 
-    // Esto se ejecuta automáticamente cuando entras a la plataforma
+    // ==========================================
+    // 2. MÓDULO CAMPAÑAS
+    // ==========================================
+    const fetchCampaigns = async () => {
+        try {
+            const data = await obtenerCampanas();
+            console.log('📦 Campañas recibidas:', data);
+
+            // Mapeo y Limpieza de Datos (Igual que hicimos con Convocatorias)
+            const formattedCampaigns = data.map(camp => ({
+                // 1. Identificación y Básicos
+                id: camp.id,
+                titulo: camp.titulo,
+                descripcion: camp.descripcion,
+                
+                // 2. Fechas y Estado
+                fecha_inicio: camp.fecha_inicio,
+                fecha_fin: camp.fecha_fin,
+                fecha_creacion: camp.fecha_creacion,
+                estado: camp.estado,
+                
+                // 3. Financiero (Garantizamos números)
+                monto_objetivo: Number(camp.monto_objetivo) || 0,
+                recaudo_actual: Number(camp.recaudo_actual) || 0,
+                permite_donacion_monetaria: camp.permite_donacion_monetaria,
+                permite_donacion_especie: camp.permite_donacion_especie,
+
+                // 4. Multimedia
+                imagen_url: camp.imagen_url,
+
+                // 5. Listas JSON (Garantizamos Arrays vacíos si vienen null)
+                objetivos: Array.isArray(camp.objetivos) ? camp.objetivos : [],
+                galeria_imagenes: Array.isArray(camp.galeria_imagenes) ? camp.galeria_imagenes : [],
+                necesidades: Array.isArray(camp.necesidades) ? camp.necesidades : [],
+                categoria: Array.isArray(camp.categoria) ? camp.categoria : [],
+                tipo_impacto: Array.isArray(camp.tipo_impacto) ? camp.tipo_impacto : []
+            }));
+
+            setCampaigns(formattedCampaigns);
+        } catch (error) {
+            console.error("❌ Error cargando campañas:", error);
+        }
+    };
+
+    // --- CARGA INICIAL UNIFICADA ---
+    const refreshAllData = async () => {
+        setLoading(true);
+        await Promise.all([fetchConvocations(), fetchCampaigns()]);
+        setLoading(false);
+    };
+
     useEffect(() => {
-        // Solo llamamos al backend si hay un token (usuario logueado)
         if (localStorage.getItem('access_token')) {
-            fetchConvocations();
+            refreshAllData();
+        } else {
+            setLoading(false);
         }
     }, []);
 
-    // --- Funciones Auxiliares (Actualizadas para refrescar la lista) ---
-    const addConvocation = () => {
-        fetchConvocations(); // Recarga la lista desde el backend
+    // --- FILTROS DE CAMPAÑAS (Helpers) ---
+    const getActiveCampaigns = () => {
+        return campaigns.filter(c => c.estado === 'activa' || c.estado === 'pausada');
     };
 
-    const updateConvocation = (id, data) => {
-        // Mock visual mientras hacemos el endpoint de editar
-        setConvocations(convocations.map(c => c.id === id ? { ...c, ...data } : c));
-    };
-
-    const deleteConvocation = (id) => {
-        // Mock visual mientras hacemos el endpoint de eliminar
-        setConvocations(convocations.filter(c => c.id !== id));
-    };
-
-    const pauseConvocation = (id) => {
-        setConvocations(convocations.map(c => 
-            c.id === id ? { ...c, status: c.status === 'paused' ? 'published' : 'paused' } : c
-        ));
-    };
-
-    const publishConvocation = (id) => {
-        setConvocations(convocations.map(c => 
-            c.id === id ? { ...c, status: 'published' } : c
-        ));
-    };
-
-    const closeConvocation = (id) => {
-        setConvocations(convocations.map(c => 
-            c.id === id ? { ...c, status: 'closed' } : c
-        ));
-    };
-
-    const getActiveConvocations = () => {
-        return convocations.filter(c => c.status !== 'closed');
-    };
-
-    const getClosedConvocations = () => {
-        return convocations.filter(c => c.status === 'closed');
+    const getClosedCampaigns = () => {
+        return campaigns.filter(c => c.estado === 'completada' || c.estado === 'cancelada');
     };
 
     const value = {
+        // Estado General
+        loading,
+        refreshAllData,
+
+        // Convocatorias
         convocations,
-        fetchConvocations, // Exportamos esta función por si necesitamos recargar manualmente
-        addConvocation,
-        updateConvocation,
-        deleteConvocation,
-        pauseConvocation,
-        publishConvocation,
-        closeConvocation,
-        getActiveConvocations,
-        getClosedConvocations
+        fetchConvocations,
+        getActiveConvocations: () => convocations.filter(c => c.status !== 'closed'),
+        getClosedConvocations: () => convocations.filter(c => c.status === 'closed'),
+
+        // Campañas
+        campaigns,
+        fetchCampaigns, // Para recargar manualmente tras crear/editar
+        getActiveCampaigns,
+        getClosedCampaigns
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
