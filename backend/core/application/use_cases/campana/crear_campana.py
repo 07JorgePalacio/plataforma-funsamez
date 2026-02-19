@@ -6,7 +6,7 @@ class CrearCampanaUseCase:
     def __init__(self, repository):
         self.repository = repository
 
-    def ejecutar(self, 
+    def execute(self, 
                  # 1. Info Básica
                  titulo: str, descripcion: str, 
                  # 2. Tiempos

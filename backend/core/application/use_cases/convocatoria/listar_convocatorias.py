@@ -5,5 +5,5 @@ class ListarConvocatoriasUseCase:
     def __init__(self, repository):
         self.repository = repository
 
-    def ejecutar(self, estado: str = None) -> List[Convocatoria]:
+    def execute(self, estado: str = None) -> List[Convocatoria]:
         return self.repository.listar_todas(estado=estado)

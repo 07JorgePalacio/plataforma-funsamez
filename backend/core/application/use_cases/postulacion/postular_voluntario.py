@@ -12,7 +12,7 @@ class PostularVoluntarioUseCase:
         self.postulacion_repo = postulacion_repository
         self.convocatoria_repo = convocatoria_repository
 
-    def ejecutar(self, id_usuario: int, id_convocatoria: int, observaciones: str = "") -> Postulacion:
+    def execute(self, id_usuario: int, id_convocatoria: int, observaciones: str = "") -> Postulacion:
         # Regla 1: Validar que la convocatoria exista y esté disponible
         convocatoria = self.convocatoria_repo.obtener_por_id(id_convocatoria)
         if not convocatoria:

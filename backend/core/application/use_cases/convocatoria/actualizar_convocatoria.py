@@ -5,5 +5,5 @@ class ActualizarConvocatoriaUseCase:
     def __init__(self, repository):
         self.repository = repository
 
-    def ejecutar(self, id: int, datos: Dict[str, Any]) -> Convocatoria:
+    def execute(self, id: int, datos: Dict[str, Any]) -> Convocatoria:
         return self.repository.actualizar(id, datos)

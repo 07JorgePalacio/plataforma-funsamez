@@ -2,5 +2,5 @@ class EliminarConvocatoriaUseCase:
     def __init__(self, repository):
         self.repository = repository
 
-    def ejecutar(self, id: int):
+    def execute(self, id: int):
         return self.repository.eliminar(id)
