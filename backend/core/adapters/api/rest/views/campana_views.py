@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from core.container import Container
-from core.adapters.api.rest.serializers import CampanaSerializer
+from core.adapters.api.rest.serializers.campana_serializers import CampanaSerializer
 from core.infrastructure.persistence.django.models import CampanaModel
 
 class CrearCampanaView(APIView):
@@ -19,7 +19,7 @@ class CrearCampanaView(APIView):
         
         try:
             # 2. Ejecutar Caso de Uso con datos limpios
-            nueva_campana = Container.crear_campana_use_case.ejecutar(
+            nueva_campana = Container.crear_campana_use_case().execute(
                 # Básicos
                 titulo=data['titulo'],
                 descripcion=data['descripcion'],
@@ -55,7 +55,7 @@ class ListarCampanasView(APIView):
 
     def get(self, request):
         try:
-            campanas = Container.listar_campanas_use_case.ejecutar()
+            campanas = Container.listar_campanas_use_case().execute()
             serializer = CampanaSerializer(campanas, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -78,7 +78,7 @@ class DetalleCampanaView(APIView):
             datos_limpios = serializer.validated_data
 
             # 3. EJECUTAR CASO DE USO
-            campana_actualizada = Container.actualizar_campana_use_case.ejecutar(pk, datos_limpios)
+            campana_actualizada = Container.actualizar_campana_use_case().execute(pk, datos_limpios)
             
             response_serializer = CampanaSerializer(campana_actualizada)
             return Response(response_serializer.data, status=status.HTTP_200_OK)
@@ -90,7 +90,7 @@ class DetalleCampanaView(APIView):
 
     def delete(self, request, pk):
         try:
-            Container.eliminar_campana_use_case.ejecutar(pk)
+            Container.eliminar_campana_use_case().execute(pk)
             return Response({"mensaje": "Campaña eliminada"}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
