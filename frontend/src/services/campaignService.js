@@ -24,7 +24,6 @@ export const obtenerCampanas = async () => {
 
 export const crearCampana = async (data) => {
     try {
-        // Ajustamos la ruta a /crear/ tal como la definiste en Django
         const response = await axios.post(`${API_URL}/crear/`, data, getAuthHeader());
         return response.data;
     } catch (error) {

@@ -16,7 +16,7 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             # 3. Logística
             ubicacion=model.ubicacion or "",
             link_whatsapp=model.link_whatsapp or "",
-            modalidad=model.modalidad, # 🟢
+            modalidad=model.modalidad,
             # 4. Tiempos
             fecha_inicio=model.fecha_inicio,
             fecha_fin=model.fecha_fin,
@@ -28,7 +28,7 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             habilidades_requeridas=model.habilidades_requeridas or "",
             categorias=model.categorias or [], 
             horario=model.horario or {},       
-            beneficios=model.beneficios or [] # 🟢
+            beneficios=model.beneficios or []
         )
 
     def crear(self, convocatoria: Convocatoria) -> Convocatoria:
@@ -43,7 +43,7 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             # 3. Logística
             ubicacion=convocatoria.ubicacion,
             link_whatsapp=convocatoria.link_whatsapp,
-            modalidad=convocatoria.modalidad, # 🟢
+            modalidad=convocatoria.modalidad,
             # 4. Tiempos
             fecha_inicio=convocatoria.fecha_inicio,
             fecha_fin=convocatoria.fecha_fin,
@@ -54,7 +54,7 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             habilidades_requeridas=convocatoria.habilidades_requeridas,
             categorias=convocatoria.categorias, 
             horario=convocatoria.horario,
-            beneficios=convocatoria.beneficios # 🟢
+            beneficios=convocatoria.beneficios
         )
         return self._to_domain(modelo)
 
@@ -67,8 +67,8 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             modelo = ConvocatoriaModel.objects.get(id=id)
             
             # 1. Actualización Explícita (Blindaje contra errores de tipo)
-            if 'modalidad' in datos: modelo.modalidad = datos['modalidad'] # 🟢
-            if 'beneficios' in datos: modelo.beneficios = datos['beneficios'] # 🟢
+            if 'modalidad' in datos: modelo.modalidad = datos['modalidad'] 
+            if 'beneficios' in datos: modelo.beneficios = datos['beneficios'] 
             if 'horario' in datos: modelo.horario = datos['horario']
             if 'categorias' in datos: modelo.categorias = datos['categorias']
             if 'habilidades_requeridas' in datos: modelo.habilidades_requeridas = datos['habilidades_requeridas']
@@ -96,8 +96,11 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
         except ConvocatoriaModel.DoesNotExist:
             return None
 
-    def listar_todas(self) -> List[Convocatoria]:
-        modelos = ConvocatoriaModel.objects.all().order_by('-fecha_creacion')
+    def listar_todas(self, estado: str = None) -> List[Convocatoria]:
+        modelos = ConvocatoriaModel.objects.all()
+        if estado:
+            modelos = modelos.filter(estado=estado)
+        modelos = modelos.order_by('-fecha_creacion')
         return [self._to_domain(m) for m in modelos]
 
     def eliminar(self, id: int):

@@ -34,7 +34,9 @@ class LoginUserSerializer(serializers.Serializer):
 class ConvocatoriaSerializer(serializers.ModelSerializer):
     
     beneficios = serializers.ListField(
-        child=serializers.CharField(), required=False, allow_empty=True
+        child=serializers.CharField(), 
+        required=False, 
+        allow_empty=True
     )
     
     class Meta:
@@ -102,3 +104,17 @@ class CampanaSerializer(serializers.ModelSerializer):
             'objetivos', 'galeria_imagenes', 'necesidades', 'categoria', 'tipo_impacto'
         ]
         read_only_fields = ['id', 'fecha_creacion', 'usuario_creador', 'recaudo_actual']
+
+class PostularVoluntarioSerializer(serializers.Serializer):
+    """
+    Adaptador de Entrada: Solo valida formato estructural.
+    No toca la base de datos ni aplica reglas de negocio.
+    """
+    
+    # --- 1. Identificación ---
+    # Lo envía React en el body cuando el usuario hace clic.
+    id_convocatoria = serializers.IntegerField(required=True)
+    
+    # --- 2. Información Básica ---
+    # Opcional, por si el frontend luego quiere enviar un comentario.
+    observaciones = serializers.CharField(required=False, allow_blank=True)

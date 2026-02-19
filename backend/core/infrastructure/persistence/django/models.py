@@ -188,3 +188,56 @@ class CampanaModel(models.Model):
 
     def __str__(self):
         return self.titulo
+    
+# ==========================================
+#  4. POSTULACIONES (VOLUNTARIADO)
+# ==========================================
+
+class PostulacionModel(models.Model):
+    """
+    Modelo de Infraestructura. Tabla 'public.postulacion'.
+    Conecta al Voluntario con la Convocatoria.
+    """
+
+    # --- 1. Identificación ---
+    usuario = models.ForeignKey(
+        'UsuarioModel',
+        on_delete=models.CASCADE,
+        db_column='id_usuario',
+        related_name='postulaciones'
+    )
+    convocatoria = models.ForeignKey(
+        'ConvocatoriaModel',
+        on_delete=models.CASCADE,
+        db_column='id_convocatoria',
+        related_name='postulaciones'
+    )
+
+    # --- 2. Información Básica ---
+    observaciones = models.TextField(blank=True, null=True)
+    motivo_rechazo = models.TextField(blank=True, null=True)
+
+    # --- 3. Logística/Configuración ---
+    ESTADOS = [
+        ('en_revision', 'En revisión'),
+        ('aprobada', 'Aprobada'),
+        ('rechazada', 'Rechazada')
+    ]
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='en_revision')
+
+    # --- 4. Tiempos ---
+    fecha_postulacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    # --- 5. Listas y JSON ---
+    historial_estados = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        db_table = 'postulacion'
+        managed = True
+        # Regla de Oro: Un usuario solo puede postularse una vez a una misma convocatoria
+        unique_together = ('usuario', 'convocatoria')
+        ordering = ['-fecha_postulacion']
+
+    def __str__(self):
+        return f"Postulación {self.usuario.correo_electronico} -> {self.convocatoria.titulo}"

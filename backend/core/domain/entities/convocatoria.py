@@ -41,3 +41,4 @@ class Convocatoria:
             self.fecha_inicio <= ahora <= self.fecha_fin and
             self.cupos_disponibles > 0
         )
+    
