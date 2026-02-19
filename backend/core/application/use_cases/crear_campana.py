@@ -25,6 +25,21 @@ class CrearCampanaUseCase:
                  tipo_impacto: List[str] = None) -> Campana:
         
         # Validación de Negocio
+        
+        # 1. Validar fechas lógicas
+        if fecha_fin and fecha_inicio:
+            # Convertimos a date para comparar peras con peras
+            inicio_date = fecha_inicio.date() if isinstance(fecha_inicio, datetime) else fecha_inicio
+            if fecha_fin < inicio_date:
+                raise ValueError("La fecha de fin debe ser posterior al inicio.")
+
+        # 2. Validar inicio en el pasado (Solo al CREAR)
+        hoy = date.today()
+        inicio_check = fecha_inicio.date() if isinstance(fecha_inicio, datetime) else fecha_inicio
+        if inicio_check < hoy:
+            raise ValueError("La campaña no puede iniciar en el pasado.")
+
+        # 3. Validar Montos
         if monto_objetivo < 0:
             raise ValueError("El monto objetivo no puede ser negativo.")
         
