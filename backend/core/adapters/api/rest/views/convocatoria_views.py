@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from core.container import Container
 from core.adapters.api.rest.serializers import ConvocatoriaSerializer
+from core.infrastructure.persistence.django.models import ConvocatoriaModel
 
 class CrearConvocatoriaView(APIView):
     permission_classes = [IsAuthenticated]
@@ -28,12 +29,12 @@ class CrearConvocatoriaView(APIView):
                 # 3. Logística
                 ubicacion=data.get('ubicacion', ''),
                 link_whatsapp=data.get('link_whatsapp', ''),
-                modalidad=data.get('modalidad', 'presencial'), # 🟢
+                modalidad=data.get('modalidad', 'presencial'), 
                 # 4. JSON/Listas
                 habilidades=data.get('habilidades_requeridas', ''),
                 categorias=data.get('categorias', []), 
                 horario=data.get('horario', {}),
-                beneficios=data.get('beneficios', []) # 🟢
+                beneficios=data.get('beneficios', []) 
             )
 
             response_data = {
@@ -63,22 +64,26 @@ class DetalleConvocatoriaView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
-        """Editar convocatoria completa con validación robusta"""
-        # 1. Validar y limpiar datos con Serializer
-        serializer = ConvocatoriaSerializer(data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        datos_limpios = serializer.validated_data
-        
+        """Editar convocatoria completa"""
         try:
-            # 2. Enviar datos limpios (diccionario puro) al Caso de Uso
+            # 1. BUSCAR INSTANCIA
+            convocatoria_db = ConvocatoriaModel.objects.get(id=pk)
+
+            # 2. Validar
+            serializer = ConvocatoriaSerializer(instance=convocatoria_db, data=request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            datos_limpios = serializer.validated_data
+            
+            # 3. Caso de Uso
             convocatoria_actualizada = Container.actualizar_convocatoria_use_case.ejecutar(pk, datos_limpios)
             
-            # 3. Responder
             response_serializer = ConvocatoriaSerializer(convocatoria_actualizada)
             return Response(response_serializer.data, status=status.HTTP_200_OK)
             
+        except ConvocatoriaModel.DoesNotExist:
+             return Response({"error": "Convocatoria no encontrada"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

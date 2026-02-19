@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from core.container import Container
 from core.adapters.api.rest.serializers import CampanaSerializer
+from core.infrastructure.persistence.django.models import CampanaModel
 
 class CrearCampanaView(APIView):
     permission_classes = [IsAuthenticated] 
@@ -64,17 +65,26 @@ class DetalleCampanaView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
-        """Edición completa con validación previa"""
-        serializer = CampanaSerializer(data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-        datos_limpios = serializer.validated_data
-
+        """Editar convocatoria completa con validación robusta"""
         try:
+            # 1. BUSCAR LA INSTANCIA
+            campana_db = CampanaModel.objects.get(id=pk)
+            
+            # 2. VALIDAR
+            serializer = CampanaSerializer(instance=campana_db, data=request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+            datos_limpios = serializer.validated_data
+
+            # 3. EJECUTAR CASO DE USO
             campana_actualizada = Container.actualizar_campana_use_case.ejecutar(pk, datos_limpios)
+            
             response_serializer = CampanaSerializer(campana_actualizada)
             return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+        except CampanaModel.DoesNotExist:
+            return Response({"error": "Campaña no encontrada"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

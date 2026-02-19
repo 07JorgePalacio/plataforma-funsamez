@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from core.infrastructure.persistence.django.models import ConvocatoriaModel
-from core.infrastructure.persistence.django.models import CampanaModel
+from core.infrastructure.persistence.django.models import ConvocatoriaModel, CampanaModel
 from django.utils import timezone
 
 class RegisterUserSerializer(serializers.Serializer):
@@ -46,13 +45,13 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
             # 2. Info Básica
             'titulo', 'descripcion',
             # 3. Logística
-            'ubicacion', 'link_whatsapp', 'modalidad', # 🟢
+            'ubicacion', 'link_whatsapp', 'modalidad', 
             # 4. Tiempos y Cupos
             'fecha_inicio', 'fecha_fin', 'cupos_disponibles',
             # 5. Estado
             'estado', 'fecha_creacion',
             # 6. JSON/Listas
-            'habilidades_requeridas', 'categorias', 'horario', 'beneficios' # 🟢
+            'habilidades_requeridas', 'categorias', 'horario', 'beneficios'
         ]
         read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']
 
@@ -103,14 +102,3 @@ class CampanaSerializer(serializers.ModelSerializer):
             'objetivos', 'galeria_imagenes', 'necesidades', 'categoria', 'tipo_impacto'
         ]
         read_only_fields = ['id', 'fecha_creacion', 'usuario_creador', 'recaudo_actual']
-
-    def validate_fecha_inicio(self, value):
-        if value < timezone.now().date():
-            raise serializers.ValidationError("La campaña no puede iniciar en el pasado.")
-        return value
-
-    def validate(self, data):
-        if 'fecha_inicio' in data and 'fecha_fin' in data:
-            if data['fecha_fin'] < data['fecha_inicio']:
-                raise serializers.ValidationError({"fecha_fin": "La fecha de fin debe ser posterior al inicio."})
-        return data
