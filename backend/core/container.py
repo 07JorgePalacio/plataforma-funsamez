@@ -2,6 +2,7 @@
 from core.infrastructure.persistence.django.repositories.postgres_user_repository import PostgresUserRepository
 from core.infrastructure.persistence.django.repositories.postgres_convocatoria_repository import PostgresConvocatoriaRepository
 from core.infrastructure.persistence.django.repositories.postgres_campana_repository import PostgresCampanaRepository
+from core.infrastructure.persistence.django.repositories.postgres_postulacion_repository import PostgresPostulacionRepository
 
 # --- CASOS DE USO: USUARIOS ---
 from core.application.use_cases.register_user import RegisterUser
@@ -18,6 +19,10 @@ from core.application.use_cases.crear_campana import CrearCampanaUseCase
 from core.application.use_cases.listar_campanas import ListarCampanasUseCase
 from core.application.use_cases.actualizar_campana import ActualizarCampanaUseCase
 from core.application.use_cases.eliminar_campana import EliminarCampanaUseCase
+
+# --- CASOS DE USO: VOLUNTARIADO / POSTULACIONES ---
+from core.application.use_cases.postular_voluntario import PostularVoluntarioUseCase
+from core.application.use_cases.listar_mis_postulaciones import ListarMisPostulacionesUseCase
 
 class Container:
     """
@@ -63,3 +68,17 @@ class Container:
     listar_campanas_use_case = ListarCampanasUseCase(campana_repository)
     actualizar_campana_use_case = ActualizarCampanaUseCase(campana_repository)
     eliminar_campana_use_case = EliminarCampanaUseCase(campana_repository)
+
+    # ==========================================
+    #  4. POSTULACIONES (VOLUNTARIADO)
+    # ==========================================
+    postulacion_repository = PostgresPostulacionRepository()
+
+    postular_voluntario_use_case = PostularVoluntarioUseCase(
+        postulacion_repository=postulacion_repository,
+        convocatoria_repository=convocatoria_repository 
+    )
+
+    listar_mis_postulaciones_use_case = ListarMisPostulacionesUseCase(
+        postulacion_repository=postulacion_repository
+    )

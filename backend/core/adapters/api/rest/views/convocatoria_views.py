@@ -53,8 +53,10 @@ class ListarConvocatoriasView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        estado_filtro = request.query_params.get('estado', None)
+        caso_de_uso = Container.listar_convocatorias_use_case
         try:
-            convocatorias = Container.listar_convocatorias_use_case.ejecutar()
+            convocatorias = caso_de_uso.ejecutar(estado=estado_filtro)
             serializer = ConvocatoriaSerializer(convocatorias, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:

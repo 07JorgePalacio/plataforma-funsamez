@@ -19,7 +19,7 @@ export const crearConvocatoria = async (formData) => {
         // 3. Logística
         ubicacion: formData.location,
         link_whatsapp: formData.whatsappGroupLink,
-        modalidad: formData.modalidad, // 🟢 CRÍTICO: Asegurar envío
+        modalidad: formData.modalidad,
         // 4. Tiempos y Cupos
         fecha_inicio: formData.startDate,
         fecha_fin: formData.endDate,

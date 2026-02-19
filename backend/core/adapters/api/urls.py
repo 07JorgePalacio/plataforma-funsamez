@@ -13,6 +13,12 @@ from core.adapters.api.rest.views.campana_views import (
     CrearCampanaView, ListarCampanasView, DetalleCampanaView
 )
 
+# Vistas de Postulaciones
+from core.adapters.api.rest.views.postulacion_views import (
+    PostularVoluntarioView,
+    MisPostulacionesView
+)
+
 urlpatterns = [
     # --- USUARIOS ---
     path('users/register/', RegisterUserView.as_view(), name='register_user'),
@@ -27,4 +33,8 @@ urlpatterns = [
     path('campanas/crear/', CrearCampanaView.as_view(), name='crear_campana'),
     path('campanas/', ListarCampanasView.as_view(), name='listar_campanas'),
     path('campanas/<int:pk>/', DetalleCampanaView.as_view(), name='detalle_campana'),
+
+    # --- POSTULACIONES ---
+    path('voluntariado/postular/', PostularVoluntarioView.as_view(), name='postular_voluntario'),
+    path('voluntariado/mis-postulaciones/', MisPostulacionesView.as_view(), name='mis_postulaciones'),
 ]
