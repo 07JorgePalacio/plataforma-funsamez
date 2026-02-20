@@ -2,8 +2,9 @@ from typing import List, Optional
 from core.domain.entities.postulacion import Postulacion
 from core.infrastructure.persistence.django.models import PostulacionModel
 from django.core.exceptions import ObjectDoesNotExist
+from core.application.ports.output.postulacion_repository import PostulacionRepository
 
-class PostgresPostulacionRepository:
+class PostgresPostulacionRepository(PostulacionRepository):
     """
     Repositorio para Postulaciones.
     Traduce entre la Entidad de Dominio y el Modelo ORM de Django.

@@ -8,6 +8,6 @@ class ListarMisPostulacionesUseCase:
     def __init__(self, postulacion_repository):
         self.postulacion_repo = postulacion_repository
 
-    def ejecutar(self, id_usuario: int) -> List[Postulacion]:
+    def execute(self, id_usuario: int) -> List[Postulacion]:
         # El repositorio ya hace el trabajo pesado de filtrar y ordenar
         return self.postulacion_repo.listar_por_voluntario(id_usuario)

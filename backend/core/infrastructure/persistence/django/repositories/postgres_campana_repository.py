@@ -1,8 +1,9 @@
 from typing import List, Optional
 from core.domain.entities.campana import Campana
 from core.infrastructure.persistence.django.models import CampanaModel, UsuarioModel
+from core.application.ports.output.campana_repository import CampanaRepository
 
-class PostgresCampanaRepository:
+class PostgresCampanaRepository(CampanaRepository):
     
     def _to_domain(self, model: CampanaModel) -> Campana:
         return Campana(
@@ -55,6 +56,15 @@ class PostgresCampanaRepository:
             tipo_impacto=campana.tipo_impacto, 
         )
         return self._to_domain(modelo)
+
+    def obtener_por_id(self, id: int) -> Optional[Campana]:
+        """Obtiene una campaña por su ID"""
+        try:
+            modelo = CampanaModel.objects.get(id=id)
+            return self._to_domain(modelo)
+        except CampanaModel.DoesNotExist:
+            return None
+
 
     def actualizar(self, id: int, datos: dict) -> Campana:
         """

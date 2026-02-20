@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from core.container import Container
-from core.adapters.api.rest.serializers import CampanaSerializer
+from core.adapters.api.rest.serializers.campana_serializers import CampanaSerializer
 from core.infrastructure.persistence.django.models import CampanaModel
 
 class CrearCampanaView(APIView):
@@ -19,7 +19,7 @@ class CrearCampanaView(APIView):
         
         try:
             # 2. Ejecutar Caso de Uso con datos limpios
-            nueva_campana = Container.crear_campana_use_case.ejecutar(
+            nueva_campana = Container.crear_campana_use_case().execute(
                 # Básicos
                 titulo=data['titulo'],
                 descripcion=data['descripcion'],
@@ -55,7 +55,7 @@ class ListarCampanasView(APIView):
 
     def get(self, request):
         try:
-            campanas = Container.listar_campanas_use_case.ejecutar()
+            campanas = Container.listar_campanas_use_case().execute()
             serializer = CampanaSerializer(campanas, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -65,32 +65,31 @@ class DetalleCampanaView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
-        """Editar convocatoria completa con validación robusta"""
+
         try:
-            # 1. BUSCAR LA INSTANCIA
-            campana_db = CampanaModel.objects.get(id=pk)
-            
-            # 2. VALIDAR
-            serializer = CampanaSerializer(instance=campana_db, data=request.data, partial=True)
+            # 1. VALIDAR DATOS (sin buscar la instancia)
+            serializer = CampanaSerializer(data=request.data, partial=True)
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                 
             datos_limpios = serializer.validated_data
 
-            # 3. EJECUTAR CASO DE USO
-            campana_actualizada = Container.actualizar_campana_use_case.ejecutar(pk, datos_limpios)
+            # 2. EJECUTAR CASO DE USO (él se encarga de buscar y validar)
+            campana_actualizada = Container.actualizar_campana_use_case().execute(pk, datos_limpios)
             
+            # 3. SERIALIZAR RESPUESTA
             response_serializer = CampanaSerializer(campana_actualizada)
             return Response(response_serializer.data, status=status.HTTP_200_OK)
 
-        except CampanaModel.DoesNotExist:
-            return Response({"error": "Campaña no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError as e:
+            # El use case lanza ValueError si no encuentra la campaña
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         try:
-            Container.eliminar_campana_use_case.ejecutar(pk)
+            Container.eliminar_campana_use_case().execute(pk)
             return Response({"mensaje": "Campaña eliminada"}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

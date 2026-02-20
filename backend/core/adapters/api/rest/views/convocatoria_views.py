@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from core.container import Container
-from core.adapters.api.rest.serializers import ConvocatoriaSerializer
+from core.adapters.api.rest.serializers.convocatoria_serializers import ConvocatoriaSerializer
 from core.infrastructure.persistence.django.models import ConvocatoriaModel
 
 class CrearConvocatoriaView(APIView):
@@ -17,7 +17,7 @@ class CrearConvocatoriaView(APIView):
         data = serializer.validated_data
         
         try:
-            nueva_convocatoria = Container.crear_convocatoria_use_case.ejecutar(
+            nueva_convocatoria = Container.crear_convocatoria_use_case().execute(
                 # 1. Info Básica
                 titulo=data['titulo'],
                 descripcion=data.get('descripcion', ''),
@@ -56,7 +56,7 @@ class ListarConvocatoriasView(APIView):
         estado_filtro = request.query_params.get('estado', None)
         caso_de_uso = Container.listar_convocatorias_use_case
         try:
-            convocatorias = caso_de_uso.ejecutar(estado=estado_filtro)
+            convocatorias = caso_de_uso().execute(estado=estado_filtro)
             serializer = ConvocatoriaSerializer(convocatorias, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -66,26 +66,24 @@ class DetalleConvocatoriaView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
-        """Editar convocatoria completa"""
-        try:
-            # 1. BUSCAR INSTANCIA
-            convocatoria_db = ConvocatoriaModel.objects.get(id=pk)
 
-            # 2. Validar
-            serializer = ConvocatoriaSerializer(instance=convocatoria_db, data=request.data, partial=True)
+        try:
+            # 1. Validar datos entrantes
+            serializer = ConvocatoriaSerializer(data=request.data, partial=True)
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             datos_limpios = serializer.validated_data
             
-            # 3. Caso de Uso
-            convocatoria_actualizada = Container.actualizar_convocatoria_use_case.ejecutar(pk, datos_limpios)
+            # 2. Ejecutar Caso de Uso
+            convocatoria_actualizada = Container.actualizar_convocatoria_use_case().execute(pk, datos_limpios)
             
+            # 3. Respuesta
             response_serializer = ConvocatoriaSerializer(convocatoria_actualizada)
             return Response(response_serializer.data, status=status.HTTP_200_OK)
             
-        except ConvocatoriaModel.DoesNotExist:
-             return Response({"error": "Convocatoria no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError as e:
+             return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -96,7 +94,7 @@ class DetalleConvocatoriaView(APIView):
             if nuevo_estado not in ['abierta', 'pausada', 'cerrada']:
                 return Response({"error": "Estado inválido"}, status=status.HTTP_400_BAD_REQUEST)
             
-            convocatoria_actualizada = Container.actualizar_convocatoria_use_case.ejecutar(pk, {'estado': nuevo_estado})
+            convocatoria_actualizada = Container.actualizar_convocatoria_use_case().execute(pk, {'estado': nuevo_estado})
             
             return Response({
                 "mensaje": f"Estado actualizado a {nuevo_estado}",
@@ -108,7 +106,7 @@ class DetalleConvocatoriaView(APIView):
 
     def delete(self, request, pk):
         try:
-            Container.eliminar_convocatoria_use_case.ejecutar(pk)
+            Container.eliminar_convocatoria_use_case().execute(pk)
             return Response({"mensaje": "Convocatoria eliminada"}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

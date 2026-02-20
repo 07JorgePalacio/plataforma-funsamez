@@ -32,14 +32,3 @@ class Campana:
     necesidades: List[str] = field(default_factory=list)
     categoria: List[str] = field(default_factory=list)
     tipo_impacto: List[str] = field(default_factory=list)
-
-    @property
-    def porcentaje_progreso(self) -> float:
-        if self.monto_objetivo <= 0: return 0.0
-        return min((self.recaudo_actual / self.monto_objetivo) * 100, 100.0)
-
-    @property
-    def dias_restantes(self) -> int:
-        if not self.fecha_fin: return 0
-        delta = self.fecha_fin - date.today()
-        return max(delta.days, 0)
