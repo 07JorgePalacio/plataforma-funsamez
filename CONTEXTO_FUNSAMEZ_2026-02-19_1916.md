@@ -1,11 +1,12 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-02-19 19:11:09.537272
+📅 Generado: 2026-02-19 19:16:10.768291
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
 ```text
 ├── .gitignore
 ├── CONTEXTO_FUNSAMEZ_2026-02-19_1911.md
+├── CONTEXTO_FUNSAMEZ_2026-02-19_1916.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -602,6 +603,101 @@ class User:
     intereses: Optional[List[str]] = None
     habilidades: Optional[List[str]] = None
     disponibilidad: Optional[dict] = None
+```
+
+### 📄 backend/core/domain/services/campana_service.py
+```python
+from datetime import date
+from core.domain.entities.campana import Campana
+
+class CampanaService:
+    """
+    Servicios de Dominio: Lógica de negocio pura sin dependencias de frameworks.
+    """
+    
+    @staticmethod
+    def calcular_porcentaje_progreso(campana: Campana) -> float:
+        if campana.monto_objetivo <= 0:
+            return 0.0
+        return min((campana.recaudo_actual / campana.monto_objetivo) * 100, 100.0)
+    
+    @staticmethod
+    def calcular_dias_restantes(campana: Campana) -> int:
+        if not campana.fecha_fin:
+            return 0
+        delta = campana.fecha_fin - date.today()
+        return max(delta.days, 0)
+```
+
+### 📄 backend/core/application/ports/input/__init__.py
+```python
+
+```
+
+### 📄 backend/core/application/ports/input/campana_use_cases.py
+```python
+from abc import ABC, abstractmethod
+from typing import List
+from core.domain.entities.campana import Campana
+
+class CrearCampanaInputPort(ABC):
+    @abstractmethod
+    def execute(self, **kwargs) -> Campana: pass
+
+class ListarCampanasInputPort(ABC):
+    @abstractmethod
+    def execute(self) -> List[Campana]: pass
+
+class ActualizarCampanaInputPort(ABC):
+    @abstractmethod
+    def execute(self, id: int, datos: dict) -> Campana: pass
+
+class EliminarCampanaInputPort(ABC):
+    @abstractmethod
+    def execute(self, id: int) -> None: pass
+```
+
+### 📄 backend/core/application/ports/input/convocatoria_use_cases.py
+```python
+from abc import ABC, abstractmethod
+from typing import List
+from core.domain.entities.convocatoria import Convocatoria
+
+class CrearConvocatoriaInputPort(ABC):
+    @abstractmethod
+    def execute(self, **kwargs) -> Convocatoria: pass
+
+class ListarConvocatoriasInputPort(ABC):
+    @abstractmethod
+    def execute(self, estado: str = None) -> List[Convocatoria]: pass
+
+class ActualizarConvocatoriaInputPort(ABC):
+    @abstractmethod
+    def execute(self, id: int, datos: dict) -> Convocatoria: pass
+
+class EliminarConvocatoriaInputPort(ABC):
+    @abstractmethod
+    def execute(self, id: int) -> None: pass
+```
+
+### 📄 backend/core/application/ports/input/postulacion_use_cases.py
+```python
+from abc import ABC, abstractmethod
+from typing import List
+from core.domain.entities.postulacion import Postulacion
+
+class PostularVoluntarioInputPort(ABC):
+    @abstractmethod
+    def execute(self, id_usuario: int, id_convocatoria: int, observaciones: str = "") -> Postulacion: pass
+
+class ListarMisPostulacionesInputPort(ABC):
+    @abstractmethod
+    def execute(self, id_usuario: int) -> List[Postulacion]: pass
+```
+
+### 📄 backend/core/application/ports/input/user_use_cases.py
+```python
+
 ```
 
 ### 📄 backend/core/application/ports/output/__init__.py
@@ -1800,7 +1896,144 @@ class PostgresUserRepository(UserRepository):
         )
 ```
 
-> ⚠️ NO ENCONTRADO: backend/core/adapters/api/rest/serializers.py
+### 📄 backend/core/adapters/api/rest/serializers/__init__.py
+```python
+
+```
+
+### 📄 backend/core/adapters/api/rest/serializers/campana_serializers.py
+```python
+from rest_framework import serializers
+from core.infrastructure.persistence.django.models import CampanaModel
+
+class CampanaSerializer(serializers.ModelSerializer):
+    
+    objetivos = serializers.ListField(
+        child=serializers.CharField(), 
+        required=False, 
+        allow_empty=True
+    )
+    galeria_imagenes = serializers.ListField(
+        child=serializers.URLField(), 
+        required=False, 
+        allow_empty=True
+    )
+
+    necesidades = serializers.ListField(
+        child=serializers.CharField(), 
+        required=False, 
+        allow_empty=True
+    )
+    
+    categoria = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
+    )
+    
+    tipo_impacto = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
+    )
+
+    class Meta:
+        model = CampanaModel
+        fields = [
+            # 1. Identificación
+            'id', 'usuario_creador',
+            # 2. Info Básica
+            'titulo', 'descripcion', 'imagen_url',
+            # 3. Tiempos y Estado
+            'fecha_inicio', 'fecha_fin', 'estado', 'fecha_creacion', 'fecha_actualizacion',
+            # 4. Financiero
+            'monto_objetivo', 'recaudo_actual', 
+            'permite_donacion_monetaria', 'permite_donacion_especie',
+            # 5. Listas JSON
+            'objetivos', 'galeria_imagenes', 'necesidades', 'categoria', 'tipo_impacto'
+        ]
+        read_only_fields = ['id', 'fecha_creacion', 'usuario_creador', 'recaudo_actual']
+```
+
+### 📄 backend/core/adapters/api/rest/serializers/convocatoria_serializers.py
+```python
+from rest_framework import serializers
+from core.infrastructure.persistence.django.models import ConvocatoriaModel
+
+class ConvocatoriaSerializer(serializers.ModelSerializer):
+    
+    beneficios = serializers.ListField(
+        child=serializers.CharField(), 
+        required=False, 
+        allow_empty=True
+    )
+    
+    class Meta:
+        model = ConvocatoriaModel
+        fields = [
+            # 1. Identificación
+            'id', 'usuario_creador',
+            # 2. Info Básica
+            'titulo', 'descripcion',
+            # 3. Logística
+            'ubicacion', 'link_whatsapp', 'modalidad', 
+            # 4. Tiempos y Cupos
+            'fecha_inicio', 'fecha_fin', 'cupos_disponibles',
+            # 5. Estado
+            'estado', 'fecha_creacion',
+            # 6. JSON/Listas
+            'habilidades_requeridas', 'categorias', 'horario', 'beneficios'
+        ]
+        read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']
+```
+
+### 📄 backend/core/adapters/api/rest/serializers/postulacion_serializers.py
+```python
+from rest_framework import serializers
+
+class PostularVoluntarioSerializer(serializers.Serializer):  
+    # --- 1. Identificación ---
+    # Lo envía React en el body cuando el usuario hace clic.
+    id_convocatoria = serializers.IntegerField(required=True)
+    
+    # --- 2. Información Básica ---
+    # Opcional, por si el frontend luego quiere enviar un comentario.
+    observaciones = serializers.CharField(required=False, allow_blank=True)
+```
+
+### 📄 backend/core/adapters/api/rest/serializers/user_serializers.py
+```python
+from rest_framework import serializers
+
+class RegisterUserSerializer(serializers.Serializer):
+    # 1. Credenciales y Datos Básicos
+    nombre_completo = serializers.CharField(max_length=100)
+    email = serializers.EmailField()
+    password = serializers.CharField(min_length=8, write_only=True)
+    
+    # 2. Identificación Personal (Obligatorios)
+    tipo_documento = serializers.CharField(required=True, max_length=10)
+    numero_identificacion = serializers.CharField(required=True, max_length=20)
+    fecha_nacimiento = serializers.DateField(required=True)
+
+    # 3. Datos de Contacto y Perfil (Opcionales)
+    telefono = serializers.CharField(required=False, allow_blank=True)
+    direccion = serializers.CharField(required=False, allow_blank=True)
+    profesion = serializers.CharField(required=False, allow_blank=True)
+    
+    # 4. Listas (Arrays)
+    intereses = serializers.ListField(
+        child=serializers.CharField(), required=False, allow_empty=True
+    )
+    habilidades = serializers.ListField(
+        child=serializers.CharField(), required=False, allow_empty=True
+    )
+    disponibilidad = serializers.DictField(required=False, allow_empty=True)
+
+class LoginUserSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+```
 
 ### 📄 backend/core/adapters/api/rest/views/__init__.py
 ```python

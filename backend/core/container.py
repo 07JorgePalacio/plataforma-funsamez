@@ -3,6 +3,7 @@ from core.infrastructure.persistence.django.repositories.postgres_user_repositor
 from core.infrastructure.persistence.django.repositories.postgres_convocatoria_repository import PostgresConvocatoriaRepository
 from core.infrastructure.persistence.django.repositories.postgres_campana_repository import PostgresCampanaRepository
 from core.infrastructure.persistence.django.repositories.postgres_postulacion_repository import PostgresPostulacionRepository
+from core.infrastructure.security.django_hasher import DjangoPasswordHasher
 
 # --- CASOS DE USO: USUARIOS ---
 from core.application.use_cases.user.register_user import RegisterUser
@@ -37,6 +38,7 @@ class Container:
     _convocatoria_repository = None
     _campana_repository = None
     _postulacion_repository = None
+    _password_hasher = DjangoPasswordHasher()
 
     # ==========================================
     #  1. USUARIOS
@@ -53,7 +55,11 @@ class Container:
     
     @staticmethod
     def login_user_use_case() -> LoginUser:
-        return LoginUser(user_repository=Container.get_user_repository())
+        return LoginUser(
+            user_repository=Container.get_user_repository(),
+            password_hasher=Container._password_hasher
+            )
+
 
     # ==========================================
     #  2. CONVOCATORIAS

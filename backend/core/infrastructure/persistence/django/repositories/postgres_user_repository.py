@@ -10,7 +10,7 @@ class PostgresUserRepository(UserRepository):
             correo_electronico=user.correo_electronico,
             defaults={
                 'nombre_completo': user.nombre_completo,
-                'contrasena_hash': user.contrasena_hash,
+                'password': user.contrasena_hash,
                 'numero_telefono': user.numero_telefono,
                 'direccion': user.direccion,
                 'rol': user.rol,
@@ -47,7 +47,7 @@ class PostgresUserRepository(UserRepository):
             id=model.id,
             nombre_completo=model.nombre_completo,
             correo_electronico=model.correo_electronico,
-            contrasena_hash=model.contrasena_hash,
+            contrasena_hash=model.password,
             numero_telefono=model.numero_telefono,
             direccion=model.direccion,
             rol=model.rol,
