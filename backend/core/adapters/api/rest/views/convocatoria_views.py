@@ -66,26 +66,24 @@ class DetalleConvocatoriaView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
-        """Editar convocatoria completa"""
-        try:
-            # 1. BUSCAR INSTANCIA
-            convocatoria_db = ConvocatoriaModel.objects.get(id=pk)
 
-            # 2. Validar
-            serializer = ConvocatoriaSerializer(instance=convocatoria_db, data=request.data, partial=True)
+        try:
+            # 1. Validar datos entrantes
+            serializer = ConvocatoriaSerializer(data=request.data, partial=True)
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             datos_limpios = serializer.validated_data
             
-            # 3. Caso de Uso
+            # 2. Ejecutar Caso de Uso
             convocatoria_actualizada = Container.actualizar_convocatoria_use_case().execute(pk, datos_limpios)
             
+            # 3. Respuesta
             response_serializer = ConvocatoriaSerializer(convocatoria_actualizada)
             return Response(response_serializer.data, status=status.HTTP_200_OK)
             
-        except ConvocatoriaModel.DoesNotExist:
-             return Response({"error": "Convocatoria no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError as e:
+             return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -57,6 +57,15 @@ class PostgresCampanaRepository(CampanaRepository):
         )
         return self._to_domain(modelo)
 
+    def obtener_por_id(self, id: int) -> Optional[Campana]:
+        """Obtiene una campaña por su ID"""
+        try:
+            modelo = CampanaModel.objects.get(id=id)
+            return self._to_domain(modelo)
+        except CampanaModel.DoesNotExist:
+            return None
+
+
     def actualizar(self, id: int, datos: dict) -> Campana:
         """
         Actualiza campaña con blindaje explícito para campos complejos.

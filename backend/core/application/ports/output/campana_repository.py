@@ -14,11 +14,12 @@ class CampanaRepository(ABC):
         pass
 
     @abstractmethod
-    def listar_todas(self) -> List[Campana]:
+    def obtener_todas(self) -> List[Campana]:
         pass
 
     @abstractmethod
-    def actualizar(self, campana: Campana) -> Campana:
+    def actualizar(self, id: int, datos: dict) -> Campana:
+        """Actualiza los campos especificados de una campaña"""
         pass
 
     @abstractmethod
