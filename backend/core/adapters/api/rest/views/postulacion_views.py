@@ -2,9 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-
 from core.container import Container
-from core.adapters.api.rest.serializers import PostularVoluntarioSerializer
+from core.adapters.api.rest.serializers.postulacion_serializers import PostularVoluntarioSerializer
 
 class PostularVoluntarioView(APIView):
     """
@@ -36,7 +35,7 @@ class PostularVoluntarioView(APIView):
         caso_de_uso = Container.postular_voluntario_use_case
         
         try:
-            nueva_postulacion = caso_de_uso.ejecutar(
+            nueva_postulacion = caso_de_uso().execute(
                 id_usuario=id_usuario,
                 id_convocatoria=id_convocatoria,
                 observaciones=observaciones
@@ -70,7 +69,7 @@ class MisPostulacionesView(APIView):
         
         try:
             # Traemos la lista de Entidades Puras
-            postulaciones = caso_de_uso.ejecutar(id_usuario)
+            postulaciones = caso_de_uso().execute(id_usuario)
             
             # Formateamos la respuesta para el frontend
             respuesta = []

@@ -3,13 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
-
-# Imports correctos
 from core.container import Container
-from core.adapters.api.rest.serializers import RegisterUserSerializer, LoginUserSerializer
-from core.infrastructure.persistence.django.models import UsuarioModel
-
-# backend/core/adapters/api/rest/views/user_views.py
+from core.adapters.api.rest.serializers.user_serializers import RegisterUserSerializer, LoginUserSerializer
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -22,17 +17,15 @@ class RegisterUserView(APIView):
         data = serializer.validated_data
 
         try:
-            # Crear usuario usando el manager
-            user_model = UsuarioModel.objects.create_user(
-                correo_electronico=data['email'],
+            user_entity = Container.register_user_use_case().execute(
+                nombre_completo=data['nombre_completo'],
+                email=data['email'],
                 password=data['password'],
-                nombre_completo=data['nombre_completo'], 
-                numero_telefono=data.get('telefono'),    
-                direccion=data.get('direccion'),         
-                rol='voluntario', # Por defecto es voluntario en el registro público
-                fecha_nacimiento=data.get('fecha_nacimiento'),
                 tipo_documento=data.get('tipo_documento', 'CC'),
                 numero_identificacion=data.get('numero_identificacion'),
+                telefono=data.get('telefono'),
+                direccion=data.get('direccion'),
+                fecha_nacimiento=data.get('fecha_nacimiento'),
                 profesion=data.get('profesion'),
                 intereses=data.get('intereses', []),
                 habilidades=data.get('habilidades', []),
@@ -42,17 +35,17 @@ class RegisterUserView(APIView):
             return Response({
                 "message": "Usuario registrado exitosamente",
                 "user": {
-                    "id": user_model.id,
-                    "full_name": user_model.nombre_completo,
-                    "email": user_model.correo_electronico,
-                    "role": user_model.rol
+                    "id": user_entity.id,
+                    "full_name": user_entity.nombre_completo,
+                    "email": user_entity.correo_electronico,
+                    "role": user_entity.rol
                 }
             }, status=status.HTTP_201_CREATED)
 
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            print(f"❌ ERROR REGISTRO: {e}")
-            # Devolver un error genérico pero informativo para no exponer detalles internos
-            return Response({"error": f"Error interno al crear usuario: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class LoginUserView(APIView):
@@ -66,19 +59,16 @@ class LoginUserView(APIView):
         data = serializer.validated_data
 
         try:
-            # 1. Buscar usuario en BD
-            try:
-                user_model = UsuarioModel.objects.get(correo_electronico=data['email'])
-            except UsuarioModel.DoesNotExist:
-                return Response({"non_field_errors": ["Credenciales inválidas"]}, status=status.HTTP_401_UNAUTHORIZED)
-            
-            # 2. Verificar contraseña usando check_password de Django
-            if not user_model.check_password(data['password']):
-                return Response({"non_field_errors": ["Credenciales inválidas"]}, status=status.HTTP_401_UNAUTHORIZED)
+            # 1. Delegar TODA la lógica de negocio al Caso de Uso
+            user_entity = Container.login_user_use_case().execute(
+                email=data['email'],
+                password=data['password']
+            )
 
-            # 3. Generar tokens JWT
-            refresh = RefreshToken.for_user(user_model)
-            refresh['role'] = user_model.rol
+            # 2. Generar tokens JWT manualmente 
+            refresh = RefreshToken()
+            refresh['user_id'] = user_entity.id
+            refresh['role'] = user_entity.rol
 
             return Response({
                 "message": "Inicio de sesión exitoso",
@@ -87,13 +77,16 @@ class LoginUserView(APIView):
                     "refresh": str(refresh),
                 },
                 "user": {
-                    "id": user_model.id,
-                    "full_name": user_model.nombre_completo,
-                    "email": user_model.correo_electronico,
-                    "role": user_model.rol
+                    "id": user_entity.id,
+                    "full_name": user_entity.nombre_completo,
+                    "email": user_entity.correo_electronico,
+                    "role": user_entity.rol
                 }
             }, status=status.HTTP_200_OK)
 
+        except ValueError as e:
+            # Si el caso de uso lanza un ValueError por credenciales inválidas
+            return Response({"non_field_errors": [str(e)]}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
             print(f"❌ ERROR LOGIN: {e}")
             return Response({"non_field_errors": ["Error interno del servidor"]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

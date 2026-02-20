@@ -31,6 +31,3 @@ class User:
     intereses: Optional[List[str]] = None
     habilidades: Optional[List[str]] = None
     disponibilidad: Optional[dict] = None
-
-    def check_password(self, raw_password: str) -> bool:
-        return False

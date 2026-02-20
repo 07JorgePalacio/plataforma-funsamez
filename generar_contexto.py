@@ -10,15 +10,21 @@ RUTAS_A_INCLUIR = [
     "backend/config/urls.py",
     "backend/core/container.py",
     
-    # --- 🐍 BACKEND (Lógica de Negocio - ESCANEO AUTOMÁTICO) ---
+    # --- 🐍 BACKEND (Dominio) ---
     "backend/core/domain/entities",
+    "backend/core/domain/services",           # 🟢 NUEVA: Servicios de Dominio
+    
+    # --- 🐍 BACKEND (Aplicación - Ports y Use Cases) ---
+    "backend/core/application/ports/input",   # 🟢 NUEVA: Interfaces de Casos de Uso
     "backend/core/application/ports/output",
     "backend/core/application/use_cases",
     
-    # --- 🐍 BACKEND (Adaptadores y Base de Datos) ---
+    # --- 🐍 BACKEND (Infraestructura - BD) ---
     "backend/core/infrastructure/persistence/django/models.py",
     "backend/core/infrastructure/persistence/django/repositories", 
-    "backend/core/adapters/api/rest/serializers.py",
+    
+    # --- 🐍 BACKEND (Adaptadores - API REST) ---
+    "backend/core/adapters/api/rest/serializers", # 🟢 MODIFICADA: Ahora escanea toda la carpeta
     "backend/core/adapters/api/rest/views", 
     "backend/core/adapters/api/urls.py",
 

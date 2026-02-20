@@ -8,7 +8,7 @@ class CrearConvocatoriaUseCase:
     def __init__(self, repository: ConvocatoriaRepository):
         self.repository = repository
 
-    def ejecutar(self, 
+    def execute(self, 
                  # Datos Obligatorios
                  titulo: str, descripcion: str, 
                  fecha_inicio: datetime, fecha_fin: datetime, 

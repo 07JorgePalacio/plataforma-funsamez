@@ -5,5 +5,5 @@ class ListarCampanasUseCase:
     def __init__(self, repository):
         self.repository = repository
 
-    def ejecutar(self) -> List[Campana]:
+    def execute(self) -> List[Campana]:
         return self.repository.obtener_todas()
