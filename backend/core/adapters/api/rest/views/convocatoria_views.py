@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from core.container import Container
 from core.adapters.api.rest.serializers.convocatoria_serializers import ConvocatoriaSerializer
-from core.infrastructure.persistence.django.models import ConvocatoriaModel
 
 class CrearConvocatoriaView(APIView):
     permission_classes = [IsAuthenticated]
