@@ -5,6 +5,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from core.container import Container
 from core.adapters.api.rest.serializers.user_serializers import RegisterUserSerializer, LoginUserSerializer
+from core.domain.exceptions.user_exceptions import (
+    EmailDuplicadoError,
+    UsuarioMenorDeEdadError
+)
 
 class RegisterUserView(APIView):
     permission_classes = [AllowAny]
@@ -42,10 +46,24 @@ class RegisterUserView(APIView):
                 }
             }, status=status.HTTP_201_CREATED)
 
-        except ValueError as e:
+        # ==========================================
+        #  CAPTURA DE EXCEPCIONES DE NEGOCIO
+        # ==========================================
+        except EmailDuplicadoError as e:
+            # Atrapa el error de email duplicado y devuelve un 400
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except UsuarioMenorDeEdadError as e:
+            # Atrapa el error de minoría de edad y devuelve un 400
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except ValueError as e:
+            # Atrapa errores genéricos de validación (ej. formato de email inválido)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print(f"❌ ERROR REGISTRO: {e}")
+            return Response({"error": "Error interno del servidor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class LoginUserView(APIView):
