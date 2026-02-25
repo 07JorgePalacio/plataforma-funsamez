@@ -4,11 +4,7 @@ from typing import Optional, List, Dict
 
 @dataclass
 class Postulacion:
-    """
-    Entidad de Dominio: Postulación
-    Representa la solicitud de un voluntario para unirse a una convocatoria.
-    """
-    
+
     # --- 1. Identificación ---
     id: Optional[int] = None
     id_usuario: Optional[int] = None

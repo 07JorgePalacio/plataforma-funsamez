@@ -1,55 +1,22 @@
 import { useApp } from '../../context/AppContext';
-import {
-    FileText, Clock, CheckCircle2, XCircle, MessageCircle,
-    ExternalLink, AlertCircle, Pause, Award
-} from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, AlertCircle, Calendar } from 'lucide-react';
 
 export default function MyApplicationsPage() {
-    const { user, logout, updateProfile, getPublishedConvocations, applyToConvocation, hasApplied, getApplicationsByVolunteer, convocations } = useApp();
+    // 🟢 1. Obtenemos los datos reales
+    const { getApplicationsByVolunteer, convocations } = useApp();
+    const applications = getApplicationsByVolunteer();
 
-    const applications = getApplicationsByVolunteer(user?.id);
-
-    const getStatusInfo = (status, rejectionReason = null, assignedRole = null) => {
-        switch (status) {
-            case 'pending':
-                return {
-                    label: 'Pendiente',
-                    color: 'warning',
-                    icon: Clock,
-                    description: 'Tu postulación está siendo revisada por nuestro equipo.',
-                };
-            case 'on_hold':
-                return {
-                    label: 'En Espera',
-                    color: 'secondary',
-                    icon: Pause,
-                    description: 'Tu postulación está en lista de espera. Te contactaremos pronto.',
-                };
-            case 'accepted':
-                return {
-                    label: 'Aceptado',
-                    color: 'success',
-                    icon: CheckCircle2,
-                    description: assignedRole
-                        ? `¡Felicidades! Has sido aceptado como ${assignedRole}. Únete al grupo de WhatsApp.`
-                        : '¡Felicidades! Has sido aceptado. Únete al grupo de WhatsApp para más información.',
-                };
-            case 'rejected':
-                return {
-                    label: 'Rechazado',
-                    color: 'error',
-                    icon: XCircle,
-                    description: rejectionReason
-                        ? `Lamentablemente no fuiste seleccionado. Motivo: ${rejectionReason}`
-                        : 'Lamentablemente no fuiste seleccionado esta vez. ¡Sigue intentando!',
-                };
+    // 🟢 2. Mapeamos los estados del backend de Python a UI de React
+    const getStatusInfo = (estado, motivoRechazo = null) => {
+        switch (estado) {
+            case 'en_revision':
+                return { label: 'En Revisión', color: 'warning', icon: Clock, description: 'Tu postulación está siendo revisada por nuestro equipo.' };
+            case 'aprobada':
+                return { label: 'Aprobada', color: 'success', icon: CheckCircle2, description: '¡Felicidades! Has sido aceptado. Mantente atento a tu correo para instrucciones.' };
+            case 'rechazada':
+                return { label: 'No Seleccionado', color: 'error', icon: XCircle, description: motivoRechazo ? `Motivo: ${motivoRechazo}` : 'En esta ocasión no fuiste seleccionado. ¡Sigue intentando!' };
             default:
-                return {
-                    label: 'Desconocido',
-                    color: 'outline',
-                    icon: AlertCircle,
-                    description: '',
-                };
+                return { label: 'Desconocido', color: 'secondary', icon: AlertCircle, description: '' };
         }
     };
 
@@ -60,102 +27,57 @@ export default function MyApplicationsPage() {
                     Mis Postulaciones
                 </h1>
                 <p className="text-body-large text-on-surface-variant">
-                    Revisa el estado de tus postulaciones a las diferentes convocatorias.
+                    Haces seguimiento al estado de tus postulaciones a las diferentes convocatorias.
                 </p>
             </div>
 
             {applications.length === 0 ? (
                 <div className="card-elevated text-center py-12">
-                    <FileText className="w-16 h-16 text-on-surface-variant mx-auto mb-4" />
-                    <h3 className="text-title-large text-on-surface mb-2">
-                        No tienes postulaciones
-                    </h3>
-                    <p className="text-body-large text-on-surface-variant mb-6">
-                        Explora las convocatorias disponibles y postúlate a las que te interesen.
+                    <Clock className="w-16 h-16 text-on-surface-variant mx-auto mb-4" />
+                    <h3 className="text-title-large text-on-surface mb-2">Aún no te has postulado a nada</h3>
+                    <p className="text-body-medium text-on-surface-variant max-w-md mx-auto mb-6">
+                        Explora las convocatorias abiertas y encuentra la oportunidad perfecta para ayudar.
                     </p>
-                    <a href="/voluntario/convocatorias" className="btn-filled">
-                        Ver Convocatorias
-                    </a>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {applications.map(application => {
-                        const statusInfo = getStatusInfo(application.status, application.rejectionReason, application.assignedRole);
+                <div className="grid gap-6">
+                    {applications.map((app) => {
+                        // Buscamos la convocatoria para mostrar el título
+                        const convocation = convocations.find(c => c.id === app.id_convocatoria);
+                        const statusInfo = getStatusInfo(app.estado, app.motivo_rechazo);
                         const StatusIcon = statusInfo.icon;
 
                         return (
-                            <div
-                                key={application.id}
-                                className="card-elevated"
-                            >
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    {/* Status Icon */}
-                                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0
-                    ${statusInfo.color === 'warning' ? 'bg-warning-container' : ''}
-                    ${statusInfo.color === 'secondary' ? 'bg-secondary-container' : ''}
-                    ${statusInfo.color === 'success' ? 'bg-success-container' : ''}
-                    ${statusInfo.color === 'error' ? 'bg-error-container' : ''}
-                  `}>
-                                        <StatusIcon className={`w-7 h-7
-                      ${statusInfo.color === 'warning' ? 'text-warning' : ''}
-                      ${statusInfo.color === 'secondary' ? 'text-secondary' : ''}
-                      ${statusInfo.color === 'success' ? 'text-success' : ''}
-                      ${statusInfo.color === 'error' ? 'text-error' : ''}
-                    `} />
-                                    </div>
-
-                                    {/* Content */}
+                            <div key={app.id} className="card-elevated p-6 md:p-8 relative overflow-hidden">
+                                {/* Barra de color de estado lateral */}
+                                <div className={`absolute left-0 top-0 bottom-0 w-2 bg-${statusInfo.color}`}></div>
+                                
+                                <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between pl-2">
                                     <div className="flex-1">
-                                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                                            <h3 className="text-title-large text-on-surface font-medium">
-                                                {application.convocationTitle}
-                                            </h3>
-                                            <span className={`px-3 py-1 rounded-full text-label-medium font-medium w-fit
-                        ${statusInfo.color === 'warning' ? 'bg-warning-container text-warning' : ''}
-                        ${statusInfo.color === 'secondary' ? 'bg-secondary-container text-secondary' : ''}
-                        ${statusInfo.color === 'success' ? 'bg-success-container text-success' : ''}
-                        ${statusInfo.color === 'error' ? 'bg-error-container text-error' : ''}
-                      `}>
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className={`chip bg-${statusInfo.color}/10 text-${statusInfo.color} border-${statusInfo.color}/20 border font-medium flex items-center gap-1.5`}>
+                                                <StatusIcon className="w-4 h-4" />
                                                 {statusInfo.label}
                                             </span>
-                                        </div>
-
-                                        <p className="text-body-medium text-on-surface-variant mb-3">
-                                            {statusInfo.description}
-                                        </p>
-
-                                        <div className="flex flex-wrap items-center gap-4 text-body-small text-on-surface-variant">
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="w-4 h-4" />
-                                                Aplicado el {application.appliedAt}
+                                            <span className="text-body-small text-on-surface-variant flex items-center gap-1">
+                                                <Calendar className="w-3.5 h-3.5" /> 
+                                                {new Date(app.fecha_postulacion).toLocaleDateString()}
                                             </span>
                                         </div>
-
-                                        {/* WhatsApp Link for Accepted Applications */}
-                                        {application.status === 'accepted' && application.whatsappLink && (
-                                            <div className="mt-4 p-4 rounded-xl bg-success/10 border border-success/20">
-                                                <div className="flex items-center gap-3">
-                                                    <MessageCircle className="w-6 h-6 text-success" />
-                                                    <div className="flex-1">
-                                                        <p className="text-label-large text-success font-medium">
-                                                            Grupo de WhatsApp
-                                                        </p>
-                                                        <p className="text-body-small text-on-surface-variant">
-                                                            Únete para coordinar con el equipo
-                                                        </p>
-                                                    </div>
-                                                    <a
-                                                        href={application.whatsappLink}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="btn-filled bg-success hover:bg-success/90 py-2"
-                                                    >
-                                                        <ExternalLink className="w-4 h-4" />
-                                                        Unirse
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        )}
+                                        
+                                        <h3 className="text-title-large font-bold text-on-surface mb-2">
+                                            {convocation ? convocation.title : 'Convocatoria no encontrada'}
+                                        </h3>
+                                        
+                                        <div className="mt-4 p-4 bg-surface-container rounded-xl">
+                                            <p className="text-body-medium text-on-surface font-medium flex items-center gap-2 mb-1">
+                                                <AlertCircle className="w-4 h-4 text-primary" /> 
+                                                Estado Actual:
+                                            </p>
+                                            <p className="text-body-medium text-on-surface-variant">
+                                                {statusInfo.description}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -163,29 +85,6 @@ export default function MyApplicationsPage() {
                     })}
                 </div>
             )}
-
-            {/* Legend */}
-            <div className="mt-8 p-4 rounded-xl bg-surface-container">
-                <h4 className="text-label-large text-on-surface mb-3">Estados de postulación:</h4>
-                <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-warning"></span>
-                        <span className="text-body-small text-on-surface-variant">Pendiente - En revisión</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-secondary"></span>
-                        <span className="text-body-small text-on-surface-variant">En Espera - Lista de espera</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-success"></span>
-                        <span className="text-body-small text-on-surface-variant">Aceptado - ¡Bienvenido!</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-error"></span>
-                        <span className="text-body-small text-on-surface-variant">Rechazado - Sin vacantes</span>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

@@ -8,7 +8,7 @@ import {
 export default function VolunteerDashboard() {
     const { user, logout, updateProfile, getPublishedConvocations, applyToConvocation, hasApplied, getApplicationsByVolunteer, convocations } = useApp();
 
-    const myApplications = getApplicationsByVolunteer(user?.id);
+    const myApplications = getApplicationsByVolunteer();
     const pendingApplications = myApplications.filter(a => a.status === 'pending');
     const acceptedApplications = myApplications.filter(a => a.status === 'accepted');
 

@@ -35,6 +35,6 @@ urlpatterns = [
     path('campanas/<int:pk>/', DetalleCampanaView.as_view(), name='detalle_campana'),
 
     # --- POSTULACIONES ---
-    path('voluntariado/postular/', PostularVoluntarioView.as_view(), name='postular_voluntario'),
-    path('voluntariado/mis-postulaciones/', MisPostulacionesView.as_view(), name='mis_postulaciones'),
+    path('postulaciones/postular/', PostularVoluntarioView.as_view(), name='postular_voluntario'),
+    path('postulaciones/mis-postulaciones/', MisPostulacionesView.as_view(), name='mis_postulaciones'),
 ]

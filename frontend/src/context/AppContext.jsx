@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-// Importamos Servicios de Convocatorias
+// Servicios de Convocatorias
 import { obtenerConvocatorias } from '../services/convocatoriaService';
-// Importamos Servicios de Campañas
+// Servicios de Campañas
 import { obtenerCampanas } from '../services/campaignService';
+// Servicios de Postulaciones
+import { postularAConvocatoria, obtenerMisPostulaciones } from '../services/postulacionService';
 
 const AppContext = createContext();
 
@@ -15,8 +17,31 @@ export const useApp = () => {
 export const AppProvider = ({ children }) => {
     // --- ESTADOS GLOBALES ---
     const [convocations, setConvocations] = useState([]);
-    const [campaigns, setCampaigns] = useState([]); // 🟢 Nuevo estado para Campañas
+    const [campaigns, setCampaigns] = useState([]); 
+    const [myApplications, setMyApplications] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // ==========================================
+    // 0. ESTADO DEL USUARIO Y SESIÓN
+    // ==========================================
+    const [user, setUser] = useState(() => {
+        const name = localStorage.getItem('user_name');
+        const role = localStorage.getItem('user_role');
+        return name ? { name, role, id: 1 } : null; 
+    });
+
+    const logout = () => {
+        localStorage.clear();
+        setUser(null);
+    };
+
+    const updateProfile = (data) => {
+        setUser({ ...user, ...data });
+    };
+
+    const showToast = (message) => {
+        console.log("Notificación:", message); 
+    };
 
     // ==========================================
     // 1. MÓDULO CONVOCATORIAS
@@ -90,62 +115,56 @@ export const AppProvider = ({ children }) => {
     };
 
     // ==========================================
-    // 3. MÓDULO VOLUNTARIO (Estados UI y Mocks)
+    // 3. MÓDULO VOLUNTARIO 
     // ==========================================
-    // Simulamos un usuario basado en el localStorage
-    const [user, setUser] = useState({
-        id: 1, 
-        name: localStorage.getItem('user_name') || 'Voluntario',
-        email: 'voluntario@funsamez.org',
-        role: localStorage.getItem('user_role') || 'voluntario',
-        skills: [],
-        availability: []
-    });
-
-    const [applications, setApplications] = useState([]); // Simulador de postulaciones
-
-    const logout = () => {
-        localStorage.clear();
-        window.location.href = '/login';
+    const fetchMyApplications = async () => {
+        //1. Verificamos autenticación
+        if (localStorage.getItem('user_role') !== 'voluntario') return;
+        
+        try {
+            const data = await obtenerMisPostulaciones();
+            setMyApplications(data);
+            console.log('📦 Postulaciones reales recibidas:', data);
+        } catch (error) {
+            console.error('Error al cargar postulaciones:', error);
+        }
     };
 
-    const updateProfile = (data) => {
-        setUser({ ...user, ...data });
+    const applyToConvocation = async (convocationId, observaciones = '') => {
+        try {
+            // 2. Llamamos al backend
+            await postularAConvocatoria(convocationId, observaciones);
+            // 3. Si sale bien, recargamos la lista desde la base de datos
+            await fetchMyApplications(); 
+            return { success: true };
+        } catch (error) {
+            console.error("Error en la postulación:", error);
+            throw error; 
+        }
+    };
+    
+    // 4. Validar si el voluntario ya está postulado a una convocatoria específica
+    const hasApplied = (convocationId) => {
+        return myApplications.some(app => app.id_convocatoria === convocationId);
+    };
+    // 5. Obtener mis postulaciones (Filtra por el usuario logueado)
+    const getApplicationsByVolunteer = () => {
+        return myApplications;
     };
 
-    // --- Helpers de Convocatorias para el Voluntario ---
-    const getPublishedConvocations = () => {
-        return convocations.filter(c => c.status === 'published' || c.estado === 'abierta');
-    };
 
-    const getApplicationsByVolunteer = (userId) => {
-        return applications.filter(a => a.userId === userId);
-    };
-
-    const hasApplied = (userId, convocationId) => {
-        return applications.some(a => a.userId === userId && a.convocationId === convocationId);
-    };
-
-    const applyToConvocation = (convocationId, userData) => {
-        const conv = convocations.find(c => c.id === convocationId);
-        const newApp = {
-            id: Date.now(),
-            userId: userData.id,
-            convocationId: convocationId,
-            convocationTitle: conv?.title || conv?.titulo || 'Convocatoria',
-            status: 'pending',
-            appliedAt: new Date().toLocaleDateString('es-CO')
-        };
-        setApplications([...applications, newApp]);
-        alert('¡Te has postulado exitosamente!'); // 🟢 Usamos alert por ahora para no complicarnos con Snackbar
-    };
-
-    const showToast = (msg) => alert(msg); 
-
-    // --- CARGA INICIAL UNIFICADA ---
+    // ==========================================
+    // CARGA UNIFICADA
+    // ==========================================
     const refreshAllData = async () => {
         setLoading(true);
-        await Promise.all([fetchConvocations(), fetchCampaigns()]);
+        const promises = [fetchConvocations(), fetchCampaigns()];
+        
+        if (localStorage.getItem('user_role') === 'voluntario') {
+            promises.push(fetchMyApplications());
+        }
+        
+        await Promise.all(promises);
         setLoading(false);
     };
 
@@ -157,7 +176,9 @@ export const AppProvider = ({ children }) => {
         }
     }, []);
 
-    // --- FILTROS DE CAMPAÑAS (Helpers) ---
+    // ==========================================
+    // FILTRO DE CAMPAÑAS (Helpers)
+    // ==========================================
     const getActiveCampaigns = () => {
         return campaigns.filter(c => c.estado === 'activa' || c.estado === 'pausada');
     };
@@ -165,7 +186,11 @@ export const AppProvider = ({ children }) => {
     const getClosedCampaigns = () => {
         return campaigns.filter(c => c.estado === 'completada' || c.estado === 'cancelada');
     };
+    
 
+    // ==========================================
+    // ESTADOS
+    // ==========================================
     const value = {
         // Estado General
         loading,
@@ -188,7 +213,6 @@ export const AppProvider = ({ children }) => {
         logout,
         updateProfile,
         showToast,
-        getPublishedConvocations,
         getApplicationsByVolunteer,
         hasApplied,
         applyToConvocation
