@@ -2,6 +2,11 @@ import hashlib
 from typing import List, Optional
 from core.domain.entities.user import User
 from core.application.ports.output.user_repository import UserRepository
+from core.domain.services.user_service import UserService
+from core.domain.exceptions.user_exceptions import (
+    EmailDuplicadoError,
+    UsuarioMenorDeEdadError
+)
 
 class RegisterUser:
     def __init__(self, user_repository: UserRepository):
@@ -22,14 +27,28 @@ class RegisterUser:
                 disponibilidad: dict = None  
                 ) -> User:
         
-        # 1. Verificar si el CORREO ya existe
-        if self.user_repository.get_by_email(email):
-            raise ValueError("El correo electrónico ya está registrado")
+        # =============
+        # VALIDACIONES 
+        # =============
 
-        # 2. Hashear contraseña
+        # 1. Validar formato de email usando el Service (Regla Pura)
+        if not UserService.validar_formato_email(email):
+            raise ValueError("El formato del correo electrónico no es válido.")
+
+        # 2. Verificar si el CORREO ya existe en BD (Lanza Exception específica)
+        if self.user_repository.get_by_email(email):
+            raise EmailDuplicadoError(email)
+
+        # 3. Validar edad si se proporcionó fecha de nacimiento (Lanza Exception específica)
+        if fecha_nacimiento:
+            if not UserService.es_mayor_de_edad(fecha_nacimiento):
+                edad = UserService.calcular_edad(fecha_nacimiento)
+                raise UsuarioMenorDeEdadError(edad)
+
+        # 4. Hashear contraseña
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
-        # 3. Crear Entidad
+        # 5. Crear Entidad
         new_user = User(
             nombre_completo=nombre_completo,
             correo_electronico=email,
@@ -48,5 +67,5 @@ class RegisterUser:
             disponibilidad=disponibilidad or {} 
         )
 
-        # 4. Guardar
+        # 6. Guardar
         return self.user_repository.save(new_user)

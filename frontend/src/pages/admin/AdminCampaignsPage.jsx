@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useApp } from '../context/AppContext';
-import { crearCampana, actualizarCampana, eliminarCampana } from '../services/campaignService';
-import AdminLayout from '../components/AdminLayout';
-import Snackbar from '../components/Snackbar';
-import ConfirmDialog from '../components/ConfirmDialog'; // 🟢 NUEVO
+import { useApp } from '../../context/AppContext';
+import { crearCampana, actualizarCampana, eliminarCampana } from '../../services/campaignService';
+import Snackbar from '../../components/Snackbar';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import {
     Plus, Edit, Trash2, X, Save,
     Check, DollarSign, Image as ImageIcon, AlertCircle, 
@@ -164,11 +163,11 @@ export default function AdminCampaignsPage() {
     const [editingCampaign, setEditingCampaign] = useState(null);
     const [activeTab, setActiveTab] = useState('activas');
     
-    // 🟢 NUEVO: Estado del Snackbar
+    // Estado del Snackbar (Notificación de cambios)
     const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'info' });
     const showMessage = (message, type = 'success') => setSnackbar({ show: true, message, type });
 
-    // 🟢 NUEVO: Estado del ConfirmDialog
+    // Estado del ConfirmDialog (Dialogo Personalizado)
     const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger' });
     const showConfirm = (title, message, onConfirm, type = 'danger') => setConfirmDialog({ isOpen: true, title, message, onConfirm, type });
     const closeConfirm = () => setConfirmDialog(prev => ({ ...prev, isOpen: false }));
@@ -263,7 +262,17 @@ export default function AdminCampaignsPage() {
     };
 
     return (
-        <AdminLayout title="Gestión de Campañas" subtitle="Administra las campañas de donación.">
+        <div className="animate-fade-in">
+
+            <div className="mb-6 md:mb-8 mt-2 md:mt-0">
+              <h1 className="text-headline-small md:text-headline-medium text-on-surface font-bold mb-1 md:mb-2">
+                  Panel de Control
+                </h1>
+                <p className="text-body-medium md:text-body-large text-on-surface-variant">
+                    Resumen general e indicadores clave
+                </p>
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                 <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit">
                     <button onClick={() => setActiveTab('activas')} className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'activas' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>Activas ({getActiveCampaigns().length})</button>
@@ -336,9 +345,9 @@ export default function AdminCampaignsPage() {
             {loading && <div className="text-center py-10 opacity-50 flex flex-col items-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-2"></div>Cargando...</div>}
             {isModalOpen && <CampaignFormModal campaign={editingCampaign} onSave={handleSave} onClose={() => setIsModalOpen(false)} />}
             
-            {/* 🟢 COMPONENTES VISUALES M3 */}
+            {/* COMPONENTES VISUALES M3 */}
             <Snackbar show={snackbar.show} message={snackbar.message} type={snackbar.type} onClose={() => setSnackbar({ ...snackbar, show: false })} />
             <ConfirmDialog isOpen={confirmDialog.isOpen} title={confirmDialog.title} message={confirmDialog.message} type={confirmDialog.type} onConfirm={confirmDialog.onConfirm} onCancel={closeConfirm} />
-        </AdminLayout>
+        </div>
     );
 }

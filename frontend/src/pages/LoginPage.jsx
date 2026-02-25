@@ -20,16 +20,22 @@ const LoginPage = () => {
         password: password
       });
 
+      const userRole = response.data.user.role;
       localStorage.setItem('access_token', response.data.tokens.access);
       localStorage.setItem('refresh_token', response.data.tokens.refresh);
-      localStorage.setItem('user_role', response.data.user.role); 
+      localStorage.setItem('user_role', userRole); 
       localStorage.setItem('user_name', response.data.user.full_name);
 
-      navigate('/dashboard'); 
+      if (userRole === 'voluntario') {
+        navigate('/voluntario');
+      } else {
+        navigate('/admin/dashboard');
+      }
 
     } catch (err) {
       if (err.response) {
-        setError(err.response.data.error || "Error al iniciar sesión");
+        const errorMsg = err.response.data.error || err.response.data.non_field_errors?.[0] || "Error al iniciar sesión";
+        setError(errorMsg);
       } else {
         setError("No se pudo conectar con el servidor.");
       }
@@ -39,14 +45,11 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-surface p-4">
       
-      {/* --- BLOQUE 1: CABECERA (AFUERA DE LA TARJETA) --- */}
+      {/* --- BLOQUE 1: CABECERA --- */}
       <div className="flex flex-col items-center mb-8 max-w-md text-center">
-        {/* Logo Flotante */}
         <div className="bg-gradient-to-br from-primary to-primary-dark p-4 rounded-2xl mb-6 shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
           <Heart className="w-10 h-10 text-white fill-current" />
         </div>
-        
-        {/* Título y Descripción */}
         <h1 className="text-4xl font-bold text-on-surface tracking-tight mb-3">Bienvenido</h1>
         <p className="text-on-surface-variant text-base">
           Ingresa tus credenciales para acceder al portal de <span className="font-semibold text-primary">FUNSAMEZ</span>
@@ -57,13 +60,12 @@ const LoginPage = () => {
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-8 md:p-10 border border-outline-variant">
         
         {error && (
-          <div className="bg-error-container text-error p-3 mb-6 text-sm rounded-lg border border-error/20 text-center font-medium">
+          <div className="bg-error-container text-error p-3 mb-6 text-sm rounded-lg border border-error/20 text-center font-medium animate-fade-in">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          
           <div className="space-y-2">
             <label className="text-sm font-semibold text-on-surface ml-1">Correo electrónico</label>
             <input 

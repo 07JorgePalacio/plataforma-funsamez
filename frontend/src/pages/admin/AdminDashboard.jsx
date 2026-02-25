@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Megaphone, Users, Heart, DollarSign, ArrowRight, TrendingUp, Package, Calendar } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import AdminLayout from './AdminLayout'; // <--- IMPORTAMOS LA PLANTILLA MAESTRA
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  // Nota: Ya no necesitamos user_name ni activeNav aquí, AdminLayout se encarga.
 
-  // --- DATOS DE EJEMPLO (MOCKS) ---
+
+  // --- DATOS DE EJEMPLO  ---
   const campaigns = [
     {
       id: 1,
@@ -50,7 +49,7 @@ const AdminDashboard = () => {
   ];
 
   const donations = [
-    { id: 1, type: 'money', status: 'completed', amount: 150000 }
+    { id: 1, type: 'money', status: 'completed', amount: 777 }
   ];
 
   const totalRaised = donations
@@ -94,12 +93,18 @@ const AdminDashboard = () => {
     },
   ];
 
-  // --- RENDERIZADO USANDO EL LAYOUT ---
+  // --- RENDERIZADO ---
   return (
-    <AdminLayout 
-      title="Panel de Administración" 
-      subtitle="Bienvenido al centro de control de FUNSAMEZ. Gestiona campañas, voluntarios y donaciones."
-    >
+    <div className="animate-fade-in">
+
+      <div className="mb-6 md:mb-8 mt-2 md:mt-0">
+          <h1 className="text-headline-small md:text-headline-medium text-on-surface font-bold mb-1 md:mb-2">
+              Panel de Administración
+          </h1>
+          <p className="text-body-medium md:text-body-large text-on-surface-variant">
+              Bienvenido al centro de control de FUNSAMEZ. Gestiona campañas, voluntarios y donaciones
+          </p>
+      </div>
       
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -264,8 +269,7 @@ const AdminDashboard = () => {
           </Link>
         </div>
       </div>
-
-    </AdminLayout>
+    </div>
   );
 };
 

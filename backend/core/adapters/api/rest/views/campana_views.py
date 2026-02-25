@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from core.container import Container
 from core.adapters.api.rest.serializers.campana_serializers import CampanaSerializer
-from core.infrastructure.persistence.django.models import CampanaModel
 
 class CrearCampanaView(APIView):
     permission_classes = [IsAuthenticated] 

@@ -1,26 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Megaphone, Users, Heart, Home, LogOut, Briefcase } from 'lucide-react';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useApp } from '../../context/AppContext';
+import { LayoutDashboard, User, Briefcase, FileText, Heart, LogOut } from 'lucide-react';
 
-export default function AdminLayout({ children, title, subtitle }) {
+export default function VolunteerLayout() {
+  const { user, logout } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
-  const [userName, setUserName] = useState('');
 
-  useEffect(() => {
-    const name = localStorage.getItem('user_name') || 'Administrador';
-    setUserName(name);
-  }, []);
+  // Obtenemos el nombre del usuario desde el contexto
+  const userName = user?.name || 'Voluntario';
 
   const handleLogout = () => {
-    localStorage.clear();
+    logout();
     navigate('/login');
   };
 
-  const isActive = (path) => location.pathname === path;
+  // Función infalible para saber en qué ruta estamos
+  const isActive = (path) => location.pathname === path || location.pathname === `${path}/`;
 
   return (
-    // Agregamos pb-24 (padding-bottom) en móviles para que el dock no tape el contenido
     <div className="flex min-h-screen bg-surface pb-32 md:pb-0">
       
       {/* --- SIDEBAR (PC) --- */}
@@ -28,33 +26,31 @@ export default function AdminLayout({ children, title, subtitle }) {
         {/* Logo Section */}
         <div className="px-6 py-6 flex items-center gap-4 border-b border-outline-variant">
           <div className="bg-primary p-2.5 rounded-xl shrink-0 shadow-sm">
-            <div className="w-6 h-6 bg-white/20 rounded-full" />
+            <Heart className="w-6 h-6 text-white" fill="currentColor" />
           </div>
           <div className="min-w-0">
             <h2 className="font-bold text-on-surface text-base truncate tracking-tight">FUNSAMEZ</h2>
-            <p className="text-xs text-on-surface-variant truncate font-medium">Panel Administrativo</p>
+            <p className="text-xs text-on-surface-variant truncate font-medium">Portal Voluntario</p>
           </div>
         </div>
 
-        {/* User Card */}
+        {/* User Card (Estilo Admin) */}
         <div className="mx-4 my-6 p-4 bg-secondary-container rounded-2xl flex items-center gap-4 shadow-sm border border-secondary/10">
           <div className="w-12 h-12 shrink-0 bg-white text-secondary rounded-full flex items-center justify-center font-bold text-lg shadow-sm">
             {userName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-base font-bold text-on-container truncate leading-tight">{userName}</p>
-            <p className="text-sm text-secondary font-medium truncate opacity-90">Administrador</p>
+            <p className="text-sm text-secondary font-medium truncate opacity-90">Voluntario Activo</p>
           </div>
         </div>
 
-        {/* Navigation Menu */}
+        {/* Navigation Menu (Usando botones para navegación forzada) */}
         <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
-          <NavItem icon={<LayoutDashboard size={22}/>} text="Dashboard" active={isActive('/dashboard')} onClick={() => navigate('/dashboard')} />
-          <NavItem icon={<Megaphone size={22}/>} text="Campañas" active={isActive('/admin/campanas')} onClick={() => navigate('/admin/campanas')} />
-          <NavItem icon={<Briefcase size={22}/>} text="Convocatorias" active={isActive('/admin/convocatorias')} onClick={() => navigate('/admin/convocatorias')} />
-          <NavItem icon={<Users size={22}/>} text="Voluntarios" active={isActive('/admin/voluntarios')} onClick={() => navigate('/admin/voluntarios')} />
-          <NavItem icon={<Heart size={22}/>} text="Donaciones" active={isActive('/admin/donaciones')} onClick={() => navigate('/admin/donaciones')} />
-          <NavItem icon={<Home size={22}/>} text="Editor de Inicio" active={isActive('/admin/editor-inicio')} onClick={() => navigate('/admin/editor-inicio')} />
+          <NavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/voluntario')} onClick={() => navigate('/voluntario')} />
+          <NavItem icon={<User size={22}/>} text="Mi Perfil" active={isActive('/voluntario/perfil')} onClick={() => navigate('/voluntario/perfil')} />
+          <NavItem icon={<Briefcase size={22}/>} text="Convocatorias" active={isActive('/voluntario/convocatorias')} onClick={() => navigate('/voluntario/convocatorias')} />
+          <NavItem icon={<FileText size={22}/>} text="Mis Postulaciones" active={isActive('/voluntario/postulaciones')} onClick={() => navigate('/voluntario/postulaciones')} />
         </nav>
 
         {/* Logout Button */}
@@ -68,10 +64,10 @@ export default function AdminLayout({ children, title, subtitle }) {
 
       {/* --- DOCK DE NAVEGACIÓN (MÓVIL) --- */}
       <nav className="md:hidden fixed bottom-6 inset-x-4 bg-surface/80 backdrop-blur-xl border border-white/20 z-40 flex items-center justify-around p-2 rounded-3xl shadow-elevation-4">
-        <MobileNavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/dashboard')} onClick={() => navigate('/dashboard')} />
-        <MobileNavItem icon={<Megaphone size={22}/>} text="Campañas" active={isActive('/admin/campanas')} onClick={() => navigate('/admin/campanas')} />
-        <MobileNavItem icon={<Briefcase size={22}/>} text="Convos" active={isActive('/admin/convocatorias')} onClick={() => navigate('/admin/convocatorias')} />
-        <MobileNavItem icon={<Users size={22}/>} text="Voluntarios" active={isActive('/admin/voluntarios')} onClick={() => navigate('/admin/voluntarios')} />
+        <MobileNavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/voluntario')} onClick={() => navigate('/voluntario')} />
+        <MobileNavItem icon={<User size={22}/>} text="Perfil" active={isActive('/voluntario/perfil')} onClick={() => navigate('/voluntario/perfil')} />
+        <MobileNavItem icon={<Briefcase size={22}/>} text="Convos" active={isActive('/voluntario/convocatorias')} onClick={() => navigate('/voluntario/convocatorias')} />
+        <MobileNavItem icon={<FileText size={22}/>} text="Mis Post." active={isActive('/voluntario/postulaciones')} onClick={() => navigate('/voluntario/postulaciones')} />
         
         {/* Botón Salir pequeño */}
         <button onClick={handleLogout} className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-error transition-colors opacity-70 hover:opacity-100">
@@ -81,24 +77,14 @@ export default function AdminLayout({ children, title, subtitle }) {
 
       {/* --- CONTENIDO PRINCIPAL --- */}
       <main className="flex-1 p-4 md:p-6 md:ml-[300px] w-full max-w-[100vw] overflow-x-hidden">
-        <div className="max-w-6xl mx-auto animate-fade-in">
-            {/* Header Dinámico (Solo en PC o si lo deseas en móvil, aquí lo dejamos estándar) */}
-            <div className="mb-6 md:mb-8 mt-2 md:mt-0">
-                <h1 className="text-headline-small md:text-headline-medium text-on-surface font-bold mb-1 md:mb-2">
-                    {title}
-                </h1>
-                <p className="text-body-medium md:text-body-large text-on-surface-variant">
-                    {subtitle}
-                </p>
-            </div>
-            {children}
-        </div>
+        {/* Aquí se inyectan dinámicamente las páginas (Dashboard, Perfil, etc) */}
+        <Outlet />
       </main>
     </div>
   );
 }
 
-// Subcomponente NavItem (PC)
+// Subcomponente NavItem (PC) - IDÉNTICO AL ADMIN
 const NavItem = ({ icon, text, active, onClick }) => (
   <button 
     onClick={onClick}
@@ -109,7 +95,7 @@ const NavItem = ({ icon, text, active, onClick }) => (
   </button>
 );
 
-// Subcomponente NavItem (Móvil)
+// Subcomponente NavItem (Móvil) - IDÉNTICO AL ADMIN
 const MobileNavItem = ({ icon, text, active, onClick }) => (
   <button onClick={onClick} className={`flex flex-col items-center gap-1 p-2 min-w-[64px] transition-colors ${active ? 'text-primary' : 'text-on-surface-variant'}`}>
     <div className={`p-1.5 rounded-full transition-all ${active ? 'bg-primary/15' : 'bg-transparent'}`}>

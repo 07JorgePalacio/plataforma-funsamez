@@ -89,6 +89,59 @@ export const AppProvider = ({ children }) => {
         }
     };
 
+    // ==========================================
+    // 3. MÓDULO VOLUNTARIO (Estados UI y Mocks)
+    // ==========================================
+    // Simulamos un usuario basado en el localStorage
+    const [user, setUser] = useState({
+        id: 1, 
+        name: localStorage.getItem('user_name') || 'Voluntario',
+        email: 'voluntario@funsamez.org',
+        role: localStorage.getItem('user_role') || 'voluntario',
+        skills: [],
+        availability: []
+    });
+
+    const [applications, setApplications] = useState([]); // Simulador de postulaciones
+
+    const logout = () => {
+        localStorage.clear();
+        window.location.href = '/login';
+    };
+
+    const updateProfile = (data) => {
+        setUser({ ...user, ...data });
+    };
+
+    // --- Helpers de Convocatorias para el Voluntario ---
+    const getPublishedConvocations = () => {
+        return convocations.filter(c => c.status === 'published' || c.estado === 'abierta');
+    };
+
+    const getApplicationsByVolunteer = (userId) => {
+        return applications.filter(a => a.userId === userId);
+    };
+
+    const hasApplied = (userId, convocationId) => {
+        return applications.some(a => a.userId === userId && a.convocationId === convocationId);
+    };
+
+    const applyToConvocation = (convocationId, userData) => {
+        const conv = convocations.find(c => c.id === convocationId);
+        const newApp = {
+            id: Date.now(),
+            userId: userData.id,
+            convocationId: convocationId,
+            convocationTitle: conv?.title || conv?.titulo || 'Convocatoria',
+            status: 'pending',
+            appliedAt: new Date().toLocaleDateString('es-CO')
+        };
+        setApplications([...applications, newApp]);
+        alert('¡Te has postulado exitosamente!'); // 🟢 Usamos alert por ahora para no complicarnos con Snackbar
+    };
+
+    const showToast = (msg) => alert(msg); 
+
     // --- CARGA INICIAL UNIFICADA ---
     const refreshAllData = async () => {
         setLoading(true);
@@ -126,9 +179,19 @@ export const AppProvider = ({ children }) => {
 
         // Campañas
         campaigns,
-        fetchCampaigns, // Para recargar manualmente tras crear/editar
+        fetchCampaigns, 
         getActiveCampaigns,
-        getClosedCampaigns
+        getClosedCampaigns,
+
+        // Voluntarios
+        user,
+        logout,
+        updateProfile,
+        showToast,
+        getPublishedConvocations,
+        getApplicationsByVolunteer,
+        hasApplied,
+        applyToConvocation
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
