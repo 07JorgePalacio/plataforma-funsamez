@@ -1,25 +1,49 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext'; // <--- IMPORTAR
+import { AppProvider } from './context/AppContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
-import AdminConvocationsPage from './pages/AdminConvocationsPage';
-import AdminCampaignsPage from './pages/AdminCampaignsPage';
+
+// --- 1. Importaciones de Admin  ---
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminConvocationsPage from './pages/admin/AdminConvocationsPage';
+import AdminCampaignsPage from './pages/admin/AdminCampaignsPage';
+
+// --- 2. Importaciones de Voluntario ---
+import VolunteerLayout from './pages/volunteer/VolunteerLayout';
+import VolunteerDashboard from './pages/volunteer/VolunteerDashboard';
+import ProfilePage from './pages/volunteer/ProfilePage';
+import ConvocationsPage from './pages/volunteer/ConvocationsPage';
+import MyApplicationsPage from './pages/volunteer/MyApplicationsPage';
 
 function App() {
   return (
-    <AppProvider> {/* <--- ENVOLVER TODO AQUÍ */}
+    <AppProvider> 
       <BrowserRouter>
         <Routes>
+          {/* RUTAS PUBLICAS */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/admin/convocatorias" element={<AdminConvocationsPage />} />
-          <Route path="/admin/campanas" element={<AdminCampaignsPage />} />
+          
+          {/* RUTAS DEL ADMIN (Protegidas por su Layout) */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="convocatorias" element={<AdminConvocationsPage />} />
+            <Route path="campanas" element={<AdminCampaignsPage />} />
+          </Route>
+
+          {/* RUTAS DEL VOLUNTARIO (Protegidas por su Layout) */}
+          <Route path="/voluntario" element={<VolunteerLayout />}>
+            <Route index element={<VolunteerDashboard />} />
+            <Route path="perfil" element={<ProfilePage />} />
+            <Route path="convocatorias" element={<ConvocationsPage />} />
+            <Route path="postulaciones" element={<MyApplicationsPage />} />
+          </Route>
+
         </Routes>
       </BrowserRouter>
-    </AppProvider> // <--- CIERRE
+    </AppProvider>
   );
 }
 

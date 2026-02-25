@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { 
     crearConvocatoria, actualizarConvocatoria, cambiarEstadoConvocatoria, eliminarConvocatoria 
-} from '../services/convocatoriaService';
-import { useApp } from '../context/AppContext';
-import AdminLayout from '../components/AdminLayout';
-import TimePickerMD3 from '../components/TimePickerMD3';
-import Snackbar from '../components/Snackbar';
-import ConfirmDialog from '../components/ConfirmDialog'; // 🟢 NUEVO
+} from '../../services/convocatoriaService';
+import { useApp } from '../../context/AppContext';
+import TimePickerMD3 from '../../components/TimePickerMD3';
+import Snackbar from '../../components/Snackbar';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import {
     Plus, Edit, Trash2, X, Save, MapPin, Users,
     Briefcase, Pause, Play, Archive, Search, Filter, ChevronDown, 
@@ -350,11 +349,11 @@ export default function AdminConvocationsPage() {
     const [editingConvocation, setEditingConvocation] = useState(null);
     const [activeTab, setActiveTab] = useState('active');
     
-    // 🟢 NUEVO: Estado del Snackbar
+    //Estado del Snackbar (Notificación de cambios)
     const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'info' });
     const showMessage = (message, type = 'success') => setSnackbar({ show: true, message, type });
 
-    // 🟢 NUEVO: Estado del ConfirmDialog
+    // Estado del ConfirmDialog (Dialogo Personalizado)
     const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger' });
     const showConfirm = (title, message, onConfirm, type = 'danger') => setConfirmDialog({ isOpen: true, title, message, onConfirm, type });
     const closeConfirm = () => setConfirmDialog(prev => ({ ...prev, isOpen: false }));
@@ -516,7 +515,16 @@ export default function AdminConvocationsPage() {
     };
 
     return (
-        <AdminLayout title="Gestión de Convocatorias" subtitle="Crea y administra las oportunidades.">
+        <div className="animate-fade-in">
+
+            <div className="mb-6 md:mb-8 mt-2 md:mt-0">
+                <h1 className="text-headline-small md:text-headline-medium text-on-surface font-bold mb-1 md:mb-2">
+                    Gestión de Convocatorias
+                </h1>
+                <p className="text-body-medium md:text-body-large text-on-surface-variant">
+                    Crea y administra las oportunidades.
+                </p>
+            </div>
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                 <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit">
                     <button onClick={() => setActiveTab('active')} className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'active' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}>Activas ({getActiveConvocations().length})</button>
@@ -624,7 +632,7 @@ export default function AdminConvocationsPage() {
 
             {isModalOpen && <ConvocationFormModal convocation={editingConvocation} onSave={handleSave} onClose={() => setIsModalOpen(false)} />}
             
-            {/* 🟢 COMPONENTES VISUALES M3 */}
+            {/* COMPONENTES VISUALES M3 */}
             <Snackbar show={snackbar.show} message={snackbar.message} type={snackbar.type} onClose={() => setSnackbar({ ...snackbar, show: false })} />
             
             <ConfirmDialog 
@@ -635,6 +643,6 @@ export default function AdminConvocationsPage() {
                 onConfirm={confirmDialog.onConfirm} 
                 onCancel={closeConfirm} 
             />
-        </AdminLayout>
+        </div>
     );
 }
