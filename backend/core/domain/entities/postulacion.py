@@ -9,6 +9,7 @@ class Postulacion:
     id: Optional[int] = None
     id_usuario: Optional[int] = None
     id_convocatoria: Optional[int] = None
+    titulo_convocatoria: Optional[str] = None
     nombre_usuario: Optional[str] = None
     correo_usuario: Optional[str] = None
     telefono_usuario: Optional[str] = None

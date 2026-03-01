@@ -1,5 +1,5 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-02-28 17:54:37.990295
+📅 Generado: 2026-03-01 13:46:58.990221
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
@@ -7,7 +7,7 @@
 ├── .gitignore
 ├── .vscode/
 │   └── settings.json
-├── CONTEXTO_FUNSAMEZ_2026-02-28_1754.md
+├── CONTEXTO_FUNSAMEZ_2026-03-01_1346.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -33,6 +33,7 @@
 │   │   │   │   │       ├── __init__.py
 │   │   │   │   │       ├── campana_views.py
 │   │   │   │   │       ├── convocatoria_views.py
+│   │   │   │   │       ├── notificacion_views.py
 │   │   │   │   │       ├── postulacion_views.py
 │   │   │   │   │       └── user_views.py
 │   │   │   │   └── urls.py
@@ -52,6 +53,7 @@
 │   │   │   │       ├── __init__.py
 │   │   │   │       ├── campana_repository.py
 │   │   │   │       ├── convocatoria_repository.py
+│   │   │   │       ├── notificacion_repository.py
 │   │   │   │       ├── password_hasher.py
 │   │   │   │       ├── postulacion_repository.py
 │   │   │   │       └── user_repository.py
@@ -68,9 +70,14 @@
 │   │   │       │   ├── crear_convocatoria.py
 │   │   │       │   ├── eliminar_convocatoria.py
 │   │   │       │   └── listar_convocatorias.py
+│   │   │       ├── notificacion/
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── listar_notificaciones.py
+│   │   │       │   └── marcar_notificacion_leida.py
 │   │   │       ├── postulacion/
 │   │   │       │   ├── __init__.py
 │   │   │       │   ├── cambiar_estado_postulacion.py
+│   │   │       │   ├── eliminar_postulacion.py
 │   │   │       │   ├── listar_mis_postulaciones.py
 │   │   │       │   ├── listar_postulaciones_admin.py
 │   │   │       │   └── postular_voluntario.py
@@ -114,6 +121,7 @@
 │   │       │           ├── __init__.py
 │   │       │           ├── postgres_campana_repository.py
 │   │       │           ├── postgres_convocatoria_repository.py
+│   │       │           ├── postgres_notificacion_repository.py
 │   │       │           ├── postgres_postulacion_repository.py
 │   │       │           └── postgres_user_repository.py
 │   │       └── security/
@@ -160,6 +168,7 @@
 │   │   └── services/
 │   │       ├── campaignService.js
 │   │       ├── convocatoriaService.js
+│   │       ├── notificacionService.js
 │   │       └── postulacionService.js
 │   ├── tailwind.config.js
 │   └── vite.config.js
@@ -168,3 +177,6 @@
 ├── package.json
 └── requirements.txt
 ```
+
+## 2. CÓDIGO FUENTE SELECCIONADO
+

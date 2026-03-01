@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react'; 
+import { useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { 
     Clock, CheckCircle2, XCircle, AlertCircle, Calendar, 
@@ -9,6 +10,8 @@ export default function MyApplicationsPage() {
 
     const { getApplicationsByVolunteer, convocations, loading } = useApp();
     const applications = getApplicationsByVolunteer();
+    const location = useLocation();
+    const cardRefs = useRef({}); 
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -50,6 +53,29 @@ export default function MyApplicationsPage() {
     );
 
     useMemo(() => setCurrentPage(1), [searchTerm, statusFilter]);
+
+    useEffect(() => {
+        const highlightId = location.state?.highlightId;
+        if (!loading && highlightId && cardRefs.current[highlightId]) {
+            setTimeout(() => {
+                const card = cardRefs.current[highlightId];
+                
+                // 1. Scroll suave hacia el centro de la pantalla
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // 2. Le añadimos un aura (borde) y la animación de parpadeo (pulse)
+                card.classList.add('ring-4', 'ring-primary/50', 'animate-pulse');
+                
+                // 3. Se lo quitamos después de 3 segundos para que vuelva a la normalidad
+                setTimeout(() => {
+                    card.classList.remove('ring-4', 'ring-primary/50', 'animate-pulse');
+                }, 3000);
+                
+                // 4. Limpiamos el historial para que no vuelva a saltar si el usuario recarga la página
+                window.history.replaceState({}, document.title);
+            }, 150);
+        }
+    }, [loading, location.state]);
 
     if (loading) {
         return (
@@ -128,7 +154,11 @@ export default function MyApplicationsPage() {
                                 const StatusIcon = statusInfo.icon;
 
                                 return (
-                                    <div key={app.id} className="card-elevated p-6 md:p-8 relative overflow-hidden transition-transform duration-300 hover:-translate-y-1">
+                                    <div 
+                                        key={app.id} 
+                                        ref={(el) => (cardRefs.current[app.id] = el)}
+                                        className="card-elevated p-6 md:p-8 relative overflow-hidden transition-all duration-500 hover:-translate-y-1"
+                                    >
                                         {/* Barra lateral asegurada con Tailwind */}
                                         <div className={`absolute left-0 top-0 bottom-0 w-2 ${statusInfo.bgClass}`}></div>
                                         

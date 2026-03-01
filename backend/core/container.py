@@ -3,6 +3,7 @@ from core.infrastructure.persistence.django.repositories.postgres_user_repositor
 from core.infrastructure.persistence.django.repositories.postgres_convocatoria_repository import PostgresConvocatoriaRepository
 from core.infrastructure.persistence.django.repositories.postgres_campana_repository import PostgresCampanaRepository
 from core.infrastructure.persistence.django.repositories.postgres_postulacion_repository import PostgresPostulacionRepository
+from core.infrastructure.persistence.django.repositories.postgres_notificacion_repository import PostgresNotificacionRepository
 from core.infrastructure.security.django_hasher import DjangoPasswordHasher
 
 # --- CASOS DE USO: USUARIOS ---
@@ -28,6 +29,12 @@ from core.application.use_cases.postulacion.listar_postulaciones_admin import Li
 from core.application.use_cases.postulacion.cambiar_estado_postulacion import CambiarEstadoPostulacionUseCase
 from core.application.use_cases.postulacion.eliminar_postulacion import EliminarPostulacionUseCase
 
+# --- CASOS DE USO: NOTIFICACIONES ---
+from core.application.use_cases.notificacion.listar_notificaciones import ListarNotificacionesUseCase
+from core.application.use_cases.notificacion.marcar_notificacion_leida import MarcarNotificacionLeidaUseCase
+from core.application.use_cases.notificacion.eliminar_notificacion import EliminarNotificacionUseCase
+from core.application.use_cases.notificacion.eliminar_todas_notificaciones import EliminarTodasNotificacionesUseCase
+
 class Container:
     """
     Contenedor de Inyección de Dependencias (DI).
@@ -41,6 +48,7 @@ class Container:
     _convocatoria_repository = None
     _campana_repository = None
     _postulacion_repository = None
+    _notificacion_repository = None
     _password_hasher = DjangoPasswordHasher()
 
     # ==========================================
@@ -143,13 +151,47 @@ class Container:
         )
 
     @staticmethod
+    def get_notificacion_repository():
+        if Container._notificacion_repository is None:
+            Container._notificacion_repository = PostgresNotificacionRepository()
+        return Container._notificacion_repository
+
+    @staticmethod
     def cambiar_estado_postulacion_use_case() -> CambiarEstadoPostulacionUseCase:
         return CambiarEstadoPostulacionUseCase(
-            postulacion_repository=Container.get_postulacion_repository()
+            postulacion_repository=Container.get_postulacion_repository(),
+            notificacion_repository=Container.get_notificacion_repository()
         )
 
     @staticmethod
     def eliminar_postulacion_use_case() -> EliminarPostulacionUseCase:
         return EliminarPostulacionUseCase(
             postulacion_repository=Container.get_postulacion_repository()
+        )
+
+    # ==========================================
+    #  5. NOTIFICACIONES
+    # ==========================================
+    @staticmethod
+    def listar_notificaciones_use_case() -> ListarNotificacionesUseCase:
+        return ListarNotificacionesUseCase(
+            notificacion_repository=Container.get_notificacion_repository()
+        )
+
+    @staticmethod
+    def marcar_notificacion_leida_use_case() -> MarcarNotificacionLeidaUseCase:
+        return MarcarNotificacionLeidaUseCase(
+            notificacion_repository=Container.get_notificacion_repository()
+        )
+
+    @staticmethod
+    def eliminar_notificacion_use_case() -> EliminarNotificacionUseCase:
+        return EliminarNotificacionUseCase(
+            notificacion_repository=Container.get_notificacion_repository()
+        )
+
+    @staticmethod
+    def eliminar_todas_notificaciones_use_case() -> EliminarTodasNotificacionesUseCase:
+        return EliminarTodasNotificacionesUseCase(
+            notificacion_repository=Container.get_notificacion_repository()
         )

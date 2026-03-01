@@ -17,6 +17,7 @@ class PostgresPostulacionRepository(PostulacionRepository):
             id=model.id,
             id_usuario=model.usuario_id,
             id_convocatoria=model.convocatoria_id,
+            titulo_convocatoria=model.convocatoria.titulo if hasattr(model, 'convocatoria') else None,
             nombre_usuario=model.usuario.nombre_completo if hasattr(model, 'usuario') else None,
             correo_usuario=model.usuario.correo_electronico if hasattr(model, 'usuario') else None,
             telefono_usuario=model.usuario.numero_telefono if hasattr(model, 'usuario') else None,
@@ -77,7 +78,7 @@ class PostgresPostulacionRepository(PostulacionRepository):
     def obtener_por_id(self, id_postulacion: int) -> Optional[Postulacion]:
         """Busca una postulación específica por su ID para cambiar su estado."""
         try:
-            modelo = PostulacionModel.objects.get(id=id_postulacion)
+            modelo = PostulacionModel.objects.select_related('usuario', 'convocatoria').get(id=id_postulacion)
             return self._to_entity(modelo)
         except ObjectDoesNotExist:
             return None

@@ -241,3 +241,41 @@ class PostulacionModel(models.Model):
 
     def __str__(self):
         return f"Postulación {self.usuario.correo_electronico} -> {self.convocatoria.titulo}"
+
+# ==========================================
+#  5. NOTIFICACIONES (IN-APP)
+# ==========================================
+
+class NotificacionModel(models.Model):
+    """
+    Modelo de Infraestructura. Tabla 'public.notificacion'.
+    Guarda las alertas in-app para los usuarios.
+    """
+    usuario = models.ForeignKey(
+        'UsuarioModel',
+        on_delete=models.CASCADE,
+        db_column='id_usuario',
+        related_name='notificaciones'
+    )
+    titulo = models.CharField(max_length=255)
+    mensaje = models.TextField()
+    
+    TIPOS = [
+        ('success', 'Éxito'),
+        ('error', 'Error'),
+        ('warning', 'Advertencia'),
+        ('info', 'Información')
+    ]
+    tipo = models.CharField(max_length=20, choices=TIPOS, default='info')
+    
+    referencia_id = models.IntegerField(null=True, blank=True)
+    leida = models.BooleanField(default=False)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'notificacion'
+        managed = True
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f"Notificación para {self.usuario.correo_electronico}: {self.titulo}"
