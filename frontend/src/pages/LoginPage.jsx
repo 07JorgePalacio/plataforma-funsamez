@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 import { Eye, EyeOff, Heart } from 'lucide-react';
 
 const LoginPage = () => {
@@ -9,6 +10,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { refreshAllData } = useApp();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,6 +27,8 @@ const LoginPage = () => {
       localStorage.setItem('refresh_token', response.data.tokens.refresh);
       localStorage.setItem('user_role', userRole); 
       localStorage.setItem('user_name', response.data.user.full_name);
+
+      await refreshAllData();
 
       if (userRole === 'voluntario') {
         navigate('/voluntario');

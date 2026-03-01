@@ -9,3 +9,11 @@ class PostularVoluntarioInputPort(ABC):
 class ListarMisPostulacionesInputPort(ABC):
     @abstractmethod
     def execute(self, id_usuario: int) -> List[Postulacion]: pass
+
+class ListarTodasPostulacionesInputPort(ABC):
+    @abstractmethod
+    def execute(self) -> List[Postulacion]: pass
+
+class CambiarEstadoPostulacionInputPort(ABC):
+    @abstractmethod
+    def execute(self, id_postulacion: int, nuevo_estado: str, motivo_rechazo: str = None) -> Postulacion: pass

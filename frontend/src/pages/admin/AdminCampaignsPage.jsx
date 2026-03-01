@@ -178,6 +178,7 @@ export default function AdminCampaignsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 6;
 
+
     useEffect(() => { setCurrentPage(1); }, [searchQuery, activeTab, sortBy, statusFilter]);
 
     const handleSave = async (data) => {
@@ -260,6 +261,15 @@ export default function AdminCampaignsPage() {
         if (paginatedList.length === 0) return ( <div className="card text-center py-12 border-2 border-dashed border-outline-variant/50 bg-transparent animate-fade-in"><Search className="w-12 h-12 text-on-surface-variant mx-auto mb-3 opacity-50" /><h3 className="text-title-medium text-on-surface mb-1">No se encontraron resultados</h3><p className="text-body-small text-on-surface-variant">Intenta ajustar tu búsqueda o los filtros.</p><button onClick={() => { setSearchQuery(''); setStatusFilter('all'); }} className="btn-text mt-2 text-primary font-bold">Limpiar filtros</button></div> );
         return null;
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-32 animate-fade-in">
+                <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
+                <p className="text-body-large text-on-surface-variant font-medium">Sincronizando base de datos...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="animate-fade-in">

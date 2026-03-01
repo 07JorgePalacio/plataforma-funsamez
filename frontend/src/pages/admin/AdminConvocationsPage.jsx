@@ -343,7 +343,7 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
 }
 
 export default function AdminConvocationsPage() {
-    const { getActiveConvocations, getClosedConvocations, fetchConvocations } = useApp();
+    const { getActiveConvocations, getClosedConvocations, fetchConvocations, loading } = useApp();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingConvocation, setEditingConvocation] = useState(null);
@@ -363,6 +363,7 @@ export default function AdminConvocationsPage() {
     const [sortBy, setSortBy] = useState('newest'); 
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 6;
+
 
     useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter, sortBy, activeTab]);
 
@@ -513,6 +514,15 @@ export default function AdminConvocationsPage() {
         }
         return null;
     };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-32 animate-fade-in">
+                <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
+                <p className="text-body-large text-on-surface-variant font-medium">Sincronizando base de datos...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="animate-fade-in">

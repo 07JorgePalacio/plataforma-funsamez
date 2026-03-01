@@ -8,6 +8,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminConvocationsPage from './pages/admin/AdminConvocationsPage';
 import AdminCampaignsPage from './pages/admin/AdminCampaignsPage';
+import VolunteersPage from './pages/admin/VolunteersPage'; //
 
 // --- 2. Importaciones de Voluntario ---
 import VolunteerLayout from './pages/volunteer/VolunteerLayout';
@@ -31,6 +32,7 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="convocatorias" element={<AdminConvocationsPage />} />
             <Route path="campanas" element={<AdminCampaignsPage />} />
+            <Route path="voluntarios" element={<VolunteersPage />} />
           </Route>
 
           {/* RUTAS DEL VOLUNTARIO (Protegidas por su Layout) */}

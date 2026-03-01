@@ -46,3 +46,50 @@ export const obtenerMisPostulaciones = async () => {
         throw error;
     }
 };
+
+// --- SERVICIOS DE ADMINISTRADOR ---
+
+export const obtenerTodasLasPostulaciones = async () => {
+    try {
+        const response = await axios.get(
+            `${API_URL}/admin/todas/`,
+            getAuthHeaders()
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener todas las postulaciones (Admin):', error);
+        throw error;
+    }
+};
+
+export const cambiarEstadoPostulacion = async (idPostulacion, nuevoEstado, motivoRechazo = null) => {
+    try {
+        const payload = { estado: nuevoEstado };
+        if (motivoRechazo) {
+            payload.motivo_rechazo = motivoRechazo;
+        }
+        
+        const response = await axios.patch(
+            `${API_URL}/admin/${idPostulacion}/estado/`,
+            payload,
+            getAuthHeaders()
+        );
+        return response.data;
+    } catch (error) {
+        console.error(`Error al cambiar el estado de la postulación ${idPostulacion}:`, error);
+        throw error;
+    }
+};
+
+export const eliminarPostulacion = async (idPostulacion) => {
+    try {
+        const response = await axios.delete(
+            `${API_URL}/admin/${idPostulacion}/`,
+            getAuthHeaders()
+        );
+        return response.data;
+    } catch (error) {
+        console.error(`Error al eliminar la postulación ${idPostulacion}:`, error);
+        throw error;
+    }
+};

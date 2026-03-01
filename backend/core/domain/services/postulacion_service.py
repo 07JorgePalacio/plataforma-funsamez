@@ -128,3 +128,41 @@ class PostulacionService:
         
         texto_limpio = observaciones.strip()
         return len(texto_limpio) >= min_caracteres
+
+    @staticmethod
+    def transicionar_estado(postulacion: Postulacion, nuevo_estado: str, motivo_rechazo: str = None) -> Postulacion:
+        """
+        Regla de negocio para cambiar el estado de forma segura.
+        Asegura que el estado sea válido y deja registro en el historial.
+        """
+        estados_permitidos = ["en_revision", "en_espera", "aprobada", "rechazada"]
+        
+        if nuevo_estado not in estados_permitidos:
+            raise ValueError(f"El estado '{nuevo_estado}' no está permitido.")
+            
+        # Si no hay cambio real, devolvemos la misma entidad
+        if postulacion.estado == nuevo_estado:
+            return postulacion
+            
+        # 1. Cambiamos el estado base
+        postulacion.estado = nuevo_estado
+        
+        # 2. Si es rechazada, asignamos el motivo (si lo hay)
+        if nuevo_estado == "rechazada":
+            postulacion.motivo_rechazo = motivo_rechazo
+            
+        # 3. Registramos en el historial
+        nuevo_registro = {
+            "estado": nuevo_estado,
+            "fecha": datetime.now().isoformat(),
+            "motivo": motivo_rechazo if nuevo_estado == "rechazada" else None
+        }
+        
+        # Blindaje por si en base de datos era un string vacío o null
+        if not isinstance(postulacion.historial_estados, list):
+            postulacion.historial_estados = []
+            
+        postulacion.historial_estados.append(nuevo_registro)
+        postulacion.fecha_actualizacion = datetime.now()
+        
+        return postulacion

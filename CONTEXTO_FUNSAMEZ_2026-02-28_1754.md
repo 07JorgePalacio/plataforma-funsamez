@@ -1,11 +1,13 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-02-24 20:26:20.898067
+📅 Generado: 2026-02-28 17:54:37.990295
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
 ```text
 ├── .gitignore
-├── CONTEXTO_FUNSAMEZ_2026-02-24_2026.md
+├── .vscode/
+│   └── settings.json
+├── CONTEXTO_FUNSAMEZ_2026-02-28_1754.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -68,7 +70,9 @@
 │   │   │       │   └── listar_convocatorias.py
 │   │   │       ├── postulacion/
 │   │   │       │   ├── __init__.py
+│   │   │       │   ├── cambiar_estado_postulacion.py
 │   │   │       │   ├── listar_mis_postulaciones.py
+│   │   │       │   ├── listar_postulaciones_admin.py
 │   │   │       │   └── postular_voluntario.py
 │   │   │       └── user/
 │   │   │           ├── __init__.py
@@ -146,7 +150,7 @@
 │   │   │   │   ├── AdminConvocationsPage.jsx
 │   │   │   │   ├── AdminDashboard.jsx
 │   │   │   │   ├── AdminLayout.jsx
-│   │   │   │   └── DashboardPage.jsx
+│   │   │   │   └── VolunteersPage.jsx
 │   │   │   └── volunteer/
 │   │   │       ├── ConvocationsPage.jsx
 │   │   │       ├── MyApplicationsPage.jsx
@@ -156,7 +160,7 @@
 │   │   └── services/
 │   │       ├── campaignService.js
 │   │       ├── convocatoriaService.js
-│   │       └── voluntariadoService.js
+│   │       └── postulacionService.js
 │   ├── tailwind.config.js
 │   └── vite.config.js
 ├── generar_contexto.py
@@ -164,4 +168,3 @@
 ├── package.json
 └── requirements.txt
 ```
-

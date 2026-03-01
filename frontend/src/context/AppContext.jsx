@@ -4,7 +4,7 @@ import { obtenerConvocatorias } from '../services/convocatoriaService';
 // Servicios de Campañas
 import { obtenerCampanas } from '../services/campaignService';
 // Servicios de Postulaciones
-import { postularAConvocatoria, obtenerMisPostulaciones } from '../services/postulacionService';
+import { postularAConvocatoria, obtenerMisPostulaciones, obtenerTodasLasPostulaciones, cambiarEstadoPostulacion, eliminarPostulacion } from '../services/postulacionService';
 
 const AppContext = createContext();
 
@@ -19,6 +19,7 @@ export const AppProvider = ({ children }) => {
     const [convocations, setConvocations] = useState([]);
     const [campaigns, setCampaigns] = useState([]); 
     const [myApplications, setMyApplications] = useState([]);
+    const [adminApplications, setAdminApplications] = useState([]); 
     const [loading, setLoading] = useState(true);
 
     // ==========================================
@@ -130,6 +131,37 @@ export const AppProvider = ({ children }) => {
         }
     };
 
+    const fetchAllApplications = async () => {
+        if (localStorage.getItem('user_role') === 'voluntario') return;
+        try {
+            const data = await obtenerTodasLasPostulaciones();
+            setAdminApplications(data);
+            console.log('📦 Todas las postulaciones (Admin) recibidas:', data);
+        } catch (error) {
+            console.error('Error al cargar todas las postulaciones:', error);
+        }
+    };
+
+    const updateApplicationStatus = async (id, newStatus, reason = null) => {
+        try {
+            await cambiarEstadoPostulacion(id, newStatus, reason);
+            await fetchAllApplications(); // Recargamos para ver los cambios
+        } catch (error) {
+            console.error('Error al cambiar estado:', error);
+            throw error;
+        }
+    };
+
+    const deleteApplication = async (id) => {
+        try {
+            await eliminarPostulacion(id);
+            await fetchAllApplications(); // Recargamos para ver los cambios
+        } catch (error) {
+            console.error('Error al eliminar postulación:', error);
+            throw error;
+        }
+    };
+
     const applyToConvocation = async (convocationId, observaciones = '') => {
         try {
             // 2. Llamamos al backend
@@ -162,6 +194,8 @@ export const AppProvider = ({ children }) => {
         
         if (localStorage.getItem('user_role') === 'voluntario') {
             promises.push(fetchMyApplications());
+        } else {
+            promises.push(fetchAllApplications()); 
         }
         
         await Promise.all(promises);
@@ -201,6 +235,7 @@ export const AppProvider = ({ children }) => {
         fetchConvocations,
         getActiveConvocations: () => convocations.filter(c => c.status !== 'closed'),
         getClosedConvocations: () => convocations.filter(c => c.status === 'closed'),
+        getPublishedConvocations: () => convocations.filter(c => c.status === 'published'),
 
         // Campañas
         campaigns,
@@ -215,7 +250,13 @@ export const AppProvider = ({ children }) => {
         showToast,
         getApplicationsByVolunteer,
         hasApplied,
-        applyToConvocation
+        applyToConvocation,
+        
+        // Exportar para el Admin
+        adminApplications,
+        fetchAllApplications,
+        updateApplicationStatus,
+        deleteApplication
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

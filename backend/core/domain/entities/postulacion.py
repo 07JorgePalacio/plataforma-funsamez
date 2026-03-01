@@ -9,6 +9,12 @@ class Postulacion:
     id: Optional[int] = None
     id_usuario: Optional[int] = None
     id_convocatoria: Optional[int] = None
+    nombre_usuario: Optional[str] = None
+    correo_usuario: Optional[str] = None
+    telefono_usuario: Optional[str] = None
+    documento_usuario: Optional[str] = None
+    habilidades_usuario: list = field(default_factory=list)
+    disponibilidad_usuario: dict = field(default_factory=dict)
     
     # --- 2. Información Básica ---
     observaciones: Optional[str] = None

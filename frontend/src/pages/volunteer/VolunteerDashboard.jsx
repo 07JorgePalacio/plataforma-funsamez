@@ -15,7 +15,7 @@ export default function VolunteerDashboard() {
     const stats = [
         {
             label: 'Convocatorias Abiertas',
-            value: convocations.filter(c => c.status === 'open').length,
+            value: convocations.filter(c => c.status === 'published').length,
             icon: Briefcase,
             color: 'primary',
             link: '/voluntario/convocatorias'
