@@ -22,6 +22,14 @@ from core.adapters.api.rest.views.postulacion_views import (
     EliminarPostulacionView
 )
 
+# Vistas de Notificaciones
+from core.adapters.api.rest.views.notificacion_views import (
+    ListarNotificacionesView,
+    MarcarNotificacionLeidaView,
+    EliminarNotificacionView,
+    EliminarTodasNotificacionesView 
+)
+
 urlpatterns = [
     # --- USUARIOS ---
     path('users/register/', RegisterUserView.as_view(), name='register_user'),
@@ -45,4 +53,10 @@ urlpatterns = [
     path('postulaciones/admin/todas/', ListarTodasPostulacionesView.as_view(), name='admin_listar_postulaciones'),
     path('postulaciones/admin/<int:pk>/estado/', CambiarEstadoPostulacionView.as_view(), name='admin_cambiar_estado_postulacion'),
     path('postulaciones/admin/<int:pk>/', EliminarPostulacionView.as_view(), name='admin_eliminar_postulacion'),
+
+    # --- NOTIFICACIONES ---
+    path('notificaciones/', ListarNotificacionesView.as_view(), name='listar_notificaciones'),
+    path('notificaciones/todas/', EliminarTodasNotificacionesView.as_view(), name='eliminar_todas_notificaciones'), # 🟢 Nueva ruta masiva
+    path('notificaciones/<int:pk>/leer/', MarcarNotificacionLeidaView.as_view(), name='marcar_notificacion_leida'),
+    path('notificaciones/<int:pk>/', EliminarNotificacionView.as_view(), name='eliminar_notificacion'), 
 ]

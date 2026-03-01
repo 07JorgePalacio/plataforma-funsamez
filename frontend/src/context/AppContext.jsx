@@ -5,6 +5,8 @@ import { obtenerConvocatorias } from '../services/convocatoriaService';
 import { obtenerCampanas } from '../services/campaignService';
 // Servicios de Postulaciones
 import { postularAConvocatoria, obtenerMisPostulaciones, obtenerTodasLasPostulaciones, cambiarEstadoPostulacion, eliminarPostulacion } from '../services/postulacionService';
+// Servicios de Notificaciones
+import { obtenerMisNotificaciones, marcarNotificacionComoLeida, eliminarNotificacion, eliminarTodasLasNotificaciones } from '../services/notificacionService';
 
 const AppContext = createContext();
 
@@ -20,6 +22,7 @@ export const AppProvider = ({ children }) => {
     const [campaigns, setCampaigns] = useState([]); 
     const [myApplications, setMyApplications] = useState([]);
     const [adminApplications, setAdminApplications] = useState([]); 
+    const [notifications, setNotifications] = useState([]); 
     const [loading, setLoading] = useState(true);
 
     // ==========================================
@@ -184,13 +187,60 @@ export const AppProvider = ({ children }) => {
         return myApplications;
     };
 
+    // ==========================================
+    // 4. MÓDULO DE NOTIFICACIONES
+    // ==========================================
+    const fetchNotifications = async () => {
+        try {
+            const data = await obtenerMisNotificaciones();
+            setNotifications(data);
+            console.log('🔔 Notificaciones recibidas:', data);
+        } catch (error) {
+            console.error('❌ Error al cargar notificaciones:', error);
+        }
+    };
+
+    const markNotificationAsRead = async (id) => {
+        try {
+            await marcarNotificacionComoLeida(id);
+            // Actualizamos el estado local para que la campanita se apague de inmediato sin recargar toda la BD
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
+        } catch (error) {
+            console.error('Error al marcar notificación como leída:', error);
+        }
+    };
+
+    const deleteNotification = async (id) => {
+        try {
+            await eliminarNotificacion(id);
+            // Eliminamos localmente del estado para una UX instantánea
+            setNotifications(prev => prev.filter(n => n.id !== id));
+        } catch (error) {
+            console.error('Error al eliminar notificación:', error);
+            throw error;
+        }
+    };
+
+    const deleteAllNotifications = async () => {
+        try {
+            await eliminarTodasLasNotificaciones();
+            // Vaciamos el estado local instantáneamente
+            setNotifications([]);
+        } catch (error) {
+            console.error('Error al vaciar notificaciones:', error);
+            throw error;
+        }
+    };
+
+    const unreadNotificationsCount = notifications.filter(n => !n.leida).length;
+
 
     // ==========================================
     // CARGA UNIFICADA
     // ==========================================
     const refreshAllData = async () => {
         setLoading(true);
-        const promises = [fetchConvocations(), fetchCampaigns()];
+        const promises = [fetchConvocations(), fetchCampaigns(), fetchNotifications()]; // 🟢 Añadimos fetchNotifications
         
         if (localStorage.getItem('user_role') === 'voluntario') {
             promises.push(fetchMyApplications());
@@ -256,7 +306,15 @@ export const AppProvider = ({ children }) => {
         adminApplications,
         fetchAllApplications,
         updateApplicationStatus,
-        deleteApplication
+        deleteApplication,
+
+        // Exportar Notificaciones
+        notifications,
+        fetchNotifications,
+        markNotificationAsRead,
+        deleteNotification, 
+        deleteAllNotifications,
+        unreadNotificationsCount
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
