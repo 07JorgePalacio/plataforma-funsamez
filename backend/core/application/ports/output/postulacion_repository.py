@@ -20,3 +20,18 @@ class PostulacionRepository(ABC):
     @abstractmethod
     def actualizar(self, postulacion: Postulacion) -> Postulacion:
         pass
+
+    @abstractmethod
+    def listar_todas(self) -> List[Postulacion]:
+        """Obtiene todas las postulaciones del sistema (Para Admin)"""
+        pass
+
+    @abstractmethod
+    def obtener_por_id(self, id_postulacion: int) -> Optional[Postulacion]:
+        """Obtiene una postulación específica por su ID primario"""
+        pass
+
+    @abstractmethod
+    def eliminar(self, id_postulacion: int) -> bool:
+        """Elimina una postulación físicamente de la base de datos"""
+        pass

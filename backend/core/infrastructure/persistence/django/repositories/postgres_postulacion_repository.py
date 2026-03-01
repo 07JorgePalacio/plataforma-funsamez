@@ -17,6 +17,12 @@ class PostgresPostulacionRepository(PostulacionRepository):
             id=model.id,
             id_usuario=model.usuario_id,
             id_convocatoria=model.convocatoria_id,
+            nombre_usuario=model.usuario.nombre_completo if hasattr(model, 'usuario') else None,
+            correo_usuario=model.usuario.correo_electronico if hasattr(model, 'usuario') else None,
+            telefono_usuario=model.usuario.numero_telefono if hasattr(model, 'usuario') else None,
+            documento_usuario=f"{model.usuario.tipo_documento} {model.usuario.numero_identificacion}" if hasattr(model, 'usuario') else None,
+            habilidades_usuario=model.usuario.habilidades if hasattr(model, 'usuario') else [],
+            disponibilidad_usuario=model.usuario.disponibilidad if hasattr(model, 'usuario') else {},
             
             # --- 2. Información Básica ---
             observaciones=model.observaciones,
@@ -59,9 +65,22 @@ class PostgresPostulacionRepository(PostulacionRepository):
             return None
 
     def listar_por_voluntario(self, id_usuario: int) -> List[Postulacion]:
-        """Para la vista 'Mis Postulaciones' de la HU09."""
+        """Para la vista 'Mis Postulaciones'"""
         modelos = PostulacionModel.objects.filter(usuario_id=id_usuario).order_by('-fecha_postulacion')
         return [self._to_entity(m) for m in modelos]
+
+    def listar_todas(self) -> List[Postulacion]:
+        """Para la vista de Administrador (Todas las postulaciones)."""
+        modelos = PostulacionModel.objects.select_related('usuario').all().order_by('-fecha_postulacion')
+        return [self._to_entity(m) for m in modelos]
+
+    def obtener_por_id(self, id_postulacion: int) -> Optional[Postulacion]:
+        """Busca una postulación específica por su ID para cambiar su estado."""
+        try:
+            modelo = PostulacionModel.objects.get(id=id_postulacion)
+            return self._to_entity(modelo)
+        except ObjectDoesNotExist:
+            return None
 
     def actualizar(self, postulacion: Postulacion) -> Postulacion:
         """Actualización BLINDADA campo por campo."""
@@ -85,3 +104,12 @@ class PostgresPostulacionRepository(PostulacionRepository):
             return self._to_entity(modelo)
         except ObjectDoesNotExist:
             raise ValueError(f"La postulación con ID {postulacion.id} no existe.")
+
+    def eliminar(self, id_postulacion: int) -> bool:
+        """Eliminación física para el administrador."""
+        try:
+            modelo = PostulacionModel.objects.get(id=id_postulacion)
+            modelo.delete()
+            return True
+        except ObjectDoesNotExist:
+            return False

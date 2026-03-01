@@ -91,3 +91,99 @@ class MisPostulacionesView(APIView):
                 "error": "Ocurrió un error interno al obtener tus postulaciones.",
                 "detalle_tecnico": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class ListarTodasPostulacionesView(APIView):
+    """
+    Vista (Controlador) para listar TODAS las postulaciones (Uso de Admin).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        caso_de_uso = Container.listar_todas_postulaciones_use_case
+        
+        try:
+            postulaciones = caso_de_uso().execute()
+            
+            respuesta = []
+            for post in postulaciones:
+                respuesta.append({
+                    "id": post.id,
+                    "id_usuario": post.id_usuario,
+                    "nombre_usuario": getattr(post, 'nombre_usuario', f"Voluntario #{post.id_usuario}"), 
+                    "correo_usuario": getattr(post, 'correo_usuario', 'No registrado'),
+                    "telefono_usuario": getattr(post, 'telefono_usuario', 'No registrado'),
+                    "documento_usuario": getattr(post, 'documento_usuario', 'No registrado'),
+                    "habilidades_usuario": getattr(post, 'habilidades_usuario', []),
+                    "disponibilidad_usuario": getattr(post, 'disponibilidad_usuario', {}),
+                    "id_convocatoria": post.id_convocatoria,
+                    "estado": post.estado,
+                    "fecha_postulacion": post.fecha_postulacion,
+                    "observaciones": post.observaciones,
+                    "motivo_rechazo": post.motivo_rechazo,
+                    "historial_estados": post.historial_estados
+                })
+                
+            return Response(respuesta, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": "Ocurrió un error al obtener las postulaciones.",
+                "detalle_tecnico": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class CambiarEstadoPostulacionView(APIView):
+    """
+    Vista (Controlador) para que el Admin apruebe, rechace o ponga en espera una postulación.
+    Usamos PATCH porque es una actualización parcial.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        nuevo_estado = request.data.get('estado')
+        motivo_rechazo = request.data.get('motivo_rechazo', None)
+        
+        if not nuevo_estado:
+            return Response({"error": "El campo 'estado' es obligatorio."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        caso_de_uso = Container.cambiar_estado_postulacion_use_case
+        
+        try:
+            post = caso_de_uso().execute(
+                id_postulacion=pk,
+                nuevo_estado=nuevo_estado,
+                motivo_rechazo=motivo_rechazo
+            )
+            
+            return Response({
+                "mensaje": f"Estado actualizado a {post.estado}",
+                "estado": post.estado
+            }, status=status.HTTP_200_OK)
+            
+        except ValueError as e: # Captura PostulacionNoEncontradaError y validaciones de estado
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": "Error interno del servidor.", "detalle": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class EliminarPostulacionView(APIView):
+    """
+    Vista (Controlador) para que el Admin elimine físicamente una postulación del historial.
+    Usamos el método DELETE.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        caso_de_uso = Container.eliminar_postulacion_use_case
+        
+        try:
+            caso_de_uso().execute(id_postulacion=pk)
+            return Response({
+                "mensaje": "La postulación fue eliminada del historial permanentemente."
+            }, status=status.HTTP_200_OK)
+            
+        except ValueError as e: # Captura PostulacionNoEncontradaError
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                "error": "Ocurrió un error al intentar eliminar la postulación.", 
+                "detalle": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

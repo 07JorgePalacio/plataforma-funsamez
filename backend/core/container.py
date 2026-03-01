@@ -24,6 +24,9 @@ from core.application.use_cases.campana.eliminar_campana import EliminarCampanaU
 # --- CASOS DE USO: POSTULACIONES ---
 from core.application.use_cases.postulacion.postular_voluntario import PostularVoluntarioUseCase
 from core.application.use_cases.postulacion.listar_mis_postulaciones import ListarMisPostulacionesUseCase
+from core.application.use_cases.postulacion.listar_postulaciones_admin import ListarTodasPostulacionesUseCase
+from core.application.use_cases.postulacion.cambiar_estado_postulacion import CambiarEstadoPostulacionUseCase
+from core.application.use_cases.postulacion.eliminar_postulacion import EliminarPostulacionUseCase
 
 class Container:
     """
@@ -130,5 +133,23 @@ class Container:
     @staticmethod
     def listar_mis_postulaciones_use_case() -> ListarMisPostulacionesUseCase:
         return ListarMisPostulacionesUseCase(
+            postulacion_repository=Container.get_postulacion_repository()
+        )
+
+    @staticmethod
+    def listar_todas_postulaciones_use_case() -> ListarTodasPostulacionesUseCase:
+        return ListarTodasPostulacionesUseCase(
+            postulacion_repository=Container.get_postulacion_repository()
+        )
+
+    @staticmethod
+    def cambiar_estado_postulacion_use_case() -> CambiarEstadoPostulacionUseCase:
+        return CambiarEstadoPostulacionUseCase(
+            postulacion_repository=Container.get_postulacion_repository()
+        )
+
+    @staticmethod
+    def eliminar_postulacion_use_case() -> EliminarPostulacionUseCase:
+        return EliminarPostulacionUseCase(
             postulacion_repository=Container.get_postulacion_repository()
         )

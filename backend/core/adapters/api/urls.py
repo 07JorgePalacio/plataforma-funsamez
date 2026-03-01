@@ -16,7 +16,10 @@ from core.adapters.api.rest.views.campana_views import (
 # Vistas de Postulaciones
 from core.adapters.api.rest.views.postulacion_views import (
     PostularVoluntarioView,
-    MisPostulacionesView
+    MisPostulacionesView,
+    ListarTodasPostulacionesView,
+    CambiarEstadoPostulacionView,
+    EliminarPostulacionView
 )
 
 urlpatterns = [
@@ -35,6 +38,11 @@ urlpatterns = [
     path('campanas/<int:pk>/', DetalleCampanaView.as_view(), name='detalle_campana'),
 
     # --- POSTULACIONES ---
-    path('voluntariado/postular/', PostularVoluntarioView.as_view(), name='postular_voluntario'),
-    path('voluntariado/mis-postulaciones/', MisPostulacionesView.as_view(), name='mis_postulaciones'),
+    path('postulaciones/postular/', PostularVoluntarioView.as_view(), name='postular_voluntario'),
+    path('postulaciones/mis-postulaciones/', MisPostulacionesView.as_view(), name='mis_postulaciones'),
+    
+    # --- POSTULACIONES (ADMIN) ---
+    path('postulaciones/admin/todas/', ListarTodasPostulacionesView.as_view(), name='admin_listar_postulaciones'),
+    path('postulaciones/admin/<int:pk>/estado/', CambiarEstadoPostulacionView.as_view(), name='admin_cambiar_estado_postulacion'),
+    path('postulaciones/admin/<int:pk>/', EliminarPostulacionView.as_view(), name='admin_eliminar_postulacion'),
 ]

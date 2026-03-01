@@ -1,191 +1,210 @@
+import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import {
-    FileText, Clock, CheckCircle2, XCircle, MessageCircle,
-    ExternalLink, AlertCircle, Pause, Award
+import { 
+    Clock, CheckCircle2, XCircle, AlertCircle, Calendar, 
+    Search, Filter, ChevronLeft, ChevronRight, Pause, MessageCircle 
 } from 'lucide-react';
 
 export default function MyApplicationsPage() {
-    const { user, logout, updateProfile, getPublishedConvocations, applyToConvocation, hasApplied, getApplicationsByVolunteer, convocations } = useApp();
 
-    const applications = getApplicationsByVolunteer(user?.id);
+    const { getApplicationsByVolunteer, convocations, loading } = useApp();
+    const applications = getApplicationsByVolunteer();
 
-    const getStatusInfo = (status, rejectionReason = null, assignedRole = null) => {
-        switch (status) {
-            case 'pending':
-                return {
-                    label: 'Pendiente',
-                    color: 'warning',
-                    icon: Clock,
-                    description: 'Tu postulación está siendo revisada por nuestro equipo.',
-                };
-            case 'on_hold':
-                return {
-                    label: 'En Espera',
-                    color: 'secondary',
-                    icon: Pause,
-                    description: 'Tu postulación está en lista de espera. Te contactaremos pronto.',
-                };
-            case 'accepted':
-                return {
-                    label: 'Aceptado',
-                    color: 'success',
-                    icon: CheckCircle2,
-                    description: assignedRole
-                        ? `¡Felicidades! Has sido aceptado como ${assignedRole}. Únete al grupo de WhatsApp.`
-                        : '¡Felicidades! Has sido aceptado. Únete al grupo de WhatsApp para más información.',
-                };
-            case 'rejected':
-                return {
-                    label: 'Rechazado',
-                    color: 'error',
-                    icon: XCircle,
-                    description: rejectionReason
-                        ? `Lamentablemente no fuiste seleccionado. Motivo: ${rejectionReason}`
-                        : 'Lamentablemente no fuiste seleccionado esta vez. ¡Sigue intentando!',
-                };
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    const getStatusInfo = (estado, motivoRechazo = null) => {
+        switch (estado) {
+            case 'en_revision':
+                return { label: 'En Revisión', bgClass: 'bg-warning', textClass: 'text-warning', bgLightClass: 'bg-warning/10', borderClass: 'border-warning/20', icon: Clock, description: 'Tu postulación está siendo revisada por nuestro equipo.' };
+            case 'en_espera':
+                return { label: 'En Espera', bgClass: 'bg-secondary', textClass: 'text-secondary', bgLightClass: 'bg-secondary/10', borderClass: 'border-secondary/20', icon: Pause, description: 'Tu postulación está en lista de espera. Te notificaremos si se liberan cupos.' };
+            case 'aprobada':
+                return { label: 'Aprobada', bgClass: 'bg-success', textClass: 'text-success', bgLightClass: 'bg-success/10', borderClass: 'border-success/20', icon: CheckCircle2, description: '¡Felicidades! Has sido aceptado. Revisa las instrucciones de contacto.' };
+            case 'rechazada':
+                return { label: 'No Seleccionado', bgClass: 'bg-error', textClass: 'text-error', bgLightClass: 'bg-error/10', borderClass: 'border-error/20', icon: XCircle, description: motivoRechazo ? `Motivo: ${motivoRechazo}` : 'En esta ocasión no fuiste seleccionado. ¡Sigue intentando!' };
             default:
-                return {
-                    label: 'Desconocido',
-                    color: 'outline',
-                    icon: AlertCircle,
-                    description: '',
-                };
+                return { label: 'Desconocido', bgClass: 'bg-surface-variant', textClass: 'text-surface-variant', bgLightClass: 'bg-surface-variant/10', borderClass: 'border-surface-variant/20', icon: AlertCircle, description: '' };
         }
     };
 
+    const filteredApplications = useMemo(() => {
+        return applications.filter(app => {
+            // Buscamos la convocatoria para poder buscar por su título
+            const convocation = convocations.find(c => c.id === app.id_convocatoria);
+            const title = convocation ? convocation.title.toLowerCase() : '';
+            
+            const matchesSearch = title.includes(searchTerm.toLowerCase());
+            const matchesStatus = statusFilter === '' || app.estado === statusFilter;
+            
+            return matchesSearch && matchesStatus;
+        });
+    }, [applications, convocations, searchTerm, statusFilter]);
+
+    const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+    const paginatedApplications = filteredApplications.slice(
+        (currentPage - 1) * itemsPerPage, 
+        currentPage * itemsPerPage
+    );
+
+    useMemo(() => setCurrentPage(1), [searchTerm, statusFilter]);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-32 animate-fade-in">
+                <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
+                <p className="text-body-large text-on-surface-variant font-medium">Cargando tus postulaciones...</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="max-w-4xl mx-auto animate-fade-in">
+        <div className="max-w-4xl mx-auto animate-fade-in pb-12">
             <div className="mb-8">
                 <h1 className="text-headline-medium text-on-surface font-bold mb-2">
                     Mis Postulaciones
                 </h1>
                 <p className="text-body-large text-on-surface-variant">
-                    Revisa el estado de tus postulaciones a las diferentes convocatorias.
+                    Haz seguimiento al estado de tus postulaciones a las diferentes convocatorias.
                 </p>
             </div>
 
+            {/* CASO 1: El voluntario NUNCA se ha postulado a nada */}
             {applications.length === 0 ? (
                 <div className="card-elevated text-center py-12">
-                    <FileText className="w-16 h-16 text-on-surface-variant mx-auto mb-4" />
-                    <h3 className="text-title-large text-on-surface mb-2">
-                        No tienes postulaciones
-                    </h3>
-                    <p className="text-body-large text-on-surface-variant mb-6">
-                        Explora las convocatorias disponibles y postúlate a las que te interesen.
+                    <Clock className="w-16 h-16 text-on-surface-variant mx-auto mb-4" />
+                    <h3 className="text-title-large text-on-surface mb-2">Aún no te has postulado a nada</h3>
+                    <p className="text-body-medium text-on-surface-variant max-w-md mx-auto mb-6">
+                        Explora las convocatorias abiertas y encuentra la oportunidad perfecta para ayudar.
                     </p>
-                    <a href="/voluntario/convocatorias" className="btn-filled">
-                        Ver Convocatorias
-                    </a>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {applications.map(application => {
-                        const statusInfo = getStatusInfo(application.status, application.rejectionReason, application.assignedRole);
-                        const StatusIcon = statusInfo.icon;
-
-                        return (
-                            <div
-                                key={application.id}
-                                className="card-elevated"
+                <>
+                    {/* BARRA DE BÚSQUEDA Y FILTROS */}
+                    <div className="flex flex-col md:flex-row gap-4 mb-8 bg-surface-container-lowest p-2 rounded-2xl">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-on-surface-variant w-5 h-5" />
+                            <input
+                                type="text"
+                                placeholder="Buscar por título de convocatoria..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-outline-variant focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all bg-surface"
+                            />
+                        </div>
+                        
+                        <div className="relative min-w-[200px]">
+                            <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 text-on-surface-variant w-5 h-5" />
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="w-full pl-12 pr-10 py-3.5 rounded-xl border border-outline-variant focus:border-primary outline-none appearance-none bg-surface cursor-pointer"
                             >
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    {/* Status Icon */}
-                                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0
-                    ${statusInfo.color === 'warning' ? 'bg-warning-container' : ''}
-                    ${statusInfo.color === 'secondary' ? 'bg-secondary-container' : ''}
-                    ${statusInfo.color === 'success' ? 'bg-success-container' : ''}
-                    ${statusInfo.color === 'error' ? 'bg-error-container' : ''}
-                  `}>
-                                        <StatusIcon className={`w-7 h-7
-                      ${statusInfo.color === 'warning' ? 'text-warning' : ''}
-                      ${statusInfo.color === 'secondary' ? 'text-secondary' : ''}
-                      ${statusInfo.color === 'success' ? 'text-success' : ''}
-                      ${statusInfo.color === 'error' ? 'text-error' : ''}
-                    `} />
-                                    </div>
+                                <option value="">Todos los Estados</option>
+                                <option value="en_revision">En Revisión</option>
+                                <option value="en_espera">En Espera</option>
+                                <option value="aprobada">Aprobadas</option>
+                                <option value="rechazada">No Seleccionado</option>
+                            </select>
+                        </div>
+                    </div>
 
-                                    {/* Content */}
-                                    <div className="flex-1">
-                                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                                            <h3 className="text-title-large text-on-surface font-medium">
-                                                {application.convocationTitle}
-                                            </h3>
-                                            <span className={`px-3 py-1 rounded-full text-label-medium font-medium w-fit
-                        ${statusInfo.color === 'warning' ? 'bg-warning-container text-warning' : ''}
-                        ${statusInfo.color === 'secondary' ? 'bg-secondary-container text-secondary' : ''}
-                        ${statusInfo.color === 'success' ? 'bg-success-container text-success' : ''}
-                        ${statusInfo.color === 'error' ? 'bg-error-container text-error' : ''}
-                      `}>
-                                                {statusInfo.label}
-                                            </span>
-                                        </div>
+                    {/* CASO 2: La búsqueda no arrojó resultados */}
+                    {filteredApplications.length === 0 ? (
+                        <div className="card-elevated text-center py-16">
+                            <Search className="w-16 h-16 text-on-surface-variant mx-auto mb-4 opacity-50" />
+                            <h3 className="text-title-large text-on-surface mb-2">No se encontraron postulaciones</h3>
+                            <p className="text-body-medium text-on-surface-variant max-w-md mx-auto">
+                                Intenta ajustar tus filtros de búsqueda para ver más resultados.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-6">
+                            {paginatedApplications.map((app) => {
+                                const convocation = convocations.find(c => c.id === app.id_convocatoria);
+                                const statusInfo = getStatusInfo(app.estado, app.motivo_rechazo);
+                                const StatusIcon = statusInfo.icon;
 
-                                        <p className="text-body-medium text-on-surface-variant mb-3">
-                                            {statusInfo.description}
-                                        </p>
-
-                                        <div className="flex flex-wrap items-center gap-4 text-body-small text-on-surface-variant">
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="w-4 h-4" />
-                                                Aplicado el {application.appliedAt}
-                                            </span>
-                                        </div>
-
-                                        {/* WhatsApp Link for Accepted Applications */}
-                                        {application.status === 'accepted' && application.whatsappLink && (
-                                            <div className="mt-4 p-4 rounded-xl bg-success/10 border border-success/20">
-                                                <div className="flex items-center gap-3">
-                                                    <MessageCircle className="w-6 h-6 text-success" />
-                                                    <div className="flex-1">
-                                                        <p className="text-label-large text-success font-medium">
-                                                            Grupo de WhatsApp
-                                                        </p>
-                                                        <p className="text-body-small text-on-surface-variant">
-                                                            Únete para coordinar con el equipo
-                                                        </p>
-                                                    </div>
-                                                    <a
-                                                        href={application.whatsappLink}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="btn-filled bg-success hover:bg-success/90 py-2"
-                                                    >
-                                                        <ExternalLink className="w-4 h-4" />
-                                                        Unirse
-                                                    </a>
+                                return (
+                                    <div key={app.id} className="card-elevated p-6 md:p-8 relative overflow-hidden transition-transform duration-300 hover:-translate-y-1">
+                                        {/* Barra lateral asegurada con Tailwind */}
+                                        <div className={`absolute left-0 top-0 bottom-0 w-2 ${statusInfo.bgClass}`}></div>
+                                        
+                                        <div className="flex flex-col md:flex-row gap-6 md:items-start justify-between pl-2">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 border ${statusInfo.bgLightClass} ${statusInfo.textClass} ${statusInfo.borderClass}`}>
+                                                        <StatusIcon className="w-4 h-4" />
+                                                        {statusInfo.label}
+                                                    </span>
+                                                    <span className="text-body-small text-on-surface-variant flex items-center gap-1">
+                                                        <Calendar className="w-3.5 h-3.5" /> 
+                                                        {new Date(app.fecha_postulacion).toLocaleDateString('es-CO')}
+                                                    </span>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                                                
+                                                <h3 className="text-title-large font-bold text-on-surface mb-2">
+                                                    {convocation ? convocation.title : 'Convocatoria no encontrada'}
+                                                </h3>
+                                                
+                                                <div className="mt-4 p-4 bg-surface-container rounded-xl border border-outline-variant/30">
+                                                    <p className={`text-body-medium font-bold flex items-center gap-2 mb-1 ${statusInfo.textClass}`}>
+                                                        <AlertCircle className="w-4 h-4" /> 
+                                                        Estado Actual:
+                                                    </p>
+                                                    <p className="text-body-medium text-on-surface-variant">
+                                                        {statusInfo.description}
+                                                    </p>
+                                                </div>
 
-            {/* Legend */}
-            <div className="mt-8 p-4 rounded-xl bg-surface-container">
-                <h4 className="text-label-large text-on-surface mb-3">Estados de postulación:</h4>
-                <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-warning"></span>
-                        <span className="text-body-small text-on-surface-variant">Pendiente - En revisión</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-secondary"></span>
-                        <span className="text-body-small text-on-surface-variant">En Espera - Lista de espera</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-success"></span>
-                        <span className="text-body-small text-on-surface-variant">Aceptado - ¡Bienvenido!</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-error"></span>
-                        <span className="text-body-small text-on-surface-variant">Rechazado - Sin vacantes</span>
-                    </div>
-                </div>
-            </div>
+                                                {/*  Renderizado Condicional del Botón de WhatsApp */}
+                                                {app.estado === 'aprobada' && convocation?.link_whatsapp && (
+                                                    <div className="mt-5 animate-fade-in">
+                                                        <a 
+                                                            href={convocation.link_whatsapp} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer" 
+                                                            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#25D366] hover:bg-[#20b958] text-white font-bold rounded-xl shadow-md shadow-[#25D366]/30 transition-transform duration-200 hover:-translate-y-0.5"
+                                                        >
+                                                            <MessageCircle className="w-5 h-5" />
+                                                            Unirse al Grupo de WhatsApp
+                                                        </a>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* CONTROLES DE PAGINACIÓN */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-4 mt-10">
+                            <button 
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                                disabled={currentPage === 1} 
+                                className="p-2 rounded-full hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft className="w-6 h-6 text-primary" />
+                            </button>
+                            <span className="text-body-large text-on-surface-variant">
+                                Página <span className="text-primary font-bold">{currentPage}</span> de {totalPages}
+                            </span>
+                            <button 
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                                disabled={currentPage === totalPages} 
+                                className="p-2 rounded-full hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronRight className="w-6 h-6 text-primary" />
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     );
 }
