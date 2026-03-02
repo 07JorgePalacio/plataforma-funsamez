@@ -7,10 +7,11 @@ class PostularVoluntarioUseCase:
     Aplica las reglas de negocio de la HU09.
     """
     
-    def __init__(self, postulacion_repository, convocatoria_repository):
-        # Inyectamos ambos repositorios porque necesitamos verificar la convocatoria
+    def __init__(self, postulacion_repository, convocatoria_repository, user_repository):
+        # Inyectamos repositorios necesarios
         self.postulacion_repo = postulacion_repository
         self.convocatoria_repo = convocatoria_repository
+        self.user_repo = user_repository
 
     def execute(self, id_usuario: int, id_convocatoria: int, observaciones: str = "") -> Postulacion:
         # Regla 1: Validar que la convocatoria exista y esté disponible
@@ -26,9 +27,35 @@ class PostularVoluntarioUseCase:
         if postulacion_existente:
             raise ValueError("Ya te encuentras postulado a esta convocatoria.")
             
-        # Regla 3: (Opcional) Si en el futuro quieres validar que el perfil esté completo 
-        # antes de postularse[cite: 1055], inyectarías el user_repository y harías el chequeo aquí.
+        # Regla 3: Extraer usuario y calcular Nivel de Compatibilidad (Smart Match)
+        usuario = self.user_repo.obtener_por_id(id_usuario)
+        if not usuario:
+            raise ValueError("El usuario no existe.")
 
+        habilidades_req = convocatoria.habilidades_requeridas or ""
+        habilidades_req_list = [h.strip().lower() for h in habilidades_req.split(",") if h.strip()]
+        
+        habilidades_user = [h.lower() for h in usuario.habilidades] if usuario.habilidades else []
+        
+        if not habilidades_req_list:
+            match_hab = 100
+        else:
+            coincidencias = sum(1 for req in habilidades_req_list if any(req in hab or hab in req for hab in habilidades_user))
+            match_hab = int((coincidencias / len(habilidades_req_list)) * 100)
+            if match_hab > 100: match_hab = 100
+
+        horario_req = convocatoria.horario or {}
+        disp_user = usuario.disponibilidad or {}
+        
+        match_disp = True
+        if horario_req:
+            match_disp = False
+            for dia, turnos_req in horario_req.items():
+                turnos_user = disp_user.get(dia, [])
+                if turnos_user and any(turno in turnos_user for turno in turnos_req):
+                    match_disp = True
+                    break
+                
         # Armar el JSON del historial de estados
         historial_inicial = [{
             "estado": "en_revision",
@@ -44,6 +71,8 @@ class PostularVoluntarioUseCase:
             
             # --- 2. Información Básica ---
             observaciones=observaciones,
+            match_habilidades=match_hab,
+            match_disponibilidad=match_disp,
             
             # --- 3. Logística/Configuración ---
             estado="en_revision",

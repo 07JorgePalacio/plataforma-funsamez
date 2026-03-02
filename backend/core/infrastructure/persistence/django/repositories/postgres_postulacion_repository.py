@@ -28,6 +28,8 @@ class PostgresPostulacionRepository(PostulacionRepository):
             # --- 2. Información Básica ---
             observaciones=model.observaciones,
             motivo_rechazo=model.motivo_rechazo,
+            match_habilidades=model.match_habilidades,
+            match_disponibilidad=model.match_disponibilidad,
             
             # --- 3. Logística/Configuración ---
             estado=model.estado,
@@ -48,6 +50,8 @@ class PostgresPostulacionRepository(PostulacionRepository):
             
             # --- 2. Información Básica ---
             observaciones=postulacion.observaciones,
+            match_habilidades=postulacion.match_habilidades,
+            match_disponibilidad=postulacion.match_disponibilidad, 
             
             # --- 3. Logística/Configuración ---
             estado=postulacion.estado,
