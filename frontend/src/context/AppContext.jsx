@@ -31,7 +31,28 @@ export const AppProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
         const name = localStorage.getItem('user_name');
         const role = localStorage.getItem('user_role');
-        return name ? { name, role, id: 1 } : null; 
+        const id = localStorage.getItem('user_id');
+        
+        if (!name) return null;
+
+        let habilidades = [];
+        let disponibilidad = {};
+        try {
+            const habs = localStorage.getItem('user_habilidades');
+            const disp = localStorage.getItem('user_disponibilidad');
+            if (habs) habilidades = JSON.parse(habs);
+            if (disp) disponibilidad = JSON.parse(disp);
+        } catch (e) {
+            console.error("Error al cargar los datos del usuario:", e);
+        }
+
+        return { 
+            name, 
+            role, 
+            id: id ? parseInt(id) : null, 
+            habilidades, 
+            disponibilidad 
+        };
     });
 
     const logout = () => {

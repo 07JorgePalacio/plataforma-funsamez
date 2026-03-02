@@ -216,6 +216,8 @@ class PostulacionModel(models.Model):
     # --- 2. Información Básica ---
     observaciones = models.TextField(blank=True, null=True)
     motivo_rechazo = models.TextField(blank=True, null=True)
+    match_habilidades = models.IntegerField(null=True, blank=True)
+    match_disponibilidad = models.BooleanField(null=True, blank=True)
 
     # --- 3. Logística/Configuración ---
     ESTADOS = [

@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import {
     MapPin, Users, CheckCircle, ArrowRight, X, Search, Filter,
     ChevronLeft, ChevronRight, Gift, Target, BookOpen,
-    Laptop, Home, Clock3, CalendarCheck, Info
+    Laptop, Home, Clock3, CalendarCheck, Info, AlertTriangle, Activity
 } from 'lucide-react';
 
 const CATEGORIAS_INTERES = ["Salud", "Capacitación / Cursos", "Estética y Belleza", "Educación Infantil", "Medio Ambiente", "Adulto Mayor", "Salud y Bienestar", "Tecnología Social", "Arte y Cultura", "Logística de Eventos", "Deportes y Recreación", "Atención Psicosocial", "Nutrición y Cocina", "Construcción y Vivienda", "Rescate Animal"];
@@ -75,7 +75,7 @@ const mapBackendToForm = (convocation) => {
 };
 
 export default function ConvocationsPage() {
-    const { applyToConvocation, hasApplied, getPublishedConvocations, loading } = useApp();
+    const { applyToConvocation, hasApplied, getPublishedConvocations, loading, user } = useApp();
     const publishedConvocations = getPublishedConvocations();
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -122,6 +122,43 @@ export default function ConvocationsPage() {
         setIsApplyModalOpen(true);
     };
 
+    // --- Lógica de Smart Match ---
+    const matchInfo = useMemo(() => {
+        if (!selectedConvocation || !user) return { habMatch: 100, dispMatch: true, isPerfect: true };
+        
+        const habUser = user.habilidades || [];
+        const dispUser = user.disponibilidad || {};
+        const habReq = selectedConvocation.skills || [];
+        const horarioReq = selectedConvocation.horario || {};
+        
+        // 1. Match de Habilidades
+        let habMatch = 100;
+        if (habReq.length > 0) {
+            const coincidencias = habReq.filter(req => 
+                habUser.some(hu => hu.toLowerCase().includes(req.toLowerCase()) || req.toLowerCase().includes(hu.toLowerCase()))
+            );
+            habMatch = Math.min(100, Math.round((coincidencias.length / habReq.length) * 100));
+        }
+
+        // 2. Match de Disponibilidad
+        let dispMatch = true;
+        if (selectedConvocation.tipoHorario === 'recurrente' && Object.keys(horarioReq).length > 0) {
+            dispMatch = false;
+            for (const dia of Object.keys(horarioReq)) {
+                if (dispUser[dia] && dispUser[dia].length > 0) {
+                    dispMatch = true;
+                    break;
+                }
+            }
+        }
+
+        return {
+            habMatch,
+            dispMatch,
+            isPerfect: habMatch === 100 && dispMatch
+        };
+    }, [selectedConvocation, user]);
+
     const handleConfirmApply = async () => {
         if (!selectedConvocation) return;
         setIsSubmitting(true);
@@ -146,15 +183,21 @@ export default function ConvocationsPage() {
                         <CalendarCheck className="w-4 h-4 text-primary"/> 
                         <span className="font-medium">Rango:</span> {formatDateFriendly(parsedConv.startDate)} al {formatDateFriendly(parsedConv.endDate)}
                     </p>
-                    <div className="grid grid-cols-1 gap-2 w-full sm:w-3/4 lg:w-1/2 mx-auto">
-                        {diasActivos.map(dia => (
-                            <div key={dia} className="flex justify-between items-center bg-white p-3 rounded-xl border border-outline-variant/30 text-sm shadow-sm hover:border-primary/40 transition-colors">
-                                <span className="font-bold text-on-surface capitalize">{dia}</span>
-                                <span className="text-on-surface-variant font-medium bg-surface-container px-3 py-1 rounded-md whitespace-nowrap">
-                                    {formatTime12h(parsedConv.horario[dia].start)} - {formatTime12h(parsedConv.horario[dia].end)}
-                                </span>
-                            </div>
-                        ))}
+                    <div className="grid grid-cols-1 gap-2 w-full mx-auto">
+                        {diasActivos.map(dia => {
+                            const isMatch = user?.disponibilidad?.[dia] && user.disponibilidad[dia].length > 0;
+                            
+                            return (
+                                <div key={dia} className={`flex justify-between items-center p-3 rounded-xl border text-sm shadow-sm transition-colors ${isMatch ? 'bg-success/10 border-success/30' : 'bg-white border-outline-variant/30 hover:border-primary/40'}`}>
+                                    <span className={`font-bold capitalize flex items-center gap-1.5 ${isMatch ? 'text-success' : 'text-on-surface'}`}>
+                                        {dia} {isMatch && <CheckCircle className="w-4 h-4" />}
+                                    </span>
+                                    <span className={`font-medium px-3 py-1 rounded-md whitespace-nowrap ${isMatch ? 'bg-success/20 text-success' : 'text-on-surface-variant bg-surface-container'}`}>
+                                        {formatTime12h(parsedConv.horario[dia].start)} - {formatTime12h(parsedConv.horario[dia].end)}
+                                    </span>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             );
@@ -179,17 +222,25 @@ export default function ConvocationsPage() {
         }
     };
 
-    const renderReadOnlyChips = (title, items) => {
+    const renderReadOnlyChips = (title, items, userMatchList = []) => {
         if (!items || items.length === 0) return null;
         return (
             <div className="pt-4 border-t border-outline-variant/30">
                 <label className="block text-label-large text-on-surface font-bold text-primary mb-3">{title}</label>
                 <div className="flex flex-wrap gap-2">
-                    {items.map((opt, idx) => (
-                        <span key={idx} className="px-3 py-1.5 rounded-full text-xs font-medium bg-surface text-on-surface border border-outline-variant shadow-sm">
-                            {opt}
-                        </span>
-                    ))}
+                    {items.map((opt, idx) => {
+
+                        const isMatch = userMatchList.some(userItem => 
+                            userItem.toLowerCase().includes(opt.toLowerCase()) || 
+                            opt.toLowerCase().includes(userItem.toLowerCase())
+                        );
+
+                        return (
+                            <span key={idx} className={`px-3 py-1.5 rounded-full text-xs font-medium border shadow-sm flex items-center gap-1 transition-colors ${isMatch ? 'bg-success/10 text-success border-success/30 font-bold' : 'bg-surface text-on-surface border-outline-variant'}`}>
+                                {opt} {isMatch && <CheckCircle className="w-3.5 h-3.5" />}
+                            </span>
+                        );
+                    })}
                 </div>
             </div>
         );
@@ -365,6 +416,31 @@ export default function ConvocationsPage() {
 
                         <div className="flex-1 overflow-y-auto p-6 scroll-smooth min-h-[50vh] space-y-6 bg-surface-container-lowest">
                             
+                            {/* Tarjeta de Smart Match (Emparejamiento Inteligente) */}
+                            {!hasApplied(selectedConvocation.id) && (
+                                <div className={`p-5 rounded-2xl border shadow-sm ${matchInfo.isPerfect ? 'bg-success/10 border-success/20' : 'bg-warning/10 border-warning/20'}`}>
+                                    <h3 className={`text-label-large font-bold flex items-center gap-2 mb-3 ${matchInfo.isPerfect ? 'text-success' : 'text-warning'}`}>
+                                        <Activity className="w-5 h-5"/> Tu Nivel de Compatibilidad
+                                    </h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="flex items-center gap-3 bg-surface/60 p-3 rounded-xl">
+                                            {matchInfo.habMatch >= 80 ? <CheckCircle className="w-5 h-5 text-success shrink-0"/> : <AlertTriangle className="w-5 h-5 text-warning shrink-0"/>}
+                                            <div>
+                                                <p className="text-body-small font-bold text-on-surface">Habilidades Requeridas</p>
+                                                <p className="text-xs text-on-surface-variant">{matchInfo.habMatch}% de coincidencia con tu perfil.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 bg-surface/60 p-3 rounded-xl">
+                                            {matchInfo.dispMatch ? <CheckCircle className="w-5 h-5 text-success shrink-0"/> : <AlertTriangle className="w-5 h-5 text-warning shrink-0"/>}
+                                            <div>
+                                                <p className="text-body-small font-bold text-on-surface">Disponibilidad de Tiempo</p>
+                                                <p className="text-xs text-on-surface-variant">{matchInfo.dispMatch ? 'Tu horario coincide.' : 'Posible conflicto de horario.'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* 1. Descripción de la Actividad */}
                             <div className="bg-surface p-5 rounded-2xl border border-outline-variant/30 shadow-sm">
                                 <h3 className="text-label-large text-primary font-bold flex items-center gap-2 mb-2">
@@ -423,8 +499,8 @@ export default function ConvocationsPage() {
 
                             {/* 3. Arrays / Chips */}
                             <div className="bg-surface p-5 rounded-2xl border border-outline-variant/30 shadow-sm space-y-2">
-                                {renderReadOnlyChips("Categorías", selectedConvocation.categorias)}
-                                {renderReadOnlyChips("Requisitos", selectedConvocation.skills)}
+                                {renderReadOnlyChips("Categorías", selectedConvocation.categorias, user?.intereses || [])}
+                                {renderReadOnlyChips("Requisitos", selectedConvocation.skills, user?.habilidades || [])}
                                 {renderReadOnlyChips("Beneficios Ofrecidos", selectedConvocation.beneficios)}
                                 
                                 {selectedConvocation.categorias.length === 0 && selectedConvocation.skills.length === 0 && selectedConvocation.beneficios.length === 0 && (
@@ -471,6 +547,21 @@ export default function ConvocationsPage() {
                                     <span className="font-bold text-primary">{selectedConvocation.title}</span>
                                 </p>
                             </div>
+
+                            {/* Advertencia Amigable si no hay match perfecto */}
+                            {!matchInfo.isPerfect && (
+                                <div className="mb-6 p-4 bg-warning/10 rounded-xl border border-warning/30 flex items-start gap-3">
+                                    <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-label-large font-bold text-warning mb-1">Aviso de Compatibilidad</p>
+                                        <p className="text-body-small text-on-surface-variant">
+                                            {!matchInfo.dispMatch ? 'Tu disponibilidad no coincide exactamente con el horario requerido. ' : ''}
+                                            {matchInfo.habMatch < 100 ? `Tienes un ${matchInfo.habMatch}% de coincidencia en las habilidades solicitadas. ` : ''}
+                                            ¿Estás seguro de que deseas comprometerte y postularte de todos modos?
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             <label className="block text-label-large text-on-surface mb-2 font-bold">
                                 ¿Por qué te gustaría participar? (Opcional)

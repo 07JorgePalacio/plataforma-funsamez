@@ -98,7 +98,9 @@ class LoginUserView(APIView):
                     "id": user_entity.id,
                     "full_name": user_entity.nombre_completo,
                     "email": user_entity.correo_electronico,
-                    "role": user_entity.rol
+                    "role": user_entity.rol,
+                    "habilidades": getattr(user_entity, 'habilidades', []),
+                    "disponibilidad": getattr(user_entity, 'disponibilidad', {})
                 }
             }, status=status.HTTP_200_OK)
 

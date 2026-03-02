@@ -20,6 +20,8 @@ class Postulacion:
     # --- 2. Información Básica ---
     observaciones: Optional[str] = None
     motivo_rechazo: Optional[str] = None
+    match_habilidades: Optional[int] = None
+    match_disponibilidad: Optional[bool] = None 
     
     # --- 3. Logística/Configuración ---
     estado: str = "en_revision"  # en_revision, aprobada, rechazada

@@ -135,7 +135,8 @@ class Container:
     def postular_voluntario_use_case() -> PostularVoluntarioUseCase:
         return PostularVoluntarioUseCase(
             postulacion_repository=Container.get_postulacion_repository(),
-            convocatoria_repository=Container.get_convocatoria_repository()
+            convocatoria_repository=Container.get_convocatoria_repository(),
+            user_repository=Container.get_user_repository()
         )
 
     @staticmethod

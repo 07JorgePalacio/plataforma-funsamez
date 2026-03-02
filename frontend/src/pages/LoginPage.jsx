@@ -10,7 +10,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { refreshAllData } = useApp();
+  const { refreshAllData, updateProfile } = useApp(); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,6 +27,17 @@ const LoginPage = () => {
       localStorage.setItem('refresh_token', response.data.tokens.refresh);
       localStorage.setItem('user_role', userRole); 
       localStorage.setItem('user_name', response.data.user.full_name);
+      localStorage.setItem('user_id', response.data.user.id); 
+      localStorage.setItem('user_habilidades', JSON.stringify(response.data.user.habilidades || []));
+      localStorage.setItem('user_disponibilidad', JSON.stringify(response.data.user.disponibilidad || {}));
+
+      updateProfile({
+          name: response.data.user.full_name,
+          role: response.data.user.role,
+          id: response.data.user.id,
+          habilidades: response.data.user.habilidades || [],
+          disponibilidad: response.data.user.disponibilidad || {}
+      });
 
       await refreshAllData();
 
