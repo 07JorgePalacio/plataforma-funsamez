@@ -330,7 +330,7 @@ export default function VolunteersPage() {
         return adminApplications.map(app => {
             const convocation = convocations.find(c => c.id === app.id_convocatoria);
             
-            // 🟢 Extraemos y normalizamos las habilidades requeridas de la convocatoria
+            // Extraemos y normalizamos las habilidades requeridas de la convocatoria
             let reqSkills = [];
             if (convocation) {
                 const rawSkills = convocation.habilidades_requeridas || convocation.skills;
@@ -346,7 +346,7 @@ export default function VolunteersPage() {
                 volunteerName: app.nombre_usuario || `Voluntario #${app.id_usuario}`, 
                 convocationTitle: convocation ? convocation.title : 'Convocatoria Eliminada/Desconocida',
                 convocationSkills: reqSkills, // Guardamos las requeridas para hacer el match
-                convocationSchedule: convocation ? convocation.horario : null // 🟢 Pasamos el horario para la matriz
+                convocationSchedule: convocation ? convocation.horario : null 
             };
         });
     }, [adminApplications, convocations]);
@@ -372,6 +372,7 @@ export default function VolunteersPage() {
             await updateApplicationStatus(appId, newStatus, reason);
             if (newStatus === 'aprobada') showMessage("¡Voluntario aprobado con éxito!", "success");
             else if (newStatus === 'en_espera') showMessage("Postulación puesta en espera.", "warning");
+            else if (newStatus === 'en_revision') showMessage("Postulación devuelta a pendientes.", "info");
             else showMessage("Postulación rechazada.", "error");
         } catch (error) {
             showMessage("Ocurrió un error al cambiar el estado.", "error");

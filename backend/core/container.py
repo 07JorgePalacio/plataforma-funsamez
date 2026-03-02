@@ -5,6 +5,7 @@ from core.infrastructure.persistence.django.repositories.postgres_campana_reposi
 from core.infrastructure.persistence.django.repositories.postgres_postulacion_repository import PostgresPostulacionRepository
 from core.infrastructure.persistence.django.repositories.postgres_notificacion_repository import PostgresNotificacionRepository
 from core.infrastructure.security.django_hasher import DjangoPasswordHasher
+from core.infrastructure.external_services.django_email_service import DjangoEmailService
 
 # --- CASOS DE USO: USUARIOS ---
 from core.application.use_cases.user.register_user import RegisterUser
@@ -50,6 +51,7 @@ class Container:
     _postulacion_repository = None
     _notificacion_repository = None
     _password_hasher = DjangoPasswordHasher()
+    _email_service = None
 
     # ==========================================
     #  1. USUARIOS
@@ -158,10 +160,18 @@ class Container:
         return Container._notificacion_repository
 
     @staticmethod
+    def get_email_service():
+        if Container._email_service is None:
+            Container._email_service = DjangoEmailService()
+        return Container._email_service
+
+    @staticmethod
     def cambiar_estado_postulacion_use_case() -> CambiarEstadoPostulacionUseCase:
         return CambiarEstadoPostulacionUseCase(
             postulacion_repository=Container.get_postulacion_repository(),
-            notificacion_repository=Container.get_notificacion_repository()
+            notificacion_repository=Container.get_notificacion_repository(),
+            email_service=Container.get_email_service(),
+            convocatoria_repository=Container.get_convocatoria_repository()
         )
 
     @staticmethod

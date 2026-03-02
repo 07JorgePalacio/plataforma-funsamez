@@ -22,6 +22,7 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             fecha_inicio=model.fecha_inicio,
             fecha_fin=model.fecha_fin,
             cupos_disponibles=model.cupos_disponibles,
+            cupos_ocupados=model.postulaciones.filter(estado='aprobada').count(),
             # 5. Estado
             estado=model.estado,
             fecha_creacion=model.fecha_creacion,

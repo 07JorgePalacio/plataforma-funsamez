@@ -143,3 +143,13 @@ REST_FRAMEWORK['DATETIME_INPUT_FORMATS'] = [
     '%Y-%m-%d %H:%M:%S',   # Formato clásico
     'iso-8601',
 ]
+
+# ==========================================
+#  CONFIGURACIÓN DE CORREO (SMTP GMAIL)
+# ==========================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'jorgeismaelpalaciocaceres@gmail.com' 
+EMAIL_HOST_PASSWORD = 'gjhx tbhd itju hfnh'

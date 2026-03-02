@@ -35,7 +35,7 @@ const mapBackendToForm = (convocation) => {
     }
     return {
         id: convocation.id, title: convocation.titulo || '', description: convocation.descripcion || '', location: convocation.ubicacion || '',
-        link_google_maps: convocation.link_google_maps || '', whatsappGroupLink: convocation.link_whatsapp || '', modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', spots: convocation.cupos_disponibles || 1,
+        link_google_maps: convocation.link_google_maps || '', whatsappGroupLink: convocation.link_whatsapp || '', modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', spots: convocation.cupos_disponibles || 1, cupos_ocupados: convocation.cupos_ocupados || 0,
         startDate: tipoHorario === 'recurrente' && convocation.fecha_inicio ? convocation.fecha_inicio.split('T')[0] : '',
         endDate: tipoHorario === 'recurrente' && convocation.fecha_fin ? convocation.fecha_fin.split('T')[0] : '',
         categorias: convocation.categorias || [], skills: skillsArray, beneficios: convocation.beneficios || [], 
@@ -120,7 +120,9 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
     const handleUniqueDateChange = (value) => {
         setFormData({ ...formData, fechaEvento: value });
         setErrors(prev => { const n = {...prev}; delete n.fecha; return n; });
-        const today = new Date().toISOString().split('T')[0];
+        const d = new Date();
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        const today = d.toISOString().split('T')[0];
         if (!convocation?.id && value < today) setErrors(prev => ({...prev, fecha: "No puede ser en el pasado."}));
     };
 
@@ -128,7 +130,9 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
         const newData = { ...formData, [field]: value };
         setFormData(newData);
         setErrors(prev => { const newErrors = { ...prev }; delete newErrors[field]; return newErrors; });
-        const hoy = new Date().toISOString().split('T')[0];
+        const d = new Date();
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        const hoy = d.toISOString().split('T')[0];
         const start = field === 'startDate' ? value : formData.startDate;
         const end = field === 'endDate' ? value : formData.endDate;
         if (field === 'startDate' && !convocation?.id && value < hoy) setErrors(prev => ({...prev, startDate: "No puede iniciar en el pasado."}));
@@ -615,7 +619,23 @@ export default function AdminConvocationsPage() {
                                                 {convocation.modalidad === 'virtual' ? <Laptop size={16} className="text-indigo-500"/> : <MapPin size={16} className="text-orange-500"/>} 
                                                 <span className="truncate">{convocation.location || convocation.ubicacion || (convocation.modalidad === 'virtual' ? 'Enlace de conexión' : 'Sede Principal')}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-on-surface-variant"><Users size={16} className="text-primary"/> {convocation.spots || convocation.cupos_disponibles} cupos</div>
+                                            <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                                                <Users size={16} className="text-primary shrink-0"/> 
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between mb-1 text-xs">
+                                                        <span>Cupos ocupados</span>
+                                                        <span className="font-bold">{convocation.cupos_ocupados || 0} / {convocation.spots || convocation.cupos_disponibles}</span>
+                                                    </div>
+                                                    <div className="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                                                        <div className={`h-full transition-all duration-500 rounded-full ${(convocation.cupos_ocupados || 0) >= (convocation.spots || convocation.cupos_disponibles) ? 'bg-error' : 'bg-primary'}`} style={{ width: `${Math.min(100, ((convocation.cupos_ocupados || 0) / (convocation.spots || convocation.cupos_disponibles)) * 100)}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {(convocation.cupos_ocupados || 0) >= (convocation.spots || convocation.cupos_disponibles) && (
+                                                <div className="mt-2 text-[11px] font-bold text-error flex items-center animate-pulse bg-error/10 w-fit px-2 py-1 rounded-md border border-error/20">
+                                                    <AlertCircle size={12} className="mr-1"/> ¡Convocatoria sin cupos!
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="flex gap-2 mt-auto pt-3 border-t border-outline-variant/20">
