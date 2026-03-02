@@ -15,6 +15,7 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             descripcion=model.descripcion,
             # 3. Logística
             ubicacion=model.ubicacion or "",
+            link_google_maps=model.link_google_maps or "",
             link_whatsapp=model.link_whatsapp or "",
             modalidad=model.modalidad,
             # 4. Tiempos
@@ -42,6 +43,7 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
             descripcion=convocatoria.descripcion,
             # 3. Logística
             ubicacion=convocatoria.ubicacion,
+            link_google_maps=convocatoria.link_google_maps,
             link_whatsapp=convocatoria.link_whatsapp,
             modalidad=convocatoria.modalidad,
             # 4. Tiempos

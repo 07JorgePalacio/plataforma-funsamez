@@ -26,7 +26,7 @@ class UserRepository(ABC):
         pass
     
     @abstractmethod
-    def get_by_id(self, user_id: int) -> Optional[User]:
+    def obtener_por_id(self, user_id: int) -> Optional[User]:
         """
         Debe buscar un usuario por su ID interno.
         """

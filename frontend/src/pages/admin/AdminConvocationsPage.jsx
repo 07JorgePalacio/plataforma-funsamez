@@ -35,7 +35,7 @@ const mapBackendToForm = (convocation) => {
     }
     return {
         id: convocation.id, title: convocation.titulo || '', description: convocation.descripcion || '', location: convocation.ubicacion || '',
-        whatsappGroupLink: convocation.link_whatsapp || '', modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', spots: convocation.cupos_disponibles || 1,
+        link_google_maps: convocation.link_google_maps || '', whatsappGroupLink: convocation.link_whatsapp || '', modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', spots: convocation.cupos_disponibles || 1,
         startDate: tipoHorario === 'recurrente' && convocation.fecha_inicio ? convocation.fecha_inicio.split('T')[0] : '',
         endDate: tipoHorario === 'recurrente' && convocation.fecha_fin ? convocation.fecha_fin.split('T')[0] : '',
         categorias: convocation.categorias || [], skills: skillsArray, beneficios: convocation.beneficios || [], 
@@ -44,7 +44,7 @@ const mapBackendToForm = (convocation) => {
 };
 
 function ConvocationFormModal({ convocation, onSave, onClose }) {
-    const initialValues = { title: '', description: '', location: '', whatsappGroupLink: '', modalidad: 'presencial', spots: 1, startDate: '', endDate: '', categorias: [], skills: [], beneficios: [], tipoHorario: 'unico', fechaEvento: '', horaInicio: '', horaFin: '', horario: {} };
+    const initialValues = { title: '', description: '', location: '', link_google_maps: '', whatsappGroupLink: '', modalidad: 'presencial', spots: 1, startDate: '', endDate: '', categorias: [], skills: [], beneficios: [], tipoHorario: 'unico', fechaEvento: '', horaInicio: '', horaFin: '', horario: {} };
     const [formData, setFormData] = useState(initialValues);
     const [errors, setErrors] = useState({});
     const [matrixErrors, setMatrixErrors] = useState({});
@@ -170,7 +170,7 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
              horarioFinal = { tipo: 'recurrente', ...formData.horario };
         }
         const payload = {
-            title: formData.title, description: formData.description, location: formData.location, whatsappGroupLink: formData.whatsappGroupLink,
+            title: formData.title, description: formData.description, location: formData.location, link_google_maps: formData.link_google_maps, whatsappGroupLink: formData.whatsappGroupLink,
             modalidad: formData.modalidad, startDate, endDate, spots: parseInt(formData.spots) || 1, skills: formData.skills || [],
             categorias: formData.categorias || [], beneficios: formData.beneficios || [], horario: horarioFinal
         };
@@ -246,6 +246,20 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                                 </div>
                                 {errors.location && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.location}</p>}
                             </div>
+                            
+                            {/* Campo para Google Maps */}
+                            {formData.modalidad === 'presencial' && (
+                                <div className="pt-2">
+                                    <label className="block text-label-large text-on-surface mb-2 font-bold">Enlace de Google Maps (Opcional)</label>
+                                    <input 
+                                        type="url" 
+                                        value={formData.link_google_maps} 
+                                        onChange={(e) => setFormData({ ...formData, link_google_maps: e.target.value })} 
+                                        className="input-outlined w-full focus:bg-white" 
+                                        placeholder="Ej: https://maps.app.goo.gl/..." 
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div className="pt-6 border-t border-outline-variant/30" id="field-horario">

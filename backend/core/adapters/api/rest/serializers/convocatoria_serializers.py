@@ -17,7 +17,7 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
             # 2. Info Básica
             'titulo', 'descripcion',
             # 3. Logística
-            'ubicacion', 'link_whatsapp', 'modalidad', 
+            'ubicacion', 'link_google_maps', 'link_whatsapp', 'modalidad', 
             # 4. Tiempos y Cupos
             'fecha_inicio', 'fecha_fin', 'cupos_disponibles',
             # 5. Estado

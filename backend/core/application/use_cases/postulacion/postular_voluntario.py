@@ -31,11 +31,12 @@ class PostularVoluntarioUseCase:
         usuario = self.user_repo.obtener_por_id(id_usuario)
         if not usuario:
             raise ValueError("El usuario no existe.")
-
-        habilidades_req = convocatoria.habilidades_requeridas or ""
-        habilidades_req_list = [h.strip().lower() for h in habilidades_req.split(",") if h.strip()]
         
-        habilidades_user = [h.lower() for h in usuario.habilidades] if usuario.habilidades else []
+        habilidades_req = convocatoria.habilidades_requeridas or ""
+        habilidades_req_list = [str(h).strip().lower() for h in habilidades_req.split(",") if h.strip()]
+        
+        habilidades_user_raw = usuario.habilidades if isinstance(usuario.habilidades, list) else []
+        habilidades_user = [str(h).lower() for h in habilidades_user_raw if h]
         
         if not habilidades_req_list:
             match_hab = 100
@@ -44,15 +45,17 @@ class PostularVoluntarioUseCase:
             match_hab = int((coincidencias / len(habilidades_req_list)) * 100)
             if match_hab > 100: match_hab = 100
 
-        horario_req = convocatoria.horario or {}
-        disp_user = usuario.disponibilidad or {}
+        horario_req = convocatoria.horario if isinstance(convocatoria.horario, dict) else {}
+        disp_user = usuario.disponibilidad if isinstance(usuario.disponibilidad, dict) else {}
         
         match_disp = True
         if horario_req:
             match_disp = False
             for dia, turnos_req in horario_req.items():
-                turnos_user = disp_user.get(dia, [])
-                if turnos_user and any(turno in turnos_user for turno in turnos_req):
+                turnos_user = disp_user.get(dia, []) if isinstance(disp_user, dict) else []
+                turnos_req_iterable = turnos_req if isinstance(turnos_req, (list, dict)) else []
+                
+                if turnos_user and any(turno in turnos_user for turno in turnos_req_iterable):
                     match_disp = True
                     break
                 

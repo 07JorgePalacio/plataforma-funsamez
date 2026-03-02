@@ -15,9 +15,10 @@ class CrearConvocatoriaUseCase:
                  cupos: int, id_usuario: int, habilidades: str,
                  # Datos Opcionales (Defaults)
                  ubicacion: str = "", 
+                 link_google_maps: str = "",
                  link_whatsapp: str = "",
-                 modalidad: str = "presencial", # 🟢
-                 beneficios: List[str] = None,  # 🟢
+                 modalidad: str = "presencial", 
+                 beneficios: List[str] = None,  
                  categorias: List[str] = None, 
                  horario: Dict[str, Any] = None) -> Convocatoria:
         
@@ -33,15 +34,16 @@ class CrearConvocatoriaUseCase:
             titulo=titulo,
             descripcion=descripcion,
             ubicacion=ubicacion,
+            link_google_maps=link_google_maps,
             link_whatsapp=link_whatsapp,
-            modalidad=modalidad, # 🟢
+            modalidad=modalidad, 
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin,
             cupos_disponibles=cupos,
             habilidades_requeridas=habilidades,
             categorias=categorias or [],
             horario=horario or {},
-            beneficios=beneficios or [] # 🟢
+            beneficios=beneficios or [] 
         )
 
         return self.repository.crear(nueva_convocatoria)

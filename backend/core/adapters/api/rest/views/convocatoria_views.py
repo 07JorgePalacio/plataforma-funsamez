@@ -27,6 +27,7 @@ class CrearConvocatoriaView(APIView):
                 id_usuario=request.user.id,
                 # 3. Logística
                 ubicacion=data.get('ubicacion', ''),
+                link_google_maps=data.get('link_google_maps', ''),
                 link_whatsapp=data.get('link_whatsapp', ''),
                 modalidad=data.get('modalidad', 'presencial'), 
                 # 4. JSON/Listas
