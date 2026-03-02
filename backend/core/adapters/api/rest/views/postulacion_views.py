@@ -53,8 +53,12 @@ class PostularVoluntarioView(APIView):
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            import traceback
+            print("🔥 [DEBUG] ERROR CRÍTICO EN POSTULACIÓN:")
+            traceback.print_exc()
             return Response({
-                "error": "Ocurrió un error interno en el servidor."
+                "error": "Ocurrió un error interno en el servidor.",
+                "detalle_tecnico": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class MisPostulacionesView(APIView):

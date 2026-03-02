@@ -109,6 +109,7 @@ class ConvocatoriaModel(models.Model):
 
     # --- 3. Logística ---
     ubicacion = models.CharField(max_length=255, blank=True, null=True)
+    link_google_maps = models.URLField(max_length=500, blank=True, null=True)
     link_whatsapp = models.URLField(max_length=500, blank=True, null=True)
     
     MODALIDAD_CHOICES = [('presencial', 'Presencial'), ('virtual', 'Virtual')]

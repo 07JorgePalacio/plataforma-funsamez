@@ -62,6 +62,7 @@ const mapBackendToForm = (convocation) => {
         title: convocation.title || convocation.titulo || '', 
         description: convocation.description || convocation.descripcion || '', 
         location: convocation.ubicacion || '',
+        link_google_maps: convocation.link_google_maps || '',
         whatsappGroupLink: convocation.link_whatsapp || '', 
         modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', 
         spots: convocation.cupos_totales || convocation.cupos_disponibles || 1,
@@ -480,6 +481,10 @@ export default function ConvocationsPage() {
                                         {selectedConvocation.modalidad === 'virtual' && selectedConvocation.location.includes('http') ? (
                                             <a href={selectedConvocation.location} target="_blank" rel="noopener noreferrer" className="text-body-medium text-primary hover:underline break-all flex items-start gap-1">
                                                 <Laptop className="w-4 h-4 mt-0.5 shrink-0"/> {selectedConvocation.location}
+                                            </a>
+                                        ) : selectedConvocation.modalidad === 'presencial' && selectedConvocation.link_google_maps ? (
+                                            <a href={selectedConvocation.link_google_maps} target="_blank" rel="noopener noreferrer" className="text-body-medium text-primary font-bold hover:underline break-all flex items-start gap-1">
+                                                <MapPin className="w-4 h-4 mt-0.5 shrink-0"/> {selectedConvocation.location || 'Ver en Google Maps'}
                                             </a>
                                         ) : (
                                             <p className="text-body-medium text-on-surface flex items-start gap-1">

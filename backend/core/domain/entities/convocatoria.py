@@ -14,8 +14,9 @@ class Convocatoria:
 
     # --- 3. Logística ---
     ubicacion: str = ""
+    link_google_maps: str = ""
     link_whatsapp: str = ""
-    modalidad: str = "presencial" # 🟢 Parte del problema (Aseguramos default)
+    modalidad: str = "presencial" 
 
     # --- 4. Tiempos y Cupos ---
     fecha_inicio: Optional[datetime] = None
@@ -30,7 +31,7 @@ class Convocatoria:
     habilidades_requeridas: str = "" 
     categorias: List[str] = None 
     horario: Dict[str, Any] = None
-    beneficios: List[str] = None # 🟢 Parte del problema (Aseguramos que exista el campo)
+    beneficios: List[str] = None 
 
     def esta_activa(self) -> bool:
         ahora = datetime.now()

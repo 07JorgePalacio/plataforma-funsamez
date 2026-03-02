@@ -34,7 +34,7 @@ class PostgresUserRepository(UserRepository):
         except UsuarioModel.DoesNotExist:
             return None
 
-    def get_by_id(self, id: int) -> Optional[User]:
+    def obtener_por_id(self, id: int) -> Optional[User]:
         try:
             usuario_model = UsuarioModel.objects.get(id=id)
             return self._to_domain(usuario_model)

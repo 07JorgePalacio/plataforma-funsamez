@@ -18,8 +18,9 @@ export const crearConvocatoria = async (formData) => {
         descripcion: formData.description,
         // 3. Logística
         ubicacion: formData.location,
+        link_google_maps: formData.link_google_maps,
         link_whatsapp: formData.whatsappGroupLink,
-        modalidad: formData.modalidad,
+        modalidad: formData.modalidad, 
         // 4. Tiempos y Cupos
         fecha_inicio: formData.startDate,
         fecha_fin: formData.endDate,
@@ -28,7 +29,7 @@ export const crearConvocatoria = async (formData) => {
         habilidades_requeridas: habilidadesString,
         categorias: formData.categorias,
         horario: formData.horario,
-        beneficios: formData.beneficios // 🟢 CRÍTICO: Asegurar envío
+        beneficios: formData.beneficios 
     };
 
     try {
@@ -50,8 +51,9 @@ export const actualizarConvocatoria = async (id, formData) => {
         descripcion: formData.description,
         // 3. Logística
         ubicacion: formData.location,
+        link_google_maps: formData.link_google_maps,
         link_whatsapp: formData.whatsappGroupLink,
-        modalidad: formData.modalidad, // 🟢 CRÍTICO
+        modalidad: formData.modalidad,
         // 4. Tiempos y Cupos
         fecha_inicio: formData.startDate,
         fecha_fin: formData.endDate,
@@ -60,7 +62,7 @@ export const actualizarConvocatoria = async (id, formData) => {
         habilidades_requeridas: habilidadesString,
         categorias: formData.categorias,
         horario: formData.horario,
-        beneficios: formData.beneficios // 🟢 CRÍTICO
+        beneficios: formData.beneficios 
     };
 
     try {
