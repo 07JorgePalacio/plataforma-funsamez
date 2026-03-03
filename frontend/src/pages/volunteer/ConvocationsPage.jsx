@@ -3,8 +3,9 @@ import { useApp } from '../../context/AppContext';
 import {
     MapPin, Users, CheckCircle, ArrowRight, X, Search, Filter,
     ChevronLeft, ChevronRight, Gift, Target, BookOpen,
-    Laptop, Home, Clock3, CalendarCheck, Info, AlertTriangle, Activity
+    Laptop, Home, Clock3, CalendarCheck, Info, AlertTriangle, Activity, Briefcase
 } from 'lucide-react';
+import Snackbar from '../../components/Snackbar';
 
 const CATEGORIAS_INTERES = ["Salud", "Capacitación / Cursos", "Estética y Belleza", "Educación Infantil", "Medio Ambiente", "Adulto Mayor", "Salud y Bienestar", "Tecnología Social", "Arte y Cultura", "Logística de Eventos", "Deportes y Recreación", "Atención Psicosocial", "Nutrición y Cocina", "Construcción y Vivienda", "Rescate Animal"];
 const MODALIDADES = ["Presencial", "Virtual", "Híbrido"];
@@ -65,7 +66,8 @@ const mapBackendToForm = (convocation) => {
         link_google_maps: convocation.link_google_maps || '',
         whatsappGroupLink: convocation.link_whatsapp || '', 
         modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', 
-        spots: convocation.cupos_totales || convocation.cupos_disponibles || 1,
+        spots: convocation.cupos_disponibles || 1,
+        cupos_ocupados: convocation.cupos_ocupados || 0,
         startDate: tipoHorario === 'recurrente' && convocation.fecha_inicio ? convocation.fecha_inicio.split('T')[0] : '',
         endDate: tipoHorario === 'recurrente' && convocation.fecha_fin ? convocation.fecha_fin.split('T')[0] : '',
         categorias: Array.isArray(convocation.categorias) ? convocation.categorias : (convocation.categoria ? [convocation.categoria] : []), 
@@ -88,6 +90,7 @@ export default function ConvocationsPage() {
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false); 
     const [observaciones, setObservaciones] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'info' }); // 🟢 Control del Snackbar
 
     const filteredConvocations = useMemo(() => {
         return publishedConvocations.filter(c => {
@@ -167,9 +170,10 @@ export default function ConvocationsPage() {
             await applyToConvocation(selectedConvocation.id, observaciones);
             setIsApplyModalOpen(false);
             setSelectedConvocation(null);
+            setSnackbar({ show: true, message: '¡Te has postulado con éxito!', type: 'success' });
         } catch (error) {
             console.error("Error al postular:", error);
-            alert("Ocurrió un error al postularte. Intenta de nuevo.");
+            setSnackbar({ show: true, message: 'Ocurrió un error al postularte. Intenta de nuevo.', type: 'error' });
         } finally {
             setIsSubmitting(false);
         }
@@ -179,21 +183,22 @@ export default function ConvocationsPage() {
         if (parsedConv.tipoHorario === 'recurrente') {
             const diasActivos = Object.keys(parsedConv.horario);
             return (
-                <div className="space-y-4 w-full">
-                    <p className="text-body-small text-on-surface-variant flex items-center gap-1.5 bg-white p-2 rounded-lg border border-outline-variant/30 w-fit">
-                        <CalendarCheck className="w-4 h-4 text-primary"/> 
-                        <span className="font-medium">Rango:</span> {formatDateFriendly(parsedConv.startDate)} al {formatDateFriendly(parsedConv.endDate)}
+                <div className="space-y-3 w-full">
+                    <p className="text-xs text-on-surface-variant flex flex-wrap items-center gap-1.5 bg-white/50 px-3 py-2 rounded-lg w-full sm:w-fit">
+                        <CalendarCheck className="w-4 h-4 text-primary/70 shrink-0"/> 
+                        <span className="font-bold">Rango:</span> {formatDateFriendly(parsedConv.startDate)} al {formatDateFriendly(parsedConv.endDate)}
                     </p>
-                    <div className="grid grid-cols-1 gap-2 w-full mx-auto">
+                    <div className="flex flex-col gap-1 w-full mx-auto">
                         {diasActivos.map(dia => {
                             const isMatch = user?.disponibilidad?.[dia] && user.disponibilidad[dia].length > 0;
                             
                             return (
-                                <div key={dia} className={`flex justify-between items-center p-3 rounded-xl border text-sm shadow-sm transition-colors ${isMatch ? 'bg-success/10 border-success/30' : 'bg-white border-outline-variant/30 hover:border-primary/40'}`}>
-                                    <span className={`font-bold capitalize flex items-center gap-1.5 ${isMatch ? 'text-success' : 'text-on-surface'}`}>
-                                        {dia} {isMatch && <CheckCircle className="w-4 h-4" />}
+                                <div key={dia} className={`flex flex-wrap gap-2 justify-between items-center px-3 py-2.5 rounded-xl text-sm transition-colors ${isMatch ? 'bg-success/10' : 'bg-transparent hover:bg-white/40'}`}>
+                                    <span className={`font-bold capitalize flex items-center gap-2 ${isMatch ? 'text-success-dark' : 'text-on-surface-variant'}`}>
+                                        {isMatch ? <CheckCircle className="w-4 h-4 text-success shrink-0" /> : <span className="w-4 h-4 shrink-0 opacity-0"></span>}
+                                        {dia}
                                     </span>
-                                    <span className={`font-medium px-3 py-1 rounded-md whitespace-nowrap ${isMatch ? 'bg-success/20 text-success' : 'text-on-surface-variant bg-surface-container'}`}>
+                                    <span className={`font-bold px-3 py-1 rounded-md text-xs sm:text-sm ${isMatch ? 'bg-success-container/50 text-success-dark' : 'text-on-surface-variant bg-white/60'}`}>
                                         {formatTime12h(parsedConv.horario[dia].start)} - {formatTime12h(parsedConv.horario[dia].end)}
                                     </span>
                                 </div>
@@ -203,20 +208,31 @@ export default function ConvocationsPage() {
                 </div>
             );
         } else {
+            let isMatch = false;
+            let dayOfWeek = '';
+            if (parsedConv.fechaEvento) {
+                const dateObj = new Date(parsedConv.fechaEvento + 'T00:00:00'); 
+                const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                dayOfWeek = daysMap[dateObj.getDay()];
+                isMatch = user?.disponibilidad?.[dayOfWeek] && user.disponibilidad[dayOfWeek].length > 0;
+            }
+
             return (
-                <div className="bg-white p-4 rounded-xl border border-outline-variant/30 text-sm shadow-sm w-fit min-w-[280px] md:min-w-[350px] mx-auto">
-                    <div className="flex justify-between items-center mb-3 pb-3 border-b border-outline-variant/20 gap-6">
-                        <span className="text-on-surface-variant font-medium whitespace-nowrap">Fecha del Evento:</span>
-                        <span className="font-bold text-on-surface flex items-center gap-1.5 whitespace-nowrap">
-                            <CalendarCheck className="w-4 h-4 text-primary shrink-0"/>
-                            {formatDateFriendly(parsedConv.fechaEvento)}
-                        </span>
-                    </div>
-                    <div className="flex justify-between items-center gap-6">
-                        <span className="text-on-surface-variant font-medium whitespace-nowrap">Horario:</span>
-                        <span className="font-bold text-on-surface bg-surface-container px-3 py-1.5 rounded-md whitespace-nowrap text-right">
-                            {formatTime12h(parsedConv.horaInicio)} a {formatTime12h(parsedConv.horaFin)}
-                        </span>
+                <div className="space-y-3 w-full">
+                    <p className="text-xs text-on-surface-variant flex flex-wrap items-center gap-1.5 bg-white/50 px-3 py-2 rounded-lg w-full sm:w-fit">
+                        <CalendarCheck className="w-4 h-4 text-primary/70 shrink-0"/> 
+                        <span className="font-bold">Fecha:</span> {formatDateFriendly(parsedConv.fechaEvento)}
+                    </p>
+                    <div className="flex flex-col gap-1 w-full mx-auto">
+                        <div className={`flex flex-wrap gap-2 justify-between items-center px-3 py-2.5 rounded-xl text-sm transition-colors ${isMatch ? 'bg-success/10' : 'bg-transparent hover:bg-white/40'}`}>
+                            <span className={`font-bold capitalize flex items-center gap-2 ${isMatch ? 'text-success-dark' : 'text-on-surface-variant'}`}>
+                                {isMatch ? <CheckCircle className="w-4 h-4 text-success shrink-0" /> : <span className="w-4 h-4 shrink-0 opacity-0"></span>}
+                                {dayOfWeek}
+                            </span>
+                            <span className={`font-bold px-3 py-1 rounded-md text-xs sm:text-sm ${isMatch ? 'bg-success-container/50 text-success-dark' : 'text-on-surface-variant bg-white/60'}`}>
+                                {formatTime12h(parsedConv.horaInicio)} - {formatTime12h(parsedConv.horaFin)}
+                            </span>
+                        </div>
                     </div>
                 </div>
             );
@@ -225,9 +241,25 @@ export default function ConvocationsPage() {
 
     const renderReadOnlyChips = (title, items, userMatchList = []) => {
         if (!items || items.length === 0) return null;
+        
+        // Verificamos si hay al menos una coincidencia para mostrar la leyenda
+        const hasMatch = items.some(opt => 
+            userMatchList.some(userItem => 
+                userItem.toLowerCase().includes(opt.toLowerCase()) || 
+                opt.toLowerCase().includes(userItem.toLowerCase())
+            )
+        );
+
         return (
             <div className="pt-4 border-t border-outline-variant/30">
-                <label className="block text-label-large text-on-surface font-bold text-primary mb-3">{title}</label>
+                <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <label className="block text-label-large text-on-surface font-bold text-primary">{title}</label>
+                    {hasMatch && (
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-success-dark bg-success/10 px-2.5 py-1 rounded-full">
+                            <CheckCircle className="w-3.5 h-3.5 text-success" /> Coincide con tu perfil
+                        </span>
+                    )}
+                </div>
                 <div className="flex flex-wrap gap-2">
                     {items.map((opt, idx) => {
 
@@ -324,58 +356,82 @@ export default function ConvocationsPage() {
                             const isAlreadyApplied = hasApplied(parsed.id);
 
                             return (
-                                <div key={parsed.id} className="card-elevated overflow-hidden flex flex-col hover:-translate-y-1 transition-transform duration-300">
-                                    <div className="p-6 flex-1 flex flex-col">
-                                        <div className="flex justify-between items-center mb-4 gap-2">
-                                            <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 shadow-sm truncate max-w-[160px]" title={parsed.categorias[0] || 'General'}>
-                                                {parsed.categorias[0] || 'General'}
-                                            </span>
-                                            <div className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm ${parsed.modalidad === 'virtual' ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-orange-100 text-orange-700 border border-orange-200'}`}>
-                                                {parsed.modalidad === 'virtual' ? <Laptop size={12} strokeWidth={2.5}/> : <Home size={12} strokeWidth={2.5}/>}
+                                <div key={parsed.id} className="card-elevated overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-elevation-4 transition-all duration-300 relative border border-outline-variant/30 p-0 bg-surface rounded-3xl">
+                                    
+                                    <div className="p-6 pb-5 flex-1 flex flex-col">
+                                        
+                                        <div className="flex items-center justify-between gap-3 mb-3">
+                                            <div className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${parsed.modalidad === 'virtual' ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-orange-50 text-orange-700 border border-orange-100'}`}>
+                                                {parsed.modalidad === 'virtual' ? <Laptop size={13} /> : <MapPin size={13} />}
                                                 {parsed.modalidad}
+                                            </div>
+                                            <div className="shrink-0 bg-success/10 text-success-dark px-3 py-1.5 rounded-full text-[10px] font-bold border border-success/20 uppercase tracking-wider">
+                                                {Math.max(0, parsed.spots - parsed.cupos_ocupados)} vacantes
                                             </div>
                                         </div>
                                         
-                                        <h3 className="text-title-large font-bold text-on-surface mb-2 line-clamp-1">
+                                        <h3 className="text-title-large font-bold text-on-surface mb-3 line-clamp-1 group-hover:text-primary transition-colors" title={parsed.title}>
                                             {parsed.title}
                                         </h3>
                                         
-                                        <p className="text-body-medium text-on-surface-variant mb-6 line-clamp-2 flex-1">
+                                        <div className="flex items-center gap-x-4 gap-y-1 text-xs text-on-surface-variant mb-5 font-medium flex-wrap border-b border-outline-variant/30 pb-4">
+                                            <span className="flex items-center gap-1.5 py-1">
+                                                {parsed.tipoHorario === 'recurrente' ? <Clock3 className="w-3.5 h-3.5 text-primary/70"/> : <CalendarCheck className="w-3.5 h-3.5 text-primary/70"/>}
+                                                {parsed.tipoHorario === 'recurrente' ? 'Múltiples Días' : formatDateFriendly(parsed.fechaEvento)}
+                                            </span>
+                                            <span className="flex items-center gap-1.5 py-1">
+                                                {parsed.modalidad === 'virtual' ? <Laptop className="w-3.5 h-3.5 text-primary/70"/> : <MapPin className="w-3.5 h-3.5 text-primary/70"/>}
+                                                <span className="truncate max-w-[180px]">{parsed.modalidad === 'virtual' ? 'Remoto' : (parsed.location || 'Sede Principal')}</span>
+                                            </span>
+                                        </div>
+                                        
+                                        <p className="text-body-medium text-on-surface-variant mb-5 line-clamp-2 flex-1">
                                             {parsed.description}
                                         </p>
                                         
-                                        <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-body-small text-on-surface-variant mb-6 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/50">
-                                            <div className="flex items-center gap-2">
-                                                <CalendarCheck className="w-4 h-4 text-primary" /> 
-                                                <span className="truncate">{parsed.tipoHorario === 'recurrente' ? 'Múltiples Días' : formatDateFriendly(parsed.fechaEvento)}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <MapPin className="w-4 h-4 text-primary" /> 
-                                                <span className="truncate">{parsed.modalidad === 'virtual' ? 'Online' : (parsed.location || 'Sede Principal')}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /> {parsed.spots} Cupos</div>
-                                            
-                                            {parsed.beneficios.length > 0 && (
-                                                <div className="flex items-center gap-2 text-secondary">
-                                                    <Gift className="w-4 h-4" /> 
-                                                    <span className="truncate">{parsed.beneficios[0]} {parsed.beneficios.length > 1 && '+'}</span>
+                                        {parsed.skills.length > 0 && (
+                                            <div className="mb-4 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30">
+                                                <p className="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-2.5 flex items-center gap-1.5"><Target className="w-3.5 h-3.5 text-primary"/> Habilidades:</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {parsed.skills.slice(0, 3).map((skill, idx) => (
+                                                        <span key={idx} className="bg-primary/5 text-primary border border-primary/10 px-2.5 py-1 rounded-md text-[10px] font-bold truncate max-w-[150px]">{skill}</span>
+                                                    ))}
+                                                    {parsed.skills.length > 3 && (
+                                                        <span className="text-on-surface-variant text-[10px] font-bold py-1">+{parsed.skills.length - 3}</span>
+                                                    )}
                                                 </div>
-                                            )}
+                                            </div>
+                                        ) }
+
+                                        <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30 mb-6">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                                    <Users className="w-4 h-4 text-primary" />
+                                                    PROGRESO DE CUPOS
+                                                </span>
+                                                <span className="text-xs font-bold text-primary bg-white px-2 py-0.5 rounded-full border border-outline-variant/20">{parsed.cupos_ocupados} / {parsed.spots}</span>
+                                            </div>
+                                            <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden shadow-inner">
+                                                <div 
+                                                    className="h-full bg-primary transition-all duration-500 rounded-full" 
+                                                    style={{ width: `${Math.min(100, (parsed.cupos_ocupados / parsed.spots) * 100)}%` }}
+                                                ></div>
+                                            </div>
                                         </div>
                                         
-                                        <div className="flex items-center justify-between pt-4 border-t border-outline-variant">
-                                            <button onClick={() => handleOpenDetails(rawConv)} className="text-primary font-medium hover:underline px-2 flex items-center gap-1">
-                                                <Info className="w-4 h-4"/> Ver Detalles
+                                        <div className="flex gap-3 mt-auto pt-5 border-t border-outline-variant/30">
+                                            <button onClick={() => handleOpenDetails(rawConv)} className="btn-tonal p-3.5 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface-variant shrink-0" title="Ver Detalles Completos">
+                                                <Info className="w-5 h-5" />
                                             </button>
-                                            
+
                                             {isAlreadyApplied ? (
-                                                <div className="flex items-center gap-2 text-success font-medium bg-success/10 px-4 py-2 rounded-lg">
-                                                    <CheckCircle className="w-5 h-5" />
-                                                    Postulado
+                                                <div className="flex-1 flex items-center justify-center gap-2 text-success-dark font-bold bg-success/10 py-3.5 rounded-xl border border-success/20 shadow-sm text-sm">
+                                                    <CheckCircle className="w-5 h-5 shrink-0" />
+                                                    <span className="truncate">Postulación Registrada</span>
                                                 </div>
                                             ) : (
-                                                <button onClick={() => handleOpenApplyModal(rawConv)} className="btn-filled py-2 px-6">
-                                                    Postularme <ArrowRight className="w-4 h-4 ml-1" />
+                                                <button onClick={() => handleOpenApplyModal(rawConv)} className="btn-filled flex-1 py-3.5 rounded-xl font-bold flex justify-center items-center shadow-md shadow-primary/20 text-sm hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all">
+                                                    <span className="truncate">Postularme Ahora</span> <ArrowRight className="w-4 h-4 ml-2 shrink-0" />
                                                 </button>
                                             )}
                                         </div>
@@ -494,10 +550,17 @@ export default function ConvocationsPage() {
                                     </div>
                                 </div>
 
-                                <div className="bg-primary/5 p-5 rounded-2xl border border-primary/20">
-                                    <label className="block text-sm font-bold text-primary uppercase tracking-wider mb-4 flex items-center gap-2">
-                                        <Clock3 className="w-5 h-5"/> Disponibilidad ({selectedConvocation.tipoHorario})
-                                    </label>
+                                <div className="bg-primary/5 p-5 rounded-2xl border border-primary/10">
+                                    <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
+                                        <label className="block text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                                            <Clock3 className="w-5 h-5 opacity-80"/> Disponibilidad ({selectedConvocation.tipoHorario})
+                                        </label>
+                                        {matchInfo.dispMatch && (
+                                            <span className="flex items-center gap-1.5 text-[10px] font-bold text-success-dark bg-success/10 px-2.5 py-1 rounded-full">
+                                                <CheckCircle className="w-3.5 h-3.5 text-success" /> Coincide con tu horario
+                                            </span>
+                                        )}
+                                    </div>
                                     {renderAvailability(selectedConvocation)}
                                 </div>
                             </div>
@@ -597,6 +660,13 @@ export default function ConvocationsPage() {
                     </div>
                 </div>
             )}
+
+            <Snackbar 
+                show={snackbar.show} 
+                message={snackbar.message} 
+                type={snackbar.type} 
+                onClose={() => setSnackbar({ ...snackbar, show: false })} 
+            />
         </div>
     );
 }

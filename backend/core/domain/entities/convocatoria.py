@@ -22,6 +22,7 @@ class Convocatoria:
     fecha_inicio: Optional[datetime] = None
     fecha_fin: Optional[datetime] = None
     cupos_disponibles: int = 0
+    cupos_ocupados: int = 0
 
     # --- 5. Estado ---
     estado: str = "abierta"

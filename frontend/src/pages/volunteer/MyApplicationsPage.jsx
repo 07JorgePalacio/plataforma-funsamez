@@ -18,14 +18,19 @@ export default function MyApplicationsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
-    const getStatusInfo = (estado, motivoRechazo = null) => {
+    const getStatusInfo = (estado, motivoRechazo = null, hasWhatsApp = false) => {
         switch (estado) {
             case 'en_revision':
                 return { label: 'En Revisión', bgClass: 'bg-warning', textClass: 'text-warning', bgLightClass: 'bg-warning/10', borderClass: 'border-warning/20', icon: Clock, description: 'Tu postulación está siendo revisada por nuestro equipo.' };
             case 'en_espera':
-                return { label: 'En Espera', bgClass: 'bg-secondary', textClass: 'text-secondary', bgLightClass: 'bg-secondary/10', borderClass: 'border-secondary/20', icon: Pause, description: 'Tu postulación está en lista de espera. Te notificaremos si se liberan cupos.' };
+                return { label: 'En Espera', bgClass: 'bg-secondary', textClass: 'text-secondary', bgLightClass: 'bg-secondary/10', borderClass: 'border-secondary/20', icon: Pause, description: 'Tu postulación está en lista de espera. Te estaremos notificando acerca de tu postulación.' };
             case 'aprobada':
-                return { label: 'Aprobada', bgClass: 'bg-success', textClass: 'text-success', bgLightClass: 'bg-success/10', borderClass: 'border-success/20', icon: CheckCircle2, description: '¡Felicidades! Has sido aceptado. Revisa las instrucciones de contacto.' };
+                return { 
+                    label: 'Aprobada', bgClass: 'bg-success', textClass: 'text-success', bgLightClass: 'bg-success/10', borderClass: 'border-success/20', icon: CheckCircle2, 
+                    description: hasWhatsApp 
+                        ? '¡Felicidades! Has sido aceptado. Ingresa al grupo de whatsapp y espera instrucciones.' 
+                        : '¡Felicidades! Has sido aceptado. Nos pondremos en contacto contigo pronto para los siguientes pasos. Revisa fecha de inicio y ubicación' 
+                };
             case 'rechazada':
                 return { label: 'No Seleccionado', bgClass: 'bg-error', textClass: 'text-error', bgLightClass: 'bg-error/10', borderClass: 'border-error/20', icon: XCircle, description: motivoRechazo ? `Motivo: ${motivoRechazo}` : 'En esta ocasión no fuiste seleccionado. ¡Sigue intentando!' };
             default:
@@ -150,7 +155,7 @@ export default function MyApplicationsPage() {
                         <div className="grid gap-6">
                             {paginatedApplications.map((app) => {
                                 const convocation = convocations.find(c => c.id === app.id_convocatoria);
-                                const statusInfo = getStatusInfo(app.estado, app.motivo_rechazo);
+                                const statusInfo = getStatusInfo(app.estado, app.motivo_rechazo, !!convocation?.link_whatsapp);
                                 const StatusIcon = statusInfo.icon;
 
                                 return (

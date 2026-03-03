@@ -8,21 +8,16 @@ class ConvocatoriaSerializer(serializers.ModelSerializer):
         required=False, 
         allow_empty=True
     )
+    cupos_ocupados = serializers.IntegerField(read_only=True)
     
     class Meta:
         model = ConvocatoriaModel
         fields = [
-            # 1. Identificación
             'id', 'usuario_creador',
-            # 2. Info Básica
             'titulo', 'descripcion',
-            # 3. Logística
             'ubicacion', 'link_google_maps', 'link_whatsapp', 'modalidad', 
-            # 4. Tiempos y Cupos
-            'fecha_inicio', 'fecha_fin', 'cupos_disponibles',
-            # 5. Estado
+            'fecha_inicio', 'fecha_fin', 'cupos_disponibles', 'cupos_ocupados',
             'estado', 'fecha_creacion',
-            # 6. JSON/Listas
             'habilidades_requeridas', 'categorias', 'horario', 'beneficios'
         ]
-        read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador']
+        read_only_fields = ['id', 'fecha_creacion', 'estado', 'usuario_creador', 'cupos_ocupados']
