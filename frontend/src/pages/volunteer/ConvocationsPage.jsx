@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import {
     MapPin, Users, CheckCircle, ArrowRight, X, Search, Filter,
     ChevronLeft, ChevronRight, Gift, Target, BookOpen,
-    Laptop, Home, Clock3, CalendarCheck, Info, AlertTriangle, Activity, Briefcase
+    Laptop, Home, Clock3, CalendarCheck, Info, AlertTriangle, Activity, Briefcase, Star
 } from 'lucide-react';
 import Snackbar from '../../components/Snackbar';
 
@@ -77,6 +77,43 @@ const mapBackendToForm = (convocation) => {
     };
 };
 
+// --- LÓGICA DE PRESENTACIÓN: ALGORITMO DE MATCH SCORE ---
+const calculateMatchScore = (parsedConv, user) => {
+    if (!user) return 0;
+    const habUser = user.habilidades || [];
+    const dispUser = user.disponibilidad || {};
+    const habReq = parsedConv.skills || [];
+    const horarioReq = parsedConv.horario || {};
+
+    let habScore = 50; // Puntaje base si no hay requisitos
+    if (habReq.length > 0) {
+        const coincidencias = habReq.filter(req => 
+            habUser.some(hu => hu.toLowerCase().includes(req.toLowerCase()) || req.toLowerCase().includes(hu.toLowerCase()))
+        );
+        habScore = (coincidencias.length / habReq.length) * 50;
+    }
+
+    let dispScore = 50; // Puntaje base si no hay horario estricto
+    if (parsedConv.tipoHorario === 'recurrente' && Object.keys(horarioReq).length > 0) {
+        dispScore = 0;
+        for (const dia of Object.keys(horarioReq)) {
+            if (dispUser[dia] && dispUser[dia].length > 0) {
+                dispScore = 50;
+                break;
+            }
+        }
+    } else if (parsedConv.tipoHorario === 'unico' && parsedConv.fechaEvento) {
+        dispScore = 0;
+        const dateObj = new Date(parsedConv.fechaEvento + 'T00:00:00'); 
+        const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const dayOfWeek = daysMap[dateObj.getDay()];
+        if (dispUser[dayOfWeek] && dispUser[dayOfWeek].length > 0) {
+            dispScore = 50;
+        }
+    }
+    return habScore + dispScore;
+};
+
 export default function ConvocationsPage() {
     const { applyToConvocation, hasApplied, getPublishedConvocations, loading, user } = useApp();
     const publishedConvocations = getPublishedConvocations();
@@ -90,23 +127,39 @@ export default function ConvocationsPage() {
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false); 
     const [observaciones, setObservaciones] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'info' }); // 🟢 Control del Snackbar
+    const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'info' });
 
     const filteredConvocations = useMemo(() => {
-        return publishedConvocations.filter(c => {
+        // 1. Mapear y calcular el score de compatibilidad
+        const processed = publishedConvocations.map(c => {
             const parsed = mapBackendToForm(c);
+            const score = calculateMatchScore(parsed, user);
+            return { raw: c, parsed, matchScore: score };
+        });
+
+        // 2. Aplicar filtros de búsqueda
+        const filtered = processed.filter(item => {
+            const { parsed } = item;
             const matchesSearch = parsed.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                   parsed.description.toLowerCase().includes(searchTerm.toLowerCase());
             
             const matchesCategory = categoryFilter === '' || 
                                     parsed.categorias.includes(categoryFilter) ||
-                                    c.categoria === categoryFilter;
+                                    item.raw.categoria === categoryFilter;
             
             const matchesModality = modalityFilter === '' || parsed.modalidad === modalityFilter.toLowerCase();
             
             return matchesSearch && matchesCategory && matchesModality;
         });
-    }, [publishedConvocations, searchTerm, categoryFilter, modalityFilter]);
+
+        // 3. Ordenar descendentemente por Score, y luego por ID (más recientes)
+        return filtered.sort((a, b) => {
+            if (b.matchScore !== a.matchScore) {
+                return b.matchScore - a.matchScore;
+            }
+            return b.raw.id - a.raw.id;
+        });
+    }, [publishedConvocations, searchTerm, categoryFilter, modalityFilter, user]);
 
     const totalPages = Math.ceil(filteredConvocations.length / itemsPerPage);
     const paginatedConvocations = filteredConvocations.slice(
@@ -351,14 +404,22 @@ export default function ConvocationsPage() {
             ) : (
                 <>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {paginatedConvocations.map((rawConv) => {
-                            const parsed = mapBackendToForm(rawConv);
+                        {paginatedConvocations.map((item) => {
+                            const { raw: rawConv, parsed, matchScore } = item;
                             const isAlreadyApplied = hasApplied(parsed.id);
+                            const isHighlyRecommended = matchScore >= 80 && !isAlreadyApplied;
 
                             return (
                                 <div key={parsed.id} className="card-elevated overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-elevation-4 transition-all duration-300 relative border border-outline-variant/30 p-0 bg-surface rounded-3xl">
                                     
-                                    <div className="p-6 pb-5 flex-1 flex flex-col">
+                                    {/* Insignia de Recomendación */}
+                                    {isHighlyRecommended && (
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-4 py-1 rounded-b-xl shadow-md z-20 flex items-center gap-1.5 animate-slide-up">
+                                            <Star className="w-3.5 h-3.5 fill-current" /> Recomendado para ti
+                                        </div>
+                                    )}
+
+                                    <div className="p-6 pb-5 flex-1 flex flex-col mt-2">
                                         
                                         <div className="flex items-center justify-between gap-3 mb-3">
                                             <div className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${parsed.modalidad === 'virtual' ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-orange-50 text-orange-700 border border-orange-100'}`}>
