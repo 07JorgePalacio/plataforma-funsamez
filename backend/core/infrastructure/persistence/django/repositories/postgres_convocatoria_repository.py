@@ -64,7 +64,7 @@ class PostgresConvocatoriaRepository(ConvocatoriaRepository):
     def actualizar(self, id: int, datos: dict) -> Convocatoria:
         """
         Actualiza una convocatoria existente.
-        SOLUCIÓN ERROR 🟢: Asignación explícita de campos críticos.
+        SOLUCIÓN ERROR : Asignación explícita de campos críticos.
         """
         try:
             modelo = ConvocatoriaModel.objects.get(id=id)
