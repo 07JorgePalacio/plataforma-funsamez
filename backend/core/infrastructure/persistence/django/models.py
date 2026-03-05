@@ -179,6 +179,7 @@ class CampanaModel(models.Model):
     # --- 5. Listas y JSON ---
     objetivos = models.JSONField(default=list, blank=True) 
     galeria_imagenes = models.JSONField(default=list, blank=True)
+    video_urls = models.JSONField(default=list, blank=True)
     necesidades = models.JSONField(default=list, blank=True)
     categoria = models.JSONField(default=list, blank=True)
     tipo_impacto = models.JSONField(default=list, blank=True)

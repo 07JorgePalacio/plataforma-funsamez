@@ -30,3 +30,8 @@ class NotificacionRepository(ABC):
     def eliminar_todas_por_usuario(self, id_usuario: int) -> int:
         """Elimina todas las notificaciones de un usuario y retorna la cantidad eliminada."""
         pass
+
+    @abstractmethod
+    def limpiar_antiguas_por_usuario(self, id_usuario: int, dias_leidas: int = 15, dias_todas: int = 30) -> None:
+        """Limpia notificaciones antiguas (Garbage Collection) para mantener la BD optimizada."""
+        pass

@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { 
     Clock, CheckCircle2, XCircle, AlertCircle, Calendar, 
-    Search, Filter, ChevronLeft, ChevronRight, Pause, MessageCircle 
+    Search, Filter, ChevronLeft, ChevronRight, Pause, MessageCircle, Info 
 } from 'lucide-react';
 
 export default function MyApplicationsPage() {
@@ -13,6 +13,7 @@ export default function MyApplicationsPage() {
     const location = useLocation();
     const cardRefs = useRef({}); 
 
+    const [activeTab, setActiveTab] = useState('activas'); 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -40,16 +41,34 @@ export default function MyApplicationsPage() {
 
     const filteredApplications = useMemo(() => {
         return applications.filter(app => {
-            // Buscamos la convocatoria para poder buscar por su título
             const convocation = convocations.find(c => c.id === app.id_convocatoria);
             const title = convocation ? convocation.title.toLowerCase() : '';
             
+            // Lógica de separación: Activas vs Historial
+            const convStatus = convocation ? (convocation.estado || convocation.status) : 'cerrada';
+            const isConvClosed = convStatus === 'cerrada' || convStatus === 'closed' || convStatus === 'finalizada';
+            const isHistory = app.estado === 'rechazada' || isConvClosed;
+            
+            const matchesTab = activeTab === 'activas' ? !isHistory : isHistory;
             const matchesSearch = title.includes(searchTerm.toLowerCase());
             const matchesStatus = statusFilter === '' || app.estado === statusFilter;
             
-            return matchesSearch && matchesStatus;
+            return matchesTab && matchesSearch && matchesStatus;
         });
-    }, [applications, convocations, searchTerm, statusFilter]);
+    }, [applications, convocations, searchTerm, statusFilter, activeTab]);
+
+    // Helper para contar cuántas hay en cada pestaña dinámicamente
+    const { activasCount, historialCount } = useMemo(() => {
+        let act = 0; let hist = 0;
+        applications.forEach(app => {
+            const conv = convocations.find(c => c.id === app.id_convocatoria);
+            const st = conv ? (conv.estado || conv.status) : 'cerrada';
+            const isClosed = st === 'cerrada' || st === 'closed' || st === 'finalizada';
+            if (app.estado === 'rechazada' || isClosed) hist++;
+            else act++;
+        });
+        return { activasCount: act, historialCount: hist };
+    }, [applications, convocations]);
 
     const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
     const paginatedApplications = filteredApplications.slice(
@@ -57,7 +76,7 @@ export default function MyApplicationsPage() {
         currentPage * itemsPerPage
     );
 
-    useMemo(() => setCurrentPage(1), [searchTerm, statusFilter]);
+    useMemo(() => setCurrentPage(1), [searchTerm, statusFilter, activeTab]);
 
     useEffect(() => {
         const highlightId = location.state?.highlightId;
@@ -113,6 +132,31 @@ export default function MyApplicationsPage() {
                 </div>
             ) : (
                 <>
+                    {/* PESTAÑAS: ACTIVAS VS HISTORIAL */}
+                    <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit mb-6">
+                        <button 
+                            onClick={() => setActiveTab('activas')} 
+                            className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'activas' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                        >
+                            Activas ({activasCount})
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('historial')} 
+                            className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activeTab === 'historial' ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                        >
+                            Historial ({historialCount})
+                        </button>
+                    </div>
+
+                    {activeTab === 'historial' && applications.length > 0 && (
+                        <div className="mb-6 p-4 bg-surface-container-low border border-outline-variant/50 rounded-xl flex items-start gap-3 animate-fade-in">
+                            <Info className="w-5 h-5 text-on-surface-variant shrink-0 mt-0.5" />
+                            <p className="text-body-small text-on-surface-variant">
+                                <strong>¿Qué hay aquí?</strong> En el historial encontrarás las postulaciones a convocatorias que ya finalizaron (cerradas) o aquellas en las que no fuiste seleccionado. ¡Todo tu recorrido cuenta!
+                            </p>
+                        </div>
+                    )}
+
                     {/* BARRA DE BÚSQUEDA Y FILTROS */}
                     <div className="flex flex-col md:flex-row gap-4 mb-8 bg-surface-container-lowest p-2 rounded-2xl">
                         <div className="relative flex-1">
@@ -146,9 +190,13 @@ export default function MyApplicationsPage() {
                     {filteredApplications.length === 0 ? (
                         <div className="card-elevated text-center py-16">
                             <Search className="w-16 h-16 text-on-surface-variant mx-auto mb-4 opacity-50" />
-                            <h3 className="text-title-large text-on-surface mb-2">No se encontraron postulaciones</h3>
+                            <h3 className="text-title-large text-on-surface mb-2">
+                                {activeTab === 'historial' && !searchTerm && !statusFilter ? 'Historial Vacío' : 'No se encontraron postulaciones'}
+                            </h3>
                             <p className="text-body-medium text-on-surface-variant max-w-md mx-auto">
-                                Intenta ajustar tus filtros de búsqueda para ver más resultados.
+                                {activeTab === 'historial' && !searchTerm && !statusFilter 
+                                    ? 'Aquí aparecerán las convocatorias que hayan finalizado o aquellas donde no fuiste seleccionado.'
+                                    : 'Intenta ajustar tus filtros de búsqueda para ver más resultados.'}
                             </p>
                         </div>
                     ) : (
@@ -162,7 +210,7 @@ export default function MyApplicationsPage() {
                                     <div 
                                         key={app.id} 
                                         ref={(el) => (cardRefs.current[app.id] = el)}
-                                        className="card-elevated p-6 md:p-8 relative overflow-hidden transition-all duration-500 hover:-translate-y-1"
+                                        className={`card-elevated p-6 md:p-8 relative overflow-hidden transition-all duration-500 hover:-translate-y-1 ${activeTab === 'historial' ? 'grayscale opacity-80 hover:grayscale-0 hover:opacity-100' : ''}`}
                                     >
                                         {/* Barra lateral asegurada con Tailwind */}
                                         <div className={`absolute left-0 top-0 bottom-0 w-2 ${statusInfo.bgClass}`}></div>
@@ -178,6 +226,18 @@ export default function MyApplicationsPage() {
                                                         <Calendar className="w-3.5 h-3.5" /> 
                                                         {new Date(app.fecha_postulacion).toLocaleDateString('es-CO')}
                                                     </span>
+                                                    {activeTab === 'historial' && (
+                                                        <div className="flex items-center gap-2 ml-2">
+                                                            <span className="text-[10px] font-bold text-on-surface-variant bg-surface-variant/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                                                Archivada
+                                                            </span>
+                                                            {app.estado !== 'rechazada' && (
+                                                                <span className="text-[10px] font-bold text-error bg-error/10 border border-error/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                                                    Convocatoria Cerrada
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 
                                                 <h3 className="text-title-large font-bold text-on-surface mb-2">

@@ -13,6 +13,12 @@ class CampanaSerializer(serializers.ModelSerializer):
         required=False, 
         allow_empty=True
     )
+    
+    video_urls = serializers.ListField(
+        child=serializers.URLField(), 
+        required=False, 
+        allow_empty=True
+    )
 
     necesidades = serializers.ListField(
         child=serializers.CharField(), 
@@ -45,6 +51,6 @@ class CampanaSerializer(serializers.ModelSerializer):
             'monto_objetivo', 'recaudo_actual', 
             'permite_donacion_monetaria', 'permite_donacion_especie',
             # 5. Listas JSON
-            'objetivos', 'galeria_imagenes', 'necesidades', 'categoria', 'tipo_impacto'
+            'objetivos', 'galeria_imagenes', 'video_urls', 'necesidades', 'categoria', 'tipo_impacto'
         ]
         read_only_fields = ['id', 'fecha_creacion', 'usuario_creador', 'recaudo_actual']
