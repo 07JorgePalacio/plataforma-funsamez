@@ -6,7 +6,7 @@ const API_URL = 'http://127.0.0.1:8000/api/campanas';
 // 2. Función auxiliar para sacar el Token (Igual que en Convocatorias)
 const getAuthHeader = () => {
     const token = localStorage.getItem('access_token');
-    return { headers: { Authorization: `Bearer ${token}` } };
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 };
 
 // --- FUNCIONES DEL SERVICIO ---

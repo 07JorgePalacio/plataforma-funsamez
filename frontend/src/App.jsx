@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/public/LoginPage';
+import RegisterPage from './pages/public/RegisterPage';
+import PublicLayout from './pages/public/PublicLayout';
+import PublicCampaignsPage from './pages/public/PublicCampaignsPage';
 
 // --- 1. Importaciones de Admin  ---
 import AdminLayout from './pages/admin/AdminLayout';
@@ -22,8 +24,14 @@ function App() {
     <AppProvider> 
       <BrowserRouter>
         <Routes>
-          {/* RUTAS PUBLICAS */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* RUTAS PÚBLICAS (Con Header y Footer) */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Navigate to="/campanas" replace />} />
+            <Route path="/campanas" element={<PublicCampaignsPage />} />
+            {/* Aquí agregaremos convocatorias en el siguiente paso */}
+          </Route>
+          
+          {/* RUTAS DE AUTENTICACIÓN (Sin Header) */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           

@@ -4,7 +4,7 @@ const API_URL = 'http://127.0.0.1:8000/api/convocatorias';
 
 const getAuthHeader = () => {
     const token = localStorage.getItem('access_token');
-    return { headers: { Authorization: `Bearer ${token}` } };
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 };
 
 // 1. CREAR
