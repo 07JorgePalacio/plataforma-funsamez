@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from core.container import Container
 from core.adapters.api.rest.serializers.convocatoria_serializers import ConvocatoriaSerializer
 
@@ -50,7 +50,7 @@ class CrearConvocatoriaView(APIView):
             return Response({"error": "Error interno del servidor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ListarConvocatoriasView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         estado_filtro = request.query_params.get('estado', None)

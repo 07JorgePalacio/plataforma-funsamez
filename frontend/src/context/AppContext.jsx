@@ -262,24 +262,27 @@ export const AppProvider = ({ children }) => {
     // ==========================================
     const refreshAllData = async () => {
         setLoading(true);
-        const promises = [fetchConvocations(), fetchCampaigns(), fetchNotifications()]; // 🟢 Añadimos fetchNotifications
+        // 1. Carga Pública (Siempre)
+        const promises = [fetchConvocations(), fetchCampaigns()]; 
         
-        if (localStorage.getItem('user_role') === 'voluntario') {
-            promises.push(fetchMyApplications());
-        } else {
-            promises.push(fetchAllApplications()); 
+        // 2. Carga Privada (Solo si hay sesión)
+        if (localStorage.getItem('access_token')) {
+            promises.push(fetchNotifications());
+            if (localStorage.getItem('user_role') === 'voluntario') {
+                promises.push(fetchMyApplications());
+            } else if (localStorage.getItem('user_role') === 'administrador') {
+                promises.push(fetchAllApplications()); 
+            }
         }
         
-        await Promise.all(promises);
+        // Usamos allSettled para que si una falla, las demás no se detengan
+        await Promise.allSettled(promises);
         setLoading(false);
     };
 
     useEffect(() => {
-        if (localStorage.getItem('access_token')) {
-            refreshAllData();
-        } else {
-            setLoading(false);
-        }
+        // Se ejecuta SIEMPRE para cargar la data pública al entrar a la app
+        refreshAllData();
     }, []);
 
     // ==========================================
