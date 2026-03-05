@@ -128,6 +128,7 @@ export const AppProvider = ({ children }) => {
                 // 5. Listas JSON (Garantizamos Arrays vacíos si vienen null)
                 objetivos: Array.isArray(camp.objetivos) ? camp.objetivos : [],
                 galeria_imagenes: Array.isArray(camp.galeria_imagenes) ? camp.galeria_imagenes : [],
+                video_urls: Array.isArray(camp.video_urls) ? camp.video_urls : [],
                 necesidades: Array.isArray(camp.necesidades) ? camp.necesidades : [],
                 categoria: Array.isArray(camp.categoria) ? camp.categoria : [],
                 tipo_impacto: Array.isArray(camp.tipo_impacto) ? camp.tipo_impacto : []

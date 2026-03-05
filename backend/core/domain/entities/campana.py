@@ -29,6 +29,7 @@ class Campana:
     # 5. Listas y JSON (Al final)
     objetivos: List[str] = field(default_factory=list) 
     galeria_imagenes: List[str] = field(default_factory=list)
+    video_urls: List[str] = field(default_factory=list)
     necesidades: List[str] = field(default_factory=list)
     categoria: List[str] = field(default_factory=list)
     tipo_impacto: List[str] = field(default_factory=list)

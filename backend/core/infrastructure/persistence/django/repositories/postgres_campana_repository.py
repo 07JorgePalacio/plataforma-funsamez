@@ -28,6 +28,7 @@ class PostgresCampanaRepository(CampanaRepository):
             # 5. Listas JSON
             objetivos=model.objetivos or [],
             galeria_imagenes=model.galeria_imagenes or [],
+            video_urls=model.video_urls or [],
             necesidades=model.necesidades or [],
             categoria=model.categoria or [],       
             tipo_impacto=model.tipo_impacto or []
@@ -51,6 +52,7 @@ class PostgresCampanaRepository(CampanaRepository):
             # JSONField
             objetivos=campana.objetivos,
             galeria_imagenes=campana.galeria_imagenes,
+            video_urls=campana.video_urls,
             necesidades=campana.necesidades,
             categoria=campana.categoria,
             tipo_impacto=campana.tipo_impacto, 
@@ -83,6 +85,7 @@ class PostgresCampanaRepository(CampanaRepository):
             # Listas JSON
             if 'objetivos' in datos: modelo.objetivos = datos['objetivos']
             if 'galeria_imagenes' in datos: modelo.galeria_imagenes = datos['galeria_imagenes']
+            if 'video_urls' in datos: modelo.video_urls = datos['video_urls']
             if 'necesidades' in datos: modelo.necesidades = datos['necesidades']
             if 'categoria' in datos: modelo.categoria = datos['categoria']
             if 'tipo_impacto' in datos: modelo.tipo_impacto = datos['tipo_impacto']
@@ -90,7 +93,7 @@ class PostgresCampanaRepository(CampanaRepository):
             # 2. Actualización Genérica para el resto (titulo, descripcion, fechas, montos)
             campos_especiales = [
                 'permite_donacion_monetaria', 'permite_donacion_especie',
-                'objetivos', 'galeria_imagenes', 'necesidades', 'categoria', 'tipo_impacto'
+                'objetivos', 'galeria_imagenes', 'video_urls', 'necesidades', 'categoria', 'tipo_impacto'
             ]
             
             for key, value in datos.items():

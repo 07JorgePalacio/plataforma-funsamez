@@ -452,13 +452,13 @@ export default function ConvocationsPage() {
                                         
                                         {parsed.skills.length > 0 && (
                                             <div className="mb-4 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30">
-                                                <p className="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant mb-2.5 flex items-center gap-1.5"><Target className="w-3.5 h-3.5 text-primary"/> Habilidades:</p>
-                                                <div className="flex flex-wrap gap-2">
+                                                <p className="text-xs uppercase tracking-wider font-bold text-on-surface-variant mb-3 flex items-center gap-1.5"><Target className="w-4 h-4 text-primary"/> Habilidades requeridas:</p>
+                                                <div className="flex flex-wrap gap-2.5">
                                                     {parsed.skills.slice(0, 3).map((skill, idx) => (
-                                                        <span key={idx} className="bg-primary/5 text-primary border border-primary/10 px-2.5 py-1 rounded-md text-[10px] font-bold truncate max-w-[150px]">{skill}</span>
+                                                        <span key={idx} className="bg-primary/5 text-primary border border-primary/20 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">{skill}</span>
                                                     ))}
                                                     {parsed.skills.length > 3 && (
-                                                        <span className="text-on-surface-variant text-[10px] font-bold py-1">+{parsed.skills.length - 3}</span>
+                                                        <span className="text-on-surface-variant text-xs font-bold py-1.5 flex items-center">+{parsed.skills.length - 3} más</span>
                                                     )}
                                                 </div>
                                             </div>

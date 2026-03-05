@@ -1,4 +1,6 @@
 from typing import List, Dict
+from django.utils import timezone
+from datetime import timedelta
 from core.application.ports.output.notificacion_repository import NotificacionRepository
 from core.infrastructure.persistence.django.models import NotificacionModel
 
@@ -48,3 +50,22 @@ class PostgresNotificacionRepository(NotificacionRepository):
         # filter().delete() retorna una tupla, el primer valor es la cantidad de elementos borrados
         cantidad, _ = NotificacionModel.objects.filter(usuario_id=id_usuario).delete()
         return cantidad
+
+    def limpiar_antiguas_por_usuario(self, id_usuario: int, dias_leidas: int = 15, dias_todas: int = 30) -> None:
+        """Limpia notificaciones leídas de más de X días, y CUALQUIERA de más de Y días."""
+        ahora = timezone.now()
+        
+        # 1. Borrar leídas muy viejas (Basura procesada)
+        limite_leidas = ahora - timedelta(days=dias_leidas)
+        NotificacionModel.objects.filter(
+            usuario_id=id_usuario, 
+            leida=True, 
+            fecha_creacion__lt=limite_leidas
+        ).delete()
+        
+        # 2. Borrar cualquiera que sea extremadamente vieja para evitar acumulación infinita
+        limite_todas = ahora - timedelta(days=dias_todas)
+        NotificacionModel.objects.filter(
+            usuario_id=id_usuario, 
+            fecha_creacion__lt=limite_todas
+        ).delete()
