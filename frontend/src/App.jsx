@@ -4,6 +4,7 @@ import LoginPage from './pages/public/LoginPage';
 import RegisterPage from './pages/public/RegisterPage';
 import PublicLayout from './pages/public/PublicLayout';
 import PublicCampaignsPage from './pages/public/PublicCampaignsPage';
+import PublicConvocationsPage from './pages/public/PublicConvocationsPage';
 
 // --- 1. Importaciones de Admin  ---
 import AdminLayout from './pages/admin/AdminLayout';
@@ -28,7 +29,7 @@ function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Navigate to="/campanas" replace />} />
             <Route path="/campanas" element={<PublicCampaignsPage />} />
-            {/* Aquí agregaremos convocatorias en el siguiente paso */}
+            <Route path="/convocatorias" element={<PublicConvocationsPage />} />
           </Route>
           
           {/* RUTAS DE AUTENTICACIÓN (Sin Header) */}

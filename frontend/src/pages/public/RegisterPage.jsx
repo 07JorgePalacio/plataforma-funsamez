@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Check, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import Header from '../../components/Header';
 
 // --- CONSTANTES ---
 const MAX_SELECTION = 5; 
@@ -318,7 +319,9 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-surface p-4 py-10 animate-fade-in">
+    <>
+    <Header />
+    <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-surface p-4 pt-10 pb-32 md:pb-10 animate-fade-in">
       <div className="text-center mb-8 max-w-md animate-slide-down">
         <div className="mx-auto h-16 w-16 bg-primary rounded-full flex items-center justify-center shadow-lg mb-4">
              <span className="text-white text-2xl font-bold">F</span>
@@ -533,6 +536,7 @@ const RegisterPage = () => {
         .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
       `}</style>
     </div>
+    </>
   );
 };
 

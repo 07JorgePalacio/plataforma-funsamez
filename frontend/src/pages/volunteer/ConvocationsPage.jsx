@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import {
     MapPin, Users, CheckCircle, ArrowRight, X, Search, Filter,
@@ -117,6 +118,7 @@ const calculateMatchScore = (parsedConv, user) => {
 export default function ConvocationsPage() {
     const { applyToConvocation, hasApplied, getPublishedConvocations, loading, user } = useApp();
     const publishedConvocations = getPublishedConvocations();
+    const location = useLocation();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
@@ -167,7 +169,45 @@ export default function ConvocationsPage() {
         currentPage * itemsPerPage
     );
 
-    useMemo(() => setCurrentPage(1), [searchTerm, categoryFilter, modalityFilter]);
+    // Corregido: Usamos useEffect para evitar bugs de ciclo de vida
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, categoryFilter, modalityFilter]);
+
+    // --- LÓGICA DE SMART SCROLL Y PARPADEO ---
+    const [highlightedCard, setHighlightedCard] = useState(null);
+
+    useEffect(() => {
+        const highlightId = location.state?.highlightId;
+        
+        if (highlightId && !loading && filteredConvocations.length > 0) {
+            // 1. Buscamos en qué página está la convocatoria
+            const itemIndex = filteredConvocations.findIndex(c => c.parsed.id === highlightId);
+            
+            if (itemIndex !== -1) {
+                // 2. Calculamos la página matemáticamente y cambiamos si es necesario
+                const targetPage = Math.floor(itemIndex / itemsPerPage) + 1;
+                if (currentPage !== targetPage) {
+                    setCurrentPage(targetPage);
+                }
+                
+                // 3. Damos un respiro al DOM para renderizar, luego hacemos Scroll y Parpadeo
+                setTimeout(() => {
+                    const element = document.getElementById(`convocation-card-${highlightId}`);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setHighlightedCard(highlightId);
+                        
+                        // 4. Apagamos el parpadeo después de 3 segundos y limpiamos el historial
+                        setTimeout(() => {
+                            setHighlightedCard(null);
+                            window.history.replaceState({}, document.title);
+                        }, 3000);
+                    }
+                }, 150);
+            }
+        }
+    }, [location.state?.highlightId, loading, filteredConvocations.length]);
 
     const handleOpenDetails = (convocation) => {
         setSelectedConvocation(mapBackendToForm(convocation));
@@ -408,9 +448,14 @@ export default function ConvocationsPage() {
                             const { raw: rawConv, parsed, matchScore } = item;
                             const isAlreadyApplied = hasApplied(parsed.id);
                             const isHighlyRecommended = matchScore >= 80 && !isAlreadyApplied;
+                            const isHighlighted = highlightedCard === parsed.id;
 
                             return (
-                                <div key={parsed.id} className="card-elevated overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-elevation-4 transition-all duration-300 relative border border-outline-variant/30 p-0 bg-surface rounded-3xl">
+                                <div 
+                                    key={parsed.id} 
+                                    id={`convocation-card-${parsed.id}`}
+                                    className={`card-elevated overflow-hidden flex flex-col transition-all duration-500 relative border p-0 rounded-3xl ${isHighlighted ? 'border-primary ring-4 ring-primary/40 bg-primary/5 scale-[1.02] shadow-xl z-10' : 'border-outline-variant/30 bg-surface hover:-translate-y-1 hover:shadow-elevation-4 scale-100 z-0'}`}
+                                >
                                     
                                     {/* Insignia de Recomendación */}
                                     {isHighlyRecommended && (
