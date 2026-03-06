@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Eye, EyeOff, Heart } from 'lucide-react';
+import Header from '../../components/Header';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -58,7 +59,9 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-surface p-4">
+    <>
+    <Header />
+    <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-surface p-4 pb-32 md:pb-4">
       
       {/* --- BLOQUE 1: CABECERA --- */}
       <div className="flex flex-col items-center mb-8 max-w-md text-center">
@@ -133,6 +136,7 @@ const LoginPage = () => {
 
       </div>
     </div>
+    </>
   );
 };
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { LayoutDashboard, User, Briefcase, FileText, Heart, LogOut, Bell, X, Trash2 } from 'lucide-react';
+import { LayoutDashboard, User, Briefcase, FileText, Heart, LogOut, Bell, X, Trash2, Globe } from 'lucide-react';
 
 // ---  MODAL DE NOTIFICACIONES ---
 function NotificationsModal({ isOpen, onClose, notifications, onNotificationClick, onDeleteClick, onDeleteAllClick }) {
@@ -190,6 +190,9 @@ export default function VolunteerLayout() {
 
         {/* Navigation Menu (Usando botones para navegación forzada) */}
         <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+          <div className="pb-2 mb-2 border-b border-outline-variant/30">
+            <NavItem icon={<Globe size={22}/>} text="Explorar Sitio Web" active={false} onClick={() => navigate('/campanas')} />
+          </div>
           <NavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/voluntario')} onClick={() => navigate('/voluntario')} />
           <NavItem icon={<User size={22}/>} text="Mi Perfil" active={isActive('/voluntario/perfil')} onClick={() => navigate('/voluntario/perfil')} />
           <NavItem icon={<Briefcase size={22}/>} text="Convocatorias" active={isActive('/voluntario/convocatorias')} onClick={() => navigate('/voluntario/convocatorias')} />
@@ -221,6 +224,7 @@ export default function VolunteerLayout() {
         <MobileNavItem icon={<User size={22}/>} text="Perfil" active={isActive('/voluntario/perfil')} onClick={() => navigate('/voluntario/perfil')} />
         <MobileNavItem icon={<Briefcase size={22}/>} text="Convos" active={isActive('/voluntario/convocatorias')} onClick={() => navigate('/voluntario/convocatorias')} />
         <MobileNavItem icon={<FileText size={22}/>} text="Mis Post." active={isActive('/voluntario/postulaciones')} onClick={() => navigate('/voluntario/postulaciones')} />
+        <MobileNavItem icon={<Globe size={22}/>} text="Web" active={false} onClick={() => navigate('/campanas')} />
         
         {/* Botón Salir pequeño */}
         <button onClick={handleLogout} className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-error transition-colors opacity-70 hover:opacity-100">

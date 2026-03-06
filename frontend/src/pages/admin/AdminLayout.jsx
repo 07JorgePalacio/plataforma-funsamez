@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Megaphone, Users, Heart, Home, LogOut, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, Heart, Home, LogOut, Briefcase, Globe } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useApp } from '../../context/AppContext';
 
 export default function AdminLayout() {
+  const { logout } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const [userName, setUserName] = useState('');
@@ -13,7 +15,7 @@ export default function AdminLayout() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.clear();
+    logout(); 
     navigate('/login');
   };
 
@@ -48,6 +50,9 @@ export default function AdminLayout() {
 
         {/* Navigation Menu */}
         <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+          <div className="pb-2 mb-2 border-b border-outline-variant/30">
+            <NavItem icon={<Globe size={22}/>} text="Explorar Sitio Web" active={false} onClick={() => navigate('/campanas')} />
+          </div>
           <NavItem icon={<LayoutDashboard size={22}/>} text="Dashboard" active={isActive('/admin/dashboard')} onClick={() => navigate('/admin/dashboard')} />
           <NavItem icon={<Megaphone size={22}/>} text="Campañas" active={isActive('/admin/campanas')} onClick={() => navigate('/admin/campanas')} />
           <NavItem icon={<Briefcase size={22}/>} text="Convocatorias" active={isActive('/admin/convocatorias')} onClick={() => navigate('/admin/convocatorias')} />
@@ -66,16 +71,25 @@ export default function AdminLayout() {
       </aside>
 
       {/* --- DOCK DE NAVEGACIÓN (MÓVIL) --- */}
-      <nav className="md:hidden fixed bottom-6 inset-x-4 bg-surface/80 backdrop-blur-xl border border-white/20 z-40 flex items-center justify-around p-2 rounded-3xl shadow-elevation-4">
-        <MobileNavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/admin/dashboard')} onClick={() => navigate('/admin/dashboard')} />
-        <MobileNavItem icon={<Megaphone size={22}/>} text="Campañas" active={isActive('/admin/campanas')} onClick={() => navigate('/admin/campanas')} />
-        <MobileNavItem icon={<Briefcase size={22}/>} text="Convos" active={isActive('/admin/convocatorias')} onClick={() => navigate('/admin/convocatorias')} />
-        <MobileNavItem icon={<Users size={22}/>} text="Voluntarios" active={isActive('/admin/voluntarios')} onClick={() => navigate('/admin/voluntarios')} />
+      <nav className="md:hidden fixed bottom-6 inset-x-4 glass bg-surface/80 backdrop-blur-md border border-outline-variant/30 z-40 flex items-center p-2 rounded-3xl shadow-elevation-4 overflow-hidden">
         
-        {/* Botón Salir pequeño */}
-        <button onClick={handleLogout} className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-error transition-colors opacity-70 hover:opacity-100">
-          <LogOut size={22} />
-        </button>
+        {/* Contenedor Deslizable para las opciones (Oculta la barra de scroll nativa) */}
+        <div className="flex-1 flex items-center gap-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <MobileNavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/admin/dashboard')} onClick={() => navigate('/admin/dashboard')} />
+            <MobileNavItem icon={<Megaphone size={22}/>} text="Campañas" active={isActive('/admin/campanas')} onClick={() => navigate('/admin/campanas')} />
+            <MobileNavItem icon={<Briefcase size={22}/>} text="Convos" active={isActive('/admin/convocatorias')} onClick={() => navigate('/admin/convocatorias')} />
+            <MobileNavItem icon={<Users size={22}/>} text="Voluntarios" active={isActive('/admin/voluntarios')} onClick={() => navigate('/admin/voluntarios')} />
+            <MobileNavItem icon={<Heart size={22}/>} text="Donaciones" active={isActive('/admin/donaciones')} onClick={() => navigate('/admin/donaciones')} />
+            <MobileNavItem icon={<Home size={22}/>} text="Editor" active={isActive('/admin/editor-inicio')} onClick={() => navigate('/admin/editor-inicio')} />
+            <MobileNavItem icon={<Globe size={22}/>} text="Web" active={false} onClick={() => navigate('/campanas')} />
+        </div>
+        
+        {/* Botón Salir fijado a la derecha con margen y separador */}
+        <div className="pl-2 pr-1 ml-1 border-l border-outline-variant/30 shrink-0">
+            <button onClick={handleLogout} className="flex flex-col items-center justify-center p-2 text-on-surface-variant hover:text-error transition-colors opacity-70 hover:opacity-100 active:scale-95">
+              <LogOut size={24} />
+            </button>
+        </div>
       </nav>
 
       {/* --- CONTENIDO PRINCIPAL --- */}
@@ -102,7 +116,7 @@ const NavItem = ({ icon, text, active, onClick }) => (
 
 // Subcomponente NavItem (Móvil)
 const MobileNavItem = ({ icon, text, active, onClick }) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-1 p-2 min-w-[64px] transition-colors ${active ? 'text-primary' : 'text-on-surface-variant'}`}>
+  <button onClick={onClick} className={`shrink-0 flex flex-col items-center gap-1 p-2 min-w-[72px] transition-colors ${active ? 'text-primary' : 'text-on-surface-variant'}`}>
     <div className={`p-1.5 rounded-full transition-all ${active ? 'bg-primary/15' : 'bg-transparent'}`}>
       {icon}
     </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { Heart, Package, Target, Building, Eye, Share2, Check } from 'lucide-react';
+import { Heart, Package, Target, Building, Eye, Share2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // --- Componente Local para Compartir ---
 function ShareButton({ title, url }) {
@@ -78,37 +78,19 @@ function CampaignCard({ campaign, onDonate }) {
             </div>
 
             {/* Content */}
-            <div className="space-y-4 flex-1 flex flex-col">
-                <h3 className="text-title-large text-on-surface font-bold line-clamp-2" title={campaign.titulo}>
+            <div className="flex-1 flex flex-col">
+                <h3 className="text-title-large text-on-surface font-bold line-clamp-2 mb-3" title={campaign.titulo}>
                     {campaign.titulo}
                 </h3>
-                <p className="text-body-medium text-on-surface-variant line-clamp-3">
+                
+                {/* El flex-1 aquí empuja todo lo que está abajo hacia el fondo */}
+                <p className="text-body-medium text-on-surface-variant line-clamp-3 mb-5 flex-1">
                     {campaign.descripcion}
                 </p>
 
-                {/* Progress Bar (only for monetary campaigns) */}
-                {campaign.permite_donacion_monetaria && campaign.monto_objetivo > 0 && (
-                    <div className="space-y-2 bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/30 mt-auto">
-                        <div className="flex items-center justify-between text-xs font-bold">
-                            <span className="text-on-surface-variant">Recaudado</span>
-                            <span className="text-primary">{progress}%</span>
-                        </div>
-                        <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden shadow-inner">
-                            <div
-                                className="h-full bg-primary transition-all duration-1000 rounded-full"
-                                style={{ width: `${Math.min(progress, 100)}%` }}
-                            ></div>
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] font-bold text-on-surface-variant">
-                            <span className="text-primary">{formatCurrency(campaign.recaudo_actual)}</span>
-                            <span>Meta: {formatCurrency(campaign.monto_objetivo)}</span>
-                        </div>
-                    </div>
-                )}
-
                 {/* Needs List (only for in-kind campaigns) */}
                 {campaign.permite_donacion_especie && campaign.necesidades && campaign.necesidades.length > 0 && (
-                    <div className="space-y-2 mt-auto">
+                    <div className="space-y-2 mb-5">
                         <div className="flex items-center gap-1.5 text-xs font-bold text-secondary uppercase tracking-wider">
                             <Target className="w-3.5 h-3.5" /> Necesitamos:
                         </div>
@@ -127,12 +109,32 @@ function CampaignCard({ campaign, onDonate }) {
                     </div>
                 )}
 
+                {/* Progress Bar (only for monetary campaigns) */}
+                {campaign.permite_donacion_monetaria && campaign.monto_objetivo > 0 && (
+                    <div className="space-y-2 bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/30 mb-5">
+                        <div className="flex items-center justify-between text-xs font-bold">
+                            <span className="text-on-surface-variant">Recaudado</span>
+                            <span className="text-primary">{progress}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden shadow-inner">
+                            <div
+                                className="h-full bg-primary transition-all duration-1000 rounded-full"
+                                style={{ width: `${Math.min(progress, 100)}%` }}
+                            ></div>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] font-bold text-on-surface-variant">
+                            <span className="text-primary">{formatCurrency(campaign.recaudo_actual)}</span>
+                            <span>Meta: {formatCurrency(campaign.monto_objetivo)}</span>
+                        </div>
+                    </div>
+                )}
+
                 {/* Action Buttons */}
-                <div className="flex gap-2 mt-4 pt-4 border-t border-outline-variant/30">
-                    <button onClick={handleViewDetails} className="btn-tonal flex-1 py-2.5 text-sm font-bold justify-center">
+                <div className="flex gap-3 mt-auto pt-5 border-t border-outline-variant/30">
+                    <button onClick={handleViewDetails} className="btn-tonal flex-1 py-3.5 text-sm font-bold justify-center rounded-xl">
                         <Eye className="w-4 h-4 mr-1.5" /> Detalles
                     </button>
-                    <button onClick={() => onDonate(campaign)} className="btn-filled flex-1 py-2.5 text-sm font-bold justify-center shadow-md shadow-primary/20 hover:shadow-lg transition-all active:scale-95">
+                    <button onClick={() => onDonate(campaign)} className="btn-filled flex-1 py-3.5 text-sm font-bold justify-center rounded-xl shadow-md shadow-primary/20 hover:shadow-lg transition-all active:scale-95">
                         <Heart className="w-4 h-4 mr-1.5" /> Donar
                     </button>
                 </div>
@@ -145,12 +147,26 @@ export default function PublicCampaignsPage() {
     const { getActiveCampaigns } = useApp();
     const campaigns = getActiveCampaigns();
     const [filter, setFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 6;
 
     const filteredCampaigns = campaigns.filter(c => {
         if (filter === 'money') return c.permite_donacion_monetaria;
         if (filter === 'inkind') return c.permite_donacion_especie;
         return true;
     });
+
+    // Paginación matemática
+    const totalPages = Math.ceil(filteredCampaigns.length / ITEMS_PER_PAGE);
+    const paginatedCampaigns = filteredCampaigns.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const handleFilterChange = (newFilter) => {
+        setFilter(newFilter);
+        setCurrentPage(1); // Regresamos a la pag 1 al filtrar
+    };
 
     const handleDonate = (campaign) => {
         alert(campaign ? `Pasarela de pagos para: ${campaign.titulo} en desarrollo.` : "Pasarela de donación general en desarrollo.");
@@ -180,7 +196,7 @@ export default function PublicCampaignsPage() {
                     ].map(f => (
                         <button
                             key={f.key}
-                            onClick={() => setFilter(f.key)}
+                            onClick={() => handleFilterChange(f.key)}
                             className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 shadow-sm
                 ${filter === f.key
                                     ? 'bg-primary text-white scale-105 ring-4 ring-primary/20'
@@ -220,7 +236,7 @@ export default function PublicCampaignsPage() {
 
                 {/* Campaigns Grid */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {filteredCampaigns.map(campaign => (
+                    {paginatedCampaigns.map(campaign => (
                         <CampaignCard
                             key={campaign.id}
                             campaign={campaign}
@@ -228,6 +244,29 @@ export default function PublicCampaignsPage() {
                         />
                     ))}
                 </div>
+
+                {/* Controles de Paginación */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4 mt-12">
+                        <button 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                            disabled={currentPage === 1} 
+                            className="p-3 rounded-full hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors bg-white shadow-sm border border-outline-variant/30"
+                        >
+                            <ChevronLeft className="w-6 h-6 text-primary" />
+                        </button>
+                        <span className="text-body-large text-on-surface-variant font-medium">
+                            Página <span className="text-primary font-bold">{currentPage}</span> de {totalPages}
+                        </span>
+                        <button 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                            disabled={currentPage === totalPages} 
+                            className="p-3 rounded-full hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-colors bg-white shadow-sm border border-outline-variant/30"
+                        >
+                            <ChevronRight className="w-6 h-6 text-primary" />
+                        </button>
+                    </div>
+                )}
 
                 {filteredCampaigns.length === 0 && (
                     <div className="text-center py-20 bg-surface-container-lowest rounded-3xl border-2 border-dashed border-outline-variant/50">
