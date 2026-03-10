@@ -31,3 +31,10 @@ class UserRepository(ABC):
         Debe buscar un usuario por su ID interno.
         """
         pass
+
+    @abstractmethod
+    def actualizar(self, user_id: int, datos_actualizados: dict) -> Optional[User]:
+        """
+        Debe actualizar datos específicos de un usuario por su ID de forma parcial.
+        """
+        pass

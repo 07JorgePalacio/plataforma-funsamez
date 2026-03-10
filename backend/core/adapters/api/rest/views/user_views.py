@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from core.container import Container
-from core.adapters.api.rest.serializers.user_serializers import RegisterUserSerializer, LoginUserSerializer
+from core.adapters.api.rest.serializers.user_serializers import RegisterUserSerializer, LoginUserSerializer, ActualizarPerfilSerializer
 from core.domain.exceptions.user_exceptions import (
     EmailDuplicadoError,
     UsuarioMenorDeEdadError
@@ -99,6 +99,13 @@ class LoginUserView(APIView):
                     "full_name": user_entity.nombre_completo,
                     "email": user_entity.correo_electronico,
                     "role": user_entity.rol,
+                    "numero_telefono": getattr(user_entity, 'numero_telefono', getattr(user_entity, 'telefono', '')),
+                    "numero_identificacion": getattr(user_entity, 'numero_identificacion', getattr(user_entity, 'documento', '')),
+                    "profesion": getattr(user_entity, 'profesion', getattr(user_entity, 'ocupacion', '')),
+                    "direccion": getattr(user_entity, 'direccion', ''),
+                    "fecha_nacimiento": str(getattr(user_entity, 'fecha_nacimiento', '')) if getattr(user_entity, 'fecha_nacimiento', None) else None,
+                    "tipo_documento": getattr(user_entity, 'tipo_documento', 'CC'),
+                    "intereses": getattr(user_entity, 'intereses', []),
                     "habilidades": getattr(user_entity, 'habilidades', []),
                     "disponibilidad": getattr(user_entity, 'disponibilidad', {})
                 }
@@ -110,3 +117,48 @@ class LoginUserView(APIView):
         except Exception as e:
             print(f"❌ ERROR LOGIN: {e}")
             return Response({"non_field_errors": ["Error interno del servidor"]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ==========================================
+#  VISTA: ACTUALIZAR PERFIL
+# ==========================================
+class ActualizarPerfilView(APIView):
+    permission_classes = [IsAuthenticated] # 🔒 Protegido: Solo usuarios logueados
+
+    def patch(self, request):
+        serializer = ActualizarPerfilSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Extraemos el ID del usuario directamente del token JWT por seguridad
+            user_id = request.user.id 
+            
+            user_entity = Container.actualizar_perfil_usuario_use_case().execute(
+                user_id=user_id,
+                datos_actualizados=serializer.validated_data
+            )
+
+            return Response({
+                "message": "Perfil actualizado exitosamente",
+                "user": {
+                    "id": user_entity.id,
+                    "full_name": user_entity.nombre_completo,
+                    "email": user_entity.correo_electronico,
+                    "role": user_entity.rol,
+                    "numero_telefono": getattr(user_entity, 'numero_telefono', getattr(user_entity, 'telefono', '')),
+                    "numero_identificacion": getattr(user_entity, 'numero_identificacion', getattr(user_entity, 'documento', '')),
+                    "profesion": getattr(user_entity, 'profesion', getattr(user_entity, 'ocupacion', '')),
+                    "direccion": getattr(user_entity, 'direccion', ''),
+                    "fecha_nacimiento": str(getattr(user_entity, 'fecha_nacimiento', '')) if getattr(user_entity, 'fecha_nacimiento', None) else None,
+                    "tipo_documento": getattr(user_entity, 'tipo_documento', 'CC'),
+                    "intereses": getattr(user_entity, 'intereses', []),
+                    "habilidades": getattr(user_entity, 'habilidades', []),
+                    "disponibilidad": getattr(user_entity, 'disponibilidad', {})
+                }
+            }, status=status.HTTP_200_OK)
+
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(f"❌ ERROR ACTUALIZAR PERFIL: {e}")
+            return Response({"error": "Error interno del servidor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -41,6 +41,18 @@ class PostgresUserRepository(UserRepository):
         except UsuarioModel.DoesNotExist:
             return None
 
+    def actualizar(self, user_id: int, datos_actualizados: dict) -> Optional[User]:
+        try:
+            usuario_model = UsuarioModel.objects.get(id=user_id)
+
+            for key, value in datos_actualizados.items():
+                if hasattr(usuario_model, key):
+                    setattr(usuario_model, key, value)
+            usuario_model.save()
+            return self._to_domain(usuario_model)
+        except UsuarioModel.DoesNotExist:
+            return None
+
     def _to_domain(self, model: UsuarioModel) -> User:
         # Mapeo: Modelo Django -> Entidad
         return User(

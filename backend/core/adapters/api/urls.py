@@ -2,7 +2,7 @@ from django.urls import path
 
 # Vistas de Usuarios
 from core.adapters.api.rest.views.user_views import (
-    RegisterUserView, LoginUserView
+    RegisterUserView, LoginUserView, ActualizarPerfilView
 )
 # Vistas de Convocatorias
 from core.adapters.api.rest.views.convocatoria_views import (
@@ -34,6 +34,7 @@ urlpatterns = [
     # --- USUARIOS ---
     path('users/register/', RegisterUserView.as_view(), name='register_user'),
     path('users/login/', LoginUserView.as_view(), name='login_user'),
+    path('users/perfil/actualizar/', ActualizarPerfilView.as_view(), name='actualizar_perfil'),
     
     # --- CONVOCATORIAS ---
     path('convocatorias/crear/', CrearConvocatoriaView.as_view(), name='crear_convocatoria'),

@@ -1,12 +1,22 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import {
     Briefcase, FileText, Heart, ArrowRight,
-    Clock, MapPin, CheckCircle2
+    Clock, MapPin, CheckCircle2, Calendar
 } from 'lucide-react';
 
 export default function VolunteerDashboard() {
-    const { user, getPublishedConvocations, getApplicationsByVolunteer, convocations } = useApp();
+    const { user, getPublishedConvocations, getApplicationsByVolunteer, convocations, loading } = useApp();
+    const navigate = useNavigate();
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-32 animate-fade-in">
+                <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
+                <p className="text-body-large text-on-surface-variant font-medium">Cargando tu panel...</p>
+            </div>
+        );
+    }
 
     // --- 1. DATOS REALES DE CONVOCATORIAS ---
     const publishedConvocations = getPublishedConvocations ? getPublishedConvocations() : convocations.filter(c => c.estado === 'publicada' || c.status === 'published');
@@ -14,22 +24,28 @@ export default function VolunteerDashboard() {
     // --- 2. DATOS REALES DE POSTULACIONES (Mapeo y cruce de datos) ---
     const rawMyApplications = getApplicationsByVolunteer() || [];
     const myApplications = rawMyApplications.map(app => {
-        // Buscamos el título de la convocatoria usando el ID
+
         const convocation = convocations.find(c => c.id === app.id_convocatoria);
+        const convStatus = convocation ? (convocation.estado || convocation.status) : 'cerrada';
+        const isConvClosed = convStatus === 'cerrada' || convStatus === 'closed' || convStatus === 'finalizada';
+        const isHistory = app.estado === 'rechazada' || (isConvClosed && app.estado !== 'en_revision' && app.estado !== 'en_espera');
+
         return {
             ...app,
             convocationTitle: convocation ? convocation.title : 'Convocatoria no encontrada',
             appliedAt: app.fecha_postulacion ? new Date(app.fecha_postulacion).toLocaleDateString('es-CO') : 'Fecha desconocida',
-            // Normalizamos el estado de la BD a la UI
+    
             uiStatus: (app.estado === 'en_revision' || app.estado === 'en_espera') ? 'pending' : 
                       (app.estado === 'aprobada') ? 'accepted' : 
-                      (app.estado === 'rechazada') ? 'rejected' : app.status
+                      (app.estado === 'rechazada') ? 'rejected' : app.status,
+            isHistory // <-- Marcador para filtrarla fácilmente
         };
     });
 
-    // --- 3. FILTROS PARA ESTADÍSTICAS ---
-    const pendingApplications = myApplications.filter(a => a.uiStatus === 'pending');
-    const acceptedApplications = myApplications.filter(a => a.uiStatus === 'accepted');
+    // --- 3. FILTROS PARA ESTADÍSTICAS Y LISTAS ---
+    const activeApplications = myApplications.filter(a => !a.isHistory);
+    const pendingApplications = activeApplications.filter(a => a.uiStatus === 'pending');
+    const acceptedApplications = activeApplications.filter(a => a.uiStatus === 'accepted');
 
     const stats = [
         {
@@ -55,7 +71,6 @@ export default function VolunteerDashboard() {
         },
     ];
 
-    // Extracción segura del nombre
     const userName = user?.nombre || user?.name || 'Voluntario';
 
     return (
@@ -117,21 +132,25 @@ export default function VolunteerDashboard() {
                         </Link>
                     </div>
                     <div className="space-y-4">
-                        {publishedConvocations.slice(0, 2).map(convocation => (
+                        {/* Aumentamos a 3 el slice */}
+                        {publishedConvocations.slice(0, 3).map(convocation => (
                             <div
                                 key={convocation.id}
-                                className="p-4 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors"
+                                onClick={() => navigate('/voluntario/convocatorias', { state: { highlightId: convocation.id } })}
+                                className="p-4 rounded-2xl bg-surface-container hover:bg-surface-container-high hover:border-primary/30 transition-colors border border-outline-variant/30 cursor-pointer group"
                             >
-                                <h3 className="text-title-medium text-on-surface font-medium mb-2">
+                                <h3 className="text-title-medium text-on-surface font-bold mb-3 line-clamp-1" title={convocation.title}>
                                     {convocation.title}
                                 </h3>
-                                <div className="flex items-center gap-4 text-body-small text-on-surface-variant">
-                                    <span className="flex items-center gap-1 capitalize">
-                                        <Clock className="w-4 h-4" />
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {/* Frijolito de Modalidad */}
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant text-label-small font-bold capitalize border border-outline-variant/50">
+                                        <Clock className="w-3.5 h-3.5" />
                                         {convocation.modalidad || 'Presencial'}
                                     </span>
-                                    <span className="flex items-center gap-1">
-                                        <MapPin className="w-4 h-4" />
+                                    {/* Frijolito de Ubicación */}
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant text-label-small font-bold truncate max-w-[150px] border border-outline-variant/50" title={convocation.ubicacion || 'Sede Principal'}>
+                                        <MapPin className="w-3.5 h-3.5 shrink-0" />
                                         {convocation.ubicacion || 'Sede Principal'}
                                     </span>
                                 </div>
@@ -151,20 +170,23 @@ export default function VolunteerDashboard() {
                         </Link>
                     </div>
 
-                    {myApplications.length > 0 ? (
+                    {activeApplications.length > 0 ? (
                         <div className="space-y-4">
-                            {myApplications.slice(0, 3).map(application => (
+                            {activeApplications.slice(0, 3).map(application => (
                                 <div
                                     key={application.id}
-                                    className="p-4 rounded-xl bg-surface-container flex items-center gap-4"
+                                    onClick={() => navigate('/voluntario/postulaciones', { state: { highlightId: application.id } })}
+                                    className="p-4 rounded-2xl bg-surface-container flex items-center gap-4 border border-outline-variant/30 hover:bg-surface-container-high hover:border-secondary/30 transition-colors cursor-pointer group"
                                 >
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-title-small text-on-surface font-medium truncate">
+                                    <div className="flex-1 min-w-0 flex flex-col items-start gap-2">
+                                        <h3 className="text-title-small text-on-surface font-bold line-clamp-1" title={application.convocationTitle}>
                                             {application.convocationTitle}
                                         </h3>
-                                        <p className="text-body-small text-on-surface-variant">
-                                            Aplicado el {application.appliedAt}
-                                        </p>
+                                        {/* Frijolito de Fecha */}
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase tracking-wider border border-outline-variant/50">
+                                            <Calendar className="w-3 h-3" />
+                                            Postulado el {application.appliedAt}
+                                        </span>
                                     </div>
                                     <span className={`px-3 py-1 rounded-full text-label-small font-medium whitespace-nowrap
                                         ${application.uiStatus === 'pending' ? 'bg-warning-container text-warning' : ''}

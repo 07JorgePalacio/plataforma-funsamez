@@ -25,3 +25,10 @@ class PostulacionNoCancelableError(ValueError):
     def __init__(self, motivo: str):
         super().__init__(f"No puedes cancelar esta postulación: {motivo}")
         self.motivo = motivo
+
+
+class EstadoPostulacionInvalidoError(ValueError):
+    """Se lanza cuando no se puede cambiar el estado de la postulación por violar reglas de negocio (ej: convocatoria cerrada)"""
+    def __init__(self, mensaje: str):
+        super().__init__(mensaje)
+        self.mensaje = mensaje

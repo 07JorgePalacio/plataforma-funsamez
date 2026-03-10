@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Check, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import Header from '../../components/Header';
+import { INTERESES_OPCIONES, HABILIDADES_OPCIONES, DIAS_SEMANA, JORNADAS } from '../../utils/constants';
 
 // --- CONSTANTES ---
 const MAX_SELECTION = 5; 
@@ -24,37 +25,6 @@ const COUNTRY_CODES = [
   { code: '+52', country: 'MX' },
   { code: '+51', country: 'PE' },
   { code: '+593', country: 'EC' },
-];
-
-const INTERESES_OPCIONES = [
-  "Educación Infantil", "Medio Ambiente", "Adulto Mayor", 
-  "Salud y Bienestar", "Tecnología Social", "Arte y Cultura", 
-  "Logística de Eventos", "Deportes y Recreación", "Atención Psicosocial",
-  "Nutrición y Cocina", "Construcción y Vivienda", "Rescate Animal",
-  "Apoyo en Desastres", "Tutorías Académicas", "Inclusión Social"
-];
-
-const HABILIDADES_OPCIONES = [
-  "Liderazgo", "Trabajo en Equipo", "Comunicación Asertiva",
-  "Inglés Básico", "Inglés Avanzado", "Excel / Office", 
-  "Diseño Gráfico", "Programación / IT", 
-  "Primeros Auxilios", "Fotografía y Video", "Redacción", 
-  "Manejo de Redes Sociales", "Contabilidad Básica", "Enseñanza / Pedagogía",
-  "Conducción", "Cocina", "Manualidades"
-];
-
-const DIAS_SEMANA = [
-  'Lunes',
-  'Martes',
-  'Miércoles',
-  'Jueves',
-  'Viernes',
-  'Sábado',
-  'Domingo'
-];
-const JORNADAS = [
-  { id: 'manana', label: 'Mañana (8am - 12pm)' },
-  { id: 'tarde', label: 'Tarde (2pm - 6pm)' }
 ];
 
 // --- COMPONENTE INPUT AUXILIAR ---

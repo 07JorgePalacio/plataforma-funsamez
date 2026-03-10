@@ -24,22 +24,27 @@ class CambiarEstadoPostulacionUseCase(CambiarEstadoPostulacionInputPort):
             
         estado_anterior = postulacion.estado
         
+        # 1. Orquestación: Obtenemos la convocatoria para validar su ciclo de vida
+        convocatoria = self.convocatoria_repository.obtener_por_id(postulacion.id_convocatoria)
+        estado_conv = convocatoria.estado if convocatoria else "abierta"
+        
+        # 2. Llamamos al Servicio de Dominio para aplicar reglas de negocio puras
         postulacion_actualizada = PostulacionService.transicionar_estado(
             postulacion=postulacion, 
             nuevo_estado=nuevo_estado, 
+            estado_convocatoria=estado_conv,
             motivo_rechazo=motivo_rechazo
         )
         
         postulacion_guardada = self.postulacion_repository.actualizar(postulacion_actualizada)
         
+        # 3. Lógica de cupos (Reutilizamos la convocatoria ya consultada para optimizar base de datos)
         if estado_anterior != "aprobada" and nuevo_estado == "aprobada":
-            convocatoria = self.convocatoria_repository.obtener_por_id(postulacion_guardada.id_convocatoria)
             if convocatoria:
                 if (convocatoria.cupos_ocupados + 1) >= convocatoria.cupos_disponibles:
                     self.convocatoria_repository.actualizar(convocatoria.id, {"estado": "pausada"})
                     
         elif estado_anterior == "aprobada" and nuevo_estado != "aprobada":
-            convocatoria = self.convocatoria_repository.obtener_por_id(postulacion_guardada.id_convocatoria)
             if convocatoria and convocatoria.estado == "pausada":
                 self.convocatoria_repository.actualizar(convocatoria.id, {"estado": "abierta"})
 

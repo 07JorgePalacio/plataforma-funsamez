@@ -10,6 +10,7 @@ from core.infrastructure.external_services.django_email_service import DjangoEma
 # --- CASOS DE USO: USUARIOS ---
 from core.application.use_cases.user.register_user import RegisterUser
 from core.application.use_cases.user.login_user import LoginUser
+from core.application.use_cases.user.actualizar_perfil_usuario import ActualizarPerfilUsuarioUseCase
 
 # --- CASOS DE USO: CONVOCATORIAS ---
 from core.application.use_cases.convocatoria.crear_convocatoria import CrearConvocatoriaUseCase
@@ -73,6 +74,11 @@ class Container:
             password_hasher=Container._password_hasher
             )
 
+    @staticmethod
+    def actualizar_perfil_usuario_use_case() -> ActualizarPerfilUsuarioUseCase:
+        return ActualizarPerfilUsuarioUseCase(
+            user_repository=Container.get_user_repository()
+        )
 
     # ==========================================
     #  2. CONVOCATORIAS

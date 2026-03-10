@@ -44,10 +44,11 @@ export default function MyApplicationsPage() {
             const convocation = convocations.find(c => c.id === app.id_convocatoria);
             const title = convocation ? convocation.title.toLowerCase() : '';
             
-            // Lógica de separación: Activas vs Historial
             const convStatus = convocation ? (convocation.estado || convocation.status) : 'cerrada';
             const isConvClosed = convStatus === 'cerrada' || convStatus === 'closed' || convStatus === 'finalizada';
-            const isHistory = app.estado === 'rechazada' || isConvClosed;
+            
+            // CORRECCIÓN LÓGICA: Si está en revisión o en espera, SIEMPRE es activa (incluso si la convocatoria ya cerró)
+            const isHistory = app.estado === 'rechazada' || (isConvClosed && app.estado !== 'en_revision' && app.estado !== 'en_espera');
             
             const matchesTab = activeTab === 'activas' ? !isHistory : isHistory;
             const matchesSearch = title.includes(searchTerm.toLowerCase());

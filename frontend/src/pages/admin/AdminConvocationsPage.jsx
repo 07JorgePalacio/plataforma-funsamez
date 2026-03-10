@@ -12,11 +12,9 @@ import {
     Check, ChevronUp, Clock3, AlertCircle, ArrowUpDown, 
     ChevronLeft, ChevronRight, Copy, Inbox, Video, Laptop, Home
 } from 'lucide-react';
+import { INTERESES_OPCIONES, HABILIDADES_OPCIONES, DIAS_SEMANA } from '../../utils/constants';
 
-const CATEGORIAS_INTERES = ["Salud", "Capacitación / Cursos", "Estética y Belleza", "Educación Infantil", "Medio Ambiente", "Adulto Mayor", "Salud y Bienestar", "Tecnología Social", "Arte y Cultura", "Logística de Eventos", "Deportes y Recreación", "Atención Psicosocial", "Nutrición y Cocina", "Construcción y Vivienda", "Rescate Animal"];
-const HABILIDADES_OPCIONES = ["Sin Experiencia Previa", "Disponibilidad de Tiempo", "Liderazgo", "Trabajo en Equipo", "Comunicación Asertiva", "Inglés Básico", "Inglés Avanzado", "Excel / Office", "Diseño Gráfico", "Programación / IT", "Primeros Auxilios", "Fotografía y Video", "Redacción", "Manejo de Redes Sociales", "Contabilidad Básica", "Enseñanza / Pedagogía", "Conducción", "Cocina", "Manualidades"];
 const BENEFICIOS_OPCIONES = ["Certificado de Curso/Diplomado", "Materiales Incluidos", "Certificado de Voluntariado", "Refrigerio / Alimentación", "Transporte", "Camiseta / Uniforme", "Capacitación Certificada", "Experiencia Laboral", "Red de Contactos", "Bonificación", "Créditos Académicos", "Seguro de Accidentes"];
-const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 const mapBackendToForm = (convocation) => {
     if (!convocation) return null;
@@ -215,7 +213,7 @@ function ConvocationFormModal({ convocation, onSave, onClose }) {
                             <div id="field-description"><label className="block text-label-large text-on-surface mb-1.5">Descripción *</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={`input-outlined resize-none focus:bg-white ${errors.description ? 'border-error bg-error-container text-error' : ''}`} rows={3} />{errors.description && <p className="text-error text-xs mt-1 font-bold flex items-center animate-pulse"><AlertCircle size={12} className="mr-1"/>{errors.description}</p>}</div>
                         </div>
                         
-                        {renderChipsSection("Categoría / Tipo de Oportunidad", "categorias", CATEGORIAS_INTERES, showAllCats, setShowAllCats, 3)}
+                        {renderChipsSection("Categoría / Tipo de Oportunidad", "categorias", INTERESES_OPCIONES, showAllCats, setShowAllCats, 3)}
                         {renderChipsSection("Requisitos / Habilidades", "skills", HABILIDADES_OPCIONES, showAllSkills, setShowAllSkills, null)}
                         {renderChipsSection("Beneficios Ofrecidos", "beneficios", BENEFICIOS_OPCIONES, showAllBenefits, setShowAllBenefits, null)}
 
