@@ -193,7 +193,7 @@ export default function VolunteerLayout() {
           <div className="pb-2 mb-2 border-b border-outline-variant/30">
             <NavItem icon={<Globe size={22}/>} text="Explorar Sitio Web" active={false} onClick={() => navigate('/campanas')} />
           </div>
-          <NavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/voluntario')} onClick={() => navigate('/voluntario')} />
+          <NavItem icon={<LayoutDashboard size={22}/>} text="Dashboard" active={isActive('/voluntario')} onClick={() => navigate('/voluntario')} />
           <NavItem icon={<User size={22}/>} text="Mi Perfil" active={isActive('/voluntario/perfil')} onClick={() => navigate('/voluntario/perfil')} />
           <NavItem icon={<Briefcase size={22}/>} text="Convocatorias" active={isActive('/voluntario/convocatorias')} onClick={() => navigate('/voluntario/convocatorias')} />
           <NavItem icon={<FileText size={22}/>} text="Mis Postulaciones" active={isActive('/voluntario/postulaciones')} onClick={() => navigate('/voluntario/postulaciones')} />

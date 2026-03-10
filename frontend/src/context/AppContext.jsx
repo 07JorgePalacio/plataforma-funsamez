@@ -295,6 +295,10 @@ export const AppProvider = ({ children }) => {
     const getClosedCampaigns = () => {
         return campaigns.filter(c => c.estado === 'completada' || c.estado === 'cancelada');
     };
+
+    const getPublicCampaigns = () => {
+        return campaigns.filter(c => c.estado === 'activa');
+    };
     
 
     // ==========================================
@@ -317,6 +321,7 @@ export const AppProvider = ({ children }) => {
         fetchCampaigns, 
         getActiveCampaigns,
         getClosedCampaigns,
+        getPublicCampaigns,
 
         // Voluntarios
         user,

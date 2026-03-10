@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { crearCampana, actualizarCampana, eliminarCampana } from '../../services/campaignService';
 import Snackbar from '../../components/Snackbar';
@@ -160,8 +161,10 @@ function CampaignFormModal({ campaign, onSave, onClose }) {
 
 export default function AdminCampaignsPage() {
     const { campaigns, fetchCampaigns, getActiveCampaigns, getClosedCampaigns, loading } = useApp();
+    const location = useLocation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCampaign, setEditingCampaign] = useState(null);
+    const [highlightedCard, setHighlightedCard] = useState(null);
     const [activeTab, setActiveTab] = useState('activas');
     
     // Estado del Snackbar (Notificación de cambios)
@@ -181,6 +184,25 @@ export default function AdminCampaignsPage() {
 
 
     useEffect(() => { setCurrentPage(1); }, [searchQuery, activeTab, sortBy, statusFilter]);
+
+    // Motor de Smart Scroll & Highlight
+    useEffect(() => {
+        const highlightId = location.state?.highlightId;
+        if (highlightId && !loading && campaigns.length > 0) {
+            setTimeout(() => {
+                const element = document.getElementById(`admin-campaign-${highlightId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setHighlightedCard(Number(highlightId));
+
+                    setTimeout(() => {
+                        setHighlightedCard(null);
+                        window.history.replaceState({}, document.title);
+                    }, 3000);
+                }
+            }, 150);
+        }
+    }, [location.state?.highlightId, loading, campaigns.length]);
 
     const handleSave = async (data) => {
         try {
@@ -306,7 +328,11 @@ export default function AdminCampaignsPage() {
                 {paginatedList.length === 0 ? renderEmptyState() : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {paginatedList.map(camp => (
-                            <div key={camp.id} className={`card-elevated flex flex-col h-full animate-fade-in group hover:-translate-y-1 transition-transform duration-300 ${activeTab === 'historial' ? 'grayscale opacity-90 hover:grayscale-0 hover:opacity-100' : ''}`}>
+                            <div 
+                                key={camp.id} 
+                                id={`admin-campaign-${camp.id}`}
+                                className={`card-elevated flex flex-col h-full animate-fade-in group transition-all duration-500 relative ${activeTab === 'historial' ? 'grayscale opacity-90 hover:grayscale-0 hover:opacity-100' : ''} ${highlightedCard === camp.id ? 'border-primary ring-4 ring-primary/40 bg-primary/5 scale-[1.02] shadow-xl z-10' : 'hover:-translate-y-1'}`}
+                            >
                                 <div className="h-40 w-full bg-surface-container-high relative overflow-hidden rounded-t-xl">
                                     {camp.imagen_url ? <img src={camp.imagen_url} alt={camp.titulo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" /> : <div className="flex items-center justify-center h-full text-on-surface-variant"><ImageIcon size={32} opacity={0.5}/></div>}
                                     <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-bold shadow-sm capitalize ${camp.estado === 'activa' ? 'bg-success-container text-success' : camp.estado === 'pausada' ? 'bg-warning-container text-warning' : 'bg-surface-container-high text-on-surface-variant'}`}>{camp.estado}</div>

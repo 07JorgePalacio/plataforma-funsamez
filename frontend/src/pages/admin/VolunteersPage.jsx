@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import {
     Users, CheckCircle, XCircle, Clock, Mail,
@@ -288,8 +289,10 @@ function VolunteerDetailsModal({ application, onClose }) {
 export default function VolunteersPage() {
     // Traemos adminApplications y convocations del Contexto Real
     const { adminApplications = [], convocations = [], updateApplicationStatus, deleteApplication, loading } = useApp();
+    const location = useLocation();
 
     const [activeTab, setActiveTab] = useState('pendientes');
+    const [highlightedCard, setHighlightedCard] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     
@@ -325,6 +328,26 @@ export default function VolunteersPage() {
     const ITEMS_PER_PAGE = 5;
 
     useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter, activeTab]);
+
+    // Motor de Smart Scroll & Highlight
+    useEffect(() => {
+        const highlightId = location.state?.highlightId;
+        if (highlightId && !loading && adminApplications.length > 0) {
+            setTimeout(() => {
+                const element = document.getElementById(`admin-volunteer-${highlightId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setHighlightedCard(Number(highlightId));
+                    
+                    // Apagamos el resaltado después de 3 segundos y limpiamos la mochila
+                    setTimeout(() => {
+                        setHighlightedCard(null);
+                        window.history.replaceState({}, document.title);
+                    }, 3000);
+                }
+            }, 150);
+        }
+    }, [location.state?.highlightId, loading, adminApplications.length]);
 
     const mappedApplications = useMemo(() => {
         return adminApplications.map(app => {
@@ -468,7 +491,11 @@ export default function VolunteersPage() {
                             const Icon = styles.icon;
 
                             return (
-                                <div key={app.id} className={`card-elevated flex flex-col h-full animate-fade-in group hover:-translate-y-1 transition-transform duration-300 ${activeTab === 'historial' ? 'grayscale opacity-80 hover:grayscale-0 hover:opacity-100' : ''}`}>
+                                <div 
+                                    key={app.id} 
+                                    id={`admin-volunteer-${app.id}`}
+                                    className={`card-elevated flex flex-col h-full animate-fade-in group transition-all duration-500 relative ${activeTab === 'historial' ? 'grayscale opacity-80 hover:grayscale-0 hover:opacity-100' : ''} ${highlightedCard === app.id ? 'border-secondary ring-4 ring-secondary/40 bg-secondary/5 scale-[1.02] shadow-xl z-10' : 'hover:-translate-y-1'}`}
+                                >
                                     {/* Barra superior de color indicadora de estado */}
                                     <div className={`h-1.5 w-full bg-${styles.color}`}></div>
                                     
