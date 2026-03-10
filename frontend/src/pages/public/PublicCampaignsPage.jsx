@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Heart, Package, Target, Building, Eye, Share2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -23,7 +23,7 @@ function ShareButton({ title, url }) {
 }
 
 // --- Tarjeta de Campaña ---
-function CampaignCard({ campaign, onDonate }) {
+function CampaignCard({ campaign, onDonate, currentFilter, currentPage, isHighlighted }) {
     const navigate = useNavigate();
     const progress = campaign.monto_objetivo
         ? Math.round((campaign.recaudo_actual / campaign.monto_objetivo) * 100)
@@ -39,13 +39,17 @@ function CampaignCard({ campaign, onDonate }) {
     };
 
     const handleViewDetails = () => {
-        alert("La vista de detalles de la campaña está en construcción.");
+        // Llenamos la "mochila" con el filtro y página actual antes de ir a detalles
+        navigate(`/campanas/${campaign.id}`, { state: { filter: currentFilter, currentPage } });
     };
 
     return (
-        <div className="card-elevated overflow-hidden group flex flex-col h-full">
+        <div 
+            id={`campaign-card-${campaign.id}`} 
+            className={`card-elevated overflow-hidden group flex flex-col h-full transition-all duration-500 relative border ${isHighlighted ? 'border-primary ring-4 ring-primary/40 bg-primary/5 scale-[1.02] shadow-xl z-10' : 'border-outline-variant/30 bg-surface hover:-translate-y-1 hover:shadow-elevation-4 scale-100 z-0'}`}
+        >
             {/* Image */}
-            <div className="relative h-48 -mx-6 -mt-6 mb-4 overflow-hidden bg-surface-container-highest shrink-0">
+            <div className="relative h-48 -mx-6 -mt-6 mb-4 overflow-hidden bg-surface-container-highest shrink-0 rounded-t-2xl isolate transform-gpu">
                 {campaign.imagen_url ? (
                     <img
                         src={campaign.imagen_url}
@@ -144,11 +148,35 @@ function CampaignCard({ campaign, onDonate }) {
 }
 
 export default function PublicCampaignsPage() {
-    const { getActiveCampaigns } = useApp();
-    const campaigns = getActiveCampaigns();
-    const [filter, setFilter] = useState('all');
-    const [currentPage, setCurrentPage] = useState(1);
+    const { getPublicCampaigns, loading } = useApp();
+    const campaigns = getPublicCampaigns();
+    const location = useLocation();
+
+    // 1. Persistencia: Leemos la mochila si existe, si no, usamos valores por defecto
+    const [filter, setFilter] = useState(location.state?.filter || 'all');
+    const [currentPage, setCurrentPage] = useState(location.state?.currentPage || 1);
+    const [highlightedCard, setHighlightedCard] = useState(null);
     const ITEMS_PER_PAGE = 6;
+
+    // 2. Motor de Smart Scroll & Highlight
+    useEffect(() => {
+        const highlightId = location.state?.highlightId;
+        
+        if (highlightId && !loading && campaigns.length > 0) {
+            setTimeout(() => {
+                const element = document.getElementById(`campaign-card-${highlightId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setHighlightedCard(Number(highlightId));
+
+                    setTimeout(() => {
+                        setHighlightedCard(null);
+                        window.history.replaceState({}, document.title);
+                    }, 3000);
+                }
+            }, 150);
+        }
+    }, [location.state?.highlightId, loading, campaigns.length]);
 
     const filteredCampaigns = campaigns.filter(c => {
         if (filter === 'money') return c.permite_donacion_monetaria;
@@ -172,8 +200,17 @@ export default function PublicCampaignsPage() {
         alert(campaign ? `Pasarela de pagos para: ${campaign.titulo} en desarrollo.` : "Pasarela de donación general en desarrollo.");
     };
 
+    if (loading) {
+        return (
+            <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-surface py-32 animate-fade-in">
+                <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
+                <p className="text-body-large text-on-surface-variant font-medium">Cargando campañas...</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-surface py-8 sm:py-12 animate-fade-in">
+        <div className="min-h-[calc(100vh-64px)] bg-surface py-8 sm:py-12 animate-fade-in">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 {/* Header */}
@@ -241,6 +278,9 @@ export default function PublicCampaignsPage() {
                             key={campaign.id}
                             campaign={campaign}
                             onDonate={handleDonate}
+                            currentFilter={filter}
+                            currentPage={currentPage}
+                            isHighlighted={highlightedCard === campaign.id}
                         />
                     ))}
                 </div>

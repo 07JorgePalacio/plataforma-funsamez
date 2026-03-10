@@ -1,5 +1,5 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-03-04 15:03:32.169872
+📅 Generado: 2026-03-09 06:57:13.699178
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
@@ -8,6 +8,7 @@
 ├── .vscode/
 │   └── settings.json
 ├── CONTEXTO_FUNSAMEZ_2026-03-04_1503.md
+├── CONTEXTO_FUNSAMEZ_2026-03-09_0657.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -148,6 +149,7 @@
 │   │   │   └── react.svg
 │   │   ├── components/
 │   │   │   ├── ConfirmDialog.jsx
+│   │   │   ├── Header.jsx
 │   │   │   ├── Snackbar.jsx
 │   │   │   └── TimePickerMD3.jsx
 │   │   ├── context/
@@ -155,14 +157,18 @@
 │   │   ├── index.css
 │   │   ├── main.jsx
 │   │   ├── pages/
-│   │   │   ├── LoginPage.jsx
-│   │   │   ├── RegisterPage.jsx
 │   │   │   ├── admin/
 │   │   │   │   ├── AdminCampaignsPage.jsx
 │   │   │   │   ├── AdminConvocationsPage.jsx
 │   │   │   │   ├── AdminDashboard.jsx
 │   │   │   │   ├── AdminLayout.jsx
 │   │   │   │   └── VolunteersPage.jsx
+│   │   │   ├── public/
+│   │   │   │   ├── LoginPage.jsx
+│   │   │   │   ├── PublicCampaignsPage.jsx
+│   │   │   │   ├── PublicConvocationsPage.jsx
+│   │   │   │   ├── PublicLayout.jsx
+│   │   │   │   └── RegisterPage.jsx
 │   │   │   └── volunteer/
 │   │   │       ├── ConvocationsPage.jsx
 │   │   │       ├── MyApplicationsPage.jsx
