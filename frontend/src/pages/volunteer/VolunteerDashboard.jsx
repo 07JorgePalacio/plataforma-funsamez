@@ -6,16 +6,35 @@ import {
 } from 'lucide-react';
 
 export default function VolunteerDashboard() {
-    const { user, logout, updateProfile, getPublishedConvocations, applyToConvocation, hasApplied, getApplicationsByVolunteer, convocations } = useApp();
+    const { user, getPublishedConvocations, getApplicationsByVolunteer, convocations } = useApp();
 
-    const myApplications = getApplicationsByVolunteer();
-    const pendingApplications = myApplications.filter(a => a.status === 'pending');
-    const acceptedApplications = myApplications.filter(a => a.status === 'accepted');
+    // --- 1. DATOS REALES DE CONVOCATORIAS ---
+    const publishedConvocations = getPublishedConvocations ? getPublishedConvocations() : convocations.filter(c => c.estado === 'publicada' || c.status === 'published');
+
+    // --- 2. DATOS REALES DE POSTULACIONES (Mapeo y cruce de datos) ---
+    const rawMyApplications = getApplicationsByVolunteer() || [];
+    const myApplications = rawMyApplications.map(app => {
+        // Buscamos el título de la convocatoria usando el ID
+        const convocation = convocations.find(c => c.id === app.id_convocatoria);
+        return {
+            ...app,
+            convocationTitle: convocation ? convocation.title : 'Convocatoria no encontrada',
+            appliedAt: app.fecha_postulacion ? new Date(app.fecha_postulacion).toLocaleDateString('es-CO') : 'Fecha desconocida',
+            // Normalizamos el estado de la BD a la UI
+            uiStatus: (app.estado === 'en_revision' || app.estado === 'en_espera') ? 'pending' : 
+                      (app.estado === 'aprobada') ? 'accepted' : 
+                      (app.estado === 'rechazada') ? 'rejected' : app.status
+        };
+    });
+
+    // --- 3. FILTROS PARA ESTADÍSTICAS ---
+    const pendingApplications = myApplications.filter(a => a.uiStatus === 'pending');
+    const acceptedApplications = myApplications.filter(a => a.uiStatus === 'accepted');
 
     const stats = [
         {
             label: 'Convocatorias Abiertas',
-            value: convocations.filter(c => c.status === 'published').length,
+            value: publishedConvocations.length,
             icon: Briefcase,
             color: 'primary',
             link: '/voluntario/convocatorias'
@@ -36,12 +55,15 @@ export default function VolunteerDashboard() {
         },
     ];
 
+    // Extracción segura del nombre
+    const userName = user?.nombre || user?.name || 'Voluntario';
+
     return (
         <div className="max-w-5xl mx-auto animate-fade-in">
             {/* Welcome Section */}
             <div className="mb-8">
                 <h1 className="text-headline-medium text-on-surface font-bold mb-2">
-                    ¡Hola, {user?.name?.split(' ')[0]}! 👋
+                    ¡Hola, {userName.split(' ')[0]}! 👋
                 </h1>
                 <p className="text-body-large text-on-surface-variant">
                     Bienvenido a tu portal de voluntariado. Aquí puedes gestionar tu perfil y postulaciones.
@@ -58,15 +80,15 @@ export default function VolunteerDashboard() {
                     >
                         <div className="flex items-start justify-between mb-4">
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center
-                ${stat.color === 'primary' ? 'bg-primary/10' : ''}
-                ${stat.color === 'warning' ? 'bg-warning-container' : ''}
-                ${stat.color === 'success' ? 'bg-success-container' : ''}
-              `}>
+                                ${stat.color === 'primary' ? 'bg-primary/10' : ''}
+                                ${stat.color === 'warning' ? 'bg-warning-container' : ''}
+                                ${stat.color === 'success' ? 'bg-success-container' : ''}
+                            `}>
                                 <stat.icon className={`w-6 h-6
-                  ${stat.color === 'primary' ? 'text-primary' : ''}
-                  ${stat.color === 'warning' ? 'text-warning' : ''}
-                  ${stat.color === 'success' ? 'text-success' : ''}
-                `} />
+                                    ${stat.color === 'primary' ? 'text-primary' : ''}
+                                    ${stat.color === 'warning' ? 'text-warning' : ''}
+                                    ${stat.color === 'success' ? 'text-success' : ''}
+                                `} />
                             </div>
                             <ArrowRight className="w-5 h-5 text-on-surface-variant 
                                    group-hover:text-primary group-hover:translate-x-1 transition-all" />
@@ -83,8 +105,9 @@ export default function VolunteerDashboard() {
 
             {/* Quick Actions */}
             <div className="grid lg:grid-cols-2 gap-6">
+                
                 {/* Recent Convocations */}
-                <div className="card">
+                <div className="card-elevated border-none bg-surface p-6 rounded-3xl">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-title-large text-on-surface font-medium">
                             Convocatorias Recientes
@@ -94,11 +117,10 @@ export default function VolunteerDashboard() {
                         </Link>
                     </div>
                     <div className="space-y-4">
-                        {convocations.slice(0, 2).map(convocation => (
+                        {publishedConvocations.slice(0, 2).map(convocation => (
                             <div
                                 key={convocation.id}
-                                className="p-4 rounded-xl bg-surface-container hover:bg-surface-container-high 
-                         transition-colors"
+                                className="p-4 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors"
                             >
                                 <h3 className="text-title-medium text-on-surface font-medium mb-2">
                                     {convocation.title}
@@ -119,7 +141,7 @@ export default function VolunteerDashboard() {
                 </div>
 
                 {/* My Applications Status */}
-                <div className="card">
+                <div className="card-elevated border-none bg-surface p-6 rounded-3xl">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-title-large text-on-surface font-medium">
                             Estado de Postulaciones
@@ -144,14 +166,14 @@ export default function VolunteerDashboard() {
                                             Aplicado el {application.appliedAt}
                                         </p>
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-label-small font-medium
-                    ${application.status === 'pending' ? 'bg-warning-container text-warning' : ''}
-                    ${application.status === 'accepted' ? 'bg-success-container text-success' : ''}
-                    ${application.status === 'rejected' ? 'bg-error-container text-error' : ''}
-                  `}>
-                                        {application.status === 'pending' && 'Pendiente'}
-                                        {application.status === 'accepted' && 'Aceptado'}
-                                        {application.status === 'rejected' && 'Rechazado'}
+                                    <span className={`px-3 py-1 rounded-full text-label-small font-medium whitespace-nowrap
+                                        ${application.uiStatus === 'pending' ? 'bg-warning-container text-warning' : ''}
+                                        ${application.uiStatus === 'accepted' ? 'bg-success-container text-success' : ''}
+                                        ${application.uiStatus === 'rejected' ? 'bg-error-container text-error' : ''}
+                                    `}>
+                                        {application.uiStatus === 'pending' && 'Pendiente'}
+                                        {application.uiStatus === 'accepted' && 'Aprobada'}
+                                        {application.uiStatus === 'rejected' && 'Rechazada'}
                                     </span>
                                 </div>
                             ))}
@@ -171,8 +193,7 @@ export default function VolunteerDashboard() {
             </div>
 
             {/* Call to Action */}
-            <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/10 to-secondary/10 
-                    border border-primary/20">
+            <div className="mt-8 p-6 rounded-3xl bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                     <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                         <Heart className="w-8 h-8 text-primary" />
