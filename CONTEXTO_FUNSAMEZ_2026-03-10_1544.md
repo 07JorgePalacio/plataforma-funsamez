@@ -1,5 +1,5 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-03-09 06:57:13.699178
+📅 Generado: 2026-03-10 15:44:36.643254
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
@@ -7,8 +7,7 @@
 ├── .gitignore
 ├── .vscode/
 │   └── settings.json
-├── CONTEXTO_FUNSAMEZ_2026-03-04_1503.md
-├── CONTEXTO_FUNSAMEZ_2026-03-09_0657.md
+├── CONTEXTO_FUNSAMEZ_2026-03-10_1544.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -87,6 +86,7 @@
 │   │   │       │   └── postular_voluntario.py
 │   │   │       └── user/
 │   │   │           ├── __init__.py
+│   │   │           ├── actualizar_perfil_usuario.py
 │   │   │           ├── login_user.py
 │   │   │           └── register_user.py
 │   │   ├── container.py
@@ -149,6 +149,7 @@
 │   │   │   └── react.svg
 │   │   ├── components/
 │   │   │   ├── ConfirmDialog.jsx
+│   │   │   ├── DonationModal.jsx
 │   │   │   ├── Header.jsx
 │   │   │   ├── Snackbar.jsx
 │   │   │   └── TimePickerMD3.jsx
@@ -164,6 +165,7 @@
 │   │   │   │   ├── AdminLayout.jsx
 │   │   │   │   └── VolunteersPage.jsx
 │   │   │   ├── public/
+│   │   │   │   ├── CampaignDetailPage.jsx
 │   │   │   │   ├── LoginPage.jsx
 │   │   │   │   ├── PublicCampaignsPage.jsx
 │   │   │   │   ├── PublicConvocationsPage.jsx
@@ -179,7 +181,8 @@
 │   │       ├── campaignService.js
 │   │       ├── convocatoriaService.js
 │   │       ├── notificacionService.js
-│   │       └── postulacionService.js
+│   │       ├── postulacionService.js
+│   │       └── userService.js
 │   ├── tailwind.config.js
 │   └── vite.config.js
 ├── generar_contexto.py

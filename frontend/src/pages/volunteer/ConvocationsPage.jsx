@@ -181,8 +181,9 @@ export default function ConvocationsPage() {
         const highlightId = location.state?.highlightId;
         
         if (highlightId && !loading && filteredConvocations.length > 0) {
+            const targetId = Number(highlightId);
             // 1. Buscamos en qué página está la convocatoria
-            const itemIndex = filteredConvocations.findIndex(c => c.parsed.id === highlightId);
+            const itemIndex = filteredConvocations.findIndex(c => c.parsed.id === targetId);
             
             if (itemIndex !== -1) {
                 // 2. Calculamos la página matemáticamente y cambiamos si es necesario
@@ -193,10 +194,10 @@ export default function ConvocationsPage() {
                 
                 // 3. Damos un respiro al DOM para renderizar, luego hacemos Scroll y Parpadeo
                 setTimeout(() => {
-                    const element = document.getElementById(`convocation-card-${highlightId}`);
+                    const element = document.getElementById(`convocation-card-${targetId}`);
                     if (element) {
                         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        setHighlightedCard(highlightId);
+                        setHighlightedCard(targetId);
                         
                         // 4. Apagamos el parpadeo después de 3 segundos y limpiamos el historial
                         setTimeout(() => {
@@ -207,7 +208,7 @@ export default function ConvocationsPage() {
                 }, 150);
             }
         }
-    }, [location.state?.highlightId, loading, filteredConvocations.length]);
+    }, [location.state?.highlightId, loading, filteredConvocations.length, currentPage]);
 
     const handleOpenDetails = (convocation) => {
         setSelectedConvocation(mapBackendToForm(convocation));
@@ -454,7 +455,7 @@ export default function ConvocationsPage() {
                                 <div 
                                     key={parsed.id} 
                                     id={`convocation-card-${parsed.id}`}
-                                    className={`card-elevated overflow-hidden flex flex-col transition-all duration-500 relative border p-0 rounded-3xl ${isHighlighted ? 'border-primary ring-4 ring-primary/40 bg-primary/5 scale-[1.02] shadow-xl z-10' : 'border-outline-variant/30 bg-surface hover:-translate-y-1 hover:shadow-elevation-4 scale-100 z-0'}`}
+                                    className={`card-elevated overflow-hidden flex flex-col transition-all duration-500 relative border p-0 rounded-3xl isolate transform-gpu ${isHighlighted ? 'border-primary ring-4 ring-primary/40 bg-primary/5 scale-[1.02] shadow-xl z-10' : 'border-outline-variant/30 bg-surface hover:-translate-y-1 hover:shadow-elevation-4 scale-100 z-0'}`}
                                 >
                                     
                                     {/* Insignia de Recomendación */}

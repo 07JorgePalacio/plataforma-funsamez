@@ -29,6 +29,11 @@ const LoginPage = () => {
       localStorage.setItem('user_role', userRole); 
       localStorage.setItem('user_name', response.data.user.full_name);
       localStorage.setItem('user_id', response.data.user.id); 
+      
+      localStorage.setItem('user_email', response.data.user.email || '');
+      localStorage.setItem('user_telefono', response.data.user.numero_telefono || '');
+      localStorage.setItem('user_documento', response.data.user.numero_identificacion || '');
+      localStorage.setItem('user_profesion', response.data.user.profesion || '');
       localStorage.setItem('user_habilidades', JSON.stringify(response.data.user.habilidades || []));
       localStorage.setItem('user_disponibilidad', JSON.stringify(response.data.user.disponibilidad || {}));
 
@@ -36,6 +41,10 @@ const LoginPage = () => {
           name: response.data.user.full_name,
           role: response.data.user.role,
           id: response.data.user.id,
+          correo_electronico: response.data.user.email,
+          numero_telefono: response.data.user.numero_telefono,
+          numero_identificacion: response.data.user.numero_identificacion,
+          profesion: response.data.user.profesion,
           habilidades: response.data.user.habilidades || [],
           disponibilidad: response.data.user.disponibilidad || {}
       });

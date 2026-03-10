@@ -130,15 +130,25 @@ class PostulacionService:
         return len(texto_limpio) >= min_caracteres
 
     @staticmethod
-    def transicionar_estado(postulacion: Postulacion, nuevo_estado: str, motivo_rechazo: str = None) -> Postulacion:
+    def transicionar_estado(postulacion: Postulacion, nuevo_estado: str, estado_convocatoria: str = "abierta", motivo_rechazo: str = None) -> Postulacion:
         """
         Regla de negocio para cambiar el estado de forma segura.
-        Asegura que el estado sea válido y deja registro en el historial.
+        Asegura que el estado sea válido, respeta el ciclo de la convocatoria y deja registro.
         """
+        # Importación local para evitar dependencias circulares si las hubiera
+        from core.domain.exceptions.postulacion_exceptions import EstadoPostulacionInvalidoError
+
         estados_permitidos = ["en_revision", "en_espera", "aprobada", "rechazada"]
         
         if nuevo_estado not in estados_permitidos:
             raise ValueError(f"El estado '{nuevo_estado}' no está permitido.")
+
+        # 🟢 REGLA DE NEGOCIO ESTRICTA: 
+        # No se puede devolver a estado activo si el evento ya caducó/cerró.
+        if nuevo_estado in ["en_revision", "en_espera"] and estado_convocatoria in ["cerrada", "closed", "finalizada"]:
+            raise EstadoPostulacionInvalidoError(
+                "No se puede restablecer la postulación porque la convocatoria ya se encuentra cerrada o finalizada."
+            )
             
         # Si no hay cambio real, devolvemos la misma entidad
         if postulacion.estado == nuevo_estado:

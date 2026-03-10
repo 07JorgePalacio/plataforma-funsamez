@@ -7,6 +7,8 @@ import { obtenerCampanas } from '../services/campaignService';
 import { postularAConvocatoria, obtenerMisPostulaciones, obtenerTodasLasPostulaciones, cambiarEstadoPostulacion, eliminarPostulacion } from '../services/postulacionService';
 // Servicios de Notificaciones
 import { obtenerMisNotificaciones, marcarNotificacionComoLeida, eliminarNotificacion, eliminarTodasLasNotificaciones } from '../services/notificacionService';
+// Servicios de Usuarios
+import { actualizarPerfil } from '../services/userService';
 
 const AppContext = createContext();
 
@@ -33,15 +35,26 @@ export const AppProvider = ({ children }) => {
         const role = localStorage.getItem('user_role');
         const id = localStorage.getItem('user_id');
         
+        const correo_electronico = localStorage.getItem('user_email') || localStorage.getItem('user_correo_electronico') || '';
+        const numero_telefono = localStorage.getItem('user_telefono') || localStorage.getItem('user_numero_telefono') || '';
+        const numero_identificacion = localStorage.getItem('user_documento') || localStorage.getItem('user_numero_identificacion') || '';
+        const profesion = localStorage.getItem('user_profesion') || localStorage.getItem('user_ocupacion') || '';
+        const direccion = localStorage.getItem('user_direccion') || '';
+        const fecha_nacimiento = localStorage.getItem('user_fecha_nacimiento') || '';
+        const tipo_documento = localStorage.getItem('user_tipo_documento') || 'CC';
+
         if (!name) return null;
 
         let habilidades = [];
         let disponibilidad = {};
+        let intereses = []; 
         try {
             const habs = localStorage.getItem('user_habilidades');
             const disp = localStorage.getItem('user_disponibilidad');
+            const ints = localStorage.getItem('user_intereses'); 
             if (habs) habilidades = JSON.parse(habs);
             if (disp) disponibilidad = JSON.parse(disp);
+            if (ints) intereses = JSON.parse(ints); 
         } catch (e) {
             console.error("Error al cargar los datos del usuario:", e);
         }
@@ -50,6 +63,14 @@ export const AppProvider = ({ children }) => {
             name, 
             role, 
             id: id ? parseInt(id) : null, 
+            correo_electronico,
+            numero_telefono,
+            numero_identificacion,
+            profesion,
+            direccion,          
+            fecha_nacimiento,   
+            tipo_documento,     
+            intereses,          
             habilidades, 
             disponibilidad 
         };
@@ -60,8 +81,40 @@ export const AppProvider = ({ children }) => {
         setUser(null);
     };
 
-    const updateProfile = (data) => {
-        setUser({ ...user, ...data });
+    const updateProfile = async (data) => {
+        try {
+            // 1. Enviamos los datos al backend para persistencia real
+            const response = await actualizarPerfil(data);
+            const updatedUser = response.user;
+            
+            // 2. Si es exitoso, actualizamos el estado local de React
+            setUser(prev => ({ 
+                ...prev, 
+                ...updatedUser,
+                // Garantizamos los alias que usa la UI
+                name: updatedUser.full_name,
+                nombre_completo: updatedUser.full_name
+            }));
+            
+            // 3. Blindaje total: Actualizamos el localStorage para que no se borre al recargar
+            localStorage.setItem('user_name', updatedUser.full_name || '');
+            localStorage.setItem('user_email', updatedUser.email || '');
+            localStorage.setItem('user_telefono', updatedUser.numero_telefono || '');
+            localStorage.setItem('user_documento', updatedUser.numero_identificacion || '');
+            localStorage.setItem('user_profesion', updatedUser.profesion || '');
+            localStorage.setItem('user_direccion', updatedUser.direccion || '');
+            localStorage.setItem('user_fecha_nacimiento', updatedUser.fecha_nacimiento || '');
+            localStorage.setItem('user_tipo_documento', updatedUser.tipo_documento || 'CC');
+            localStorage.setItem('user_intereses', JSON.stringify(updatedUser.intereses || []));
+            
+            localStorage.setItem('user_habilidades', JSON.stringify(updatedUser.habilidades || []));
+            localStorage.setItem('user_disponibilidad', JSON.stringify(updatedUser.disponibilidad || {}));
+            
+            return response;
+        } catch (error) {
+            console.error("Error al actualizar perfil:", error);
+            throw error;
+        }
     };
 
     const showToast = (message) => {

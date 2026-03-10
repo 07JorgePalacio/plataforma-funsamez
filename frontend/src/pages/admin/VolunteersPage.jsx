@@ -325,7 +325,7 @@ export default function VolunteersPage() {
 
     // Paginación
     const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 5;
+    const ITEMS_PER_PAGE = 6;
 
     useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter, activeTab]);
 
@@ -364,12 +364,16 @@ export default function VolunteersPage() {
                 }
             }
 
+            const convStatus = convocation ? (convocation.estado || convocation.status) : 'cerrada';
+            const isClosed = convStatus === 'cerrada' || convStatus === 'closed' || convStatus === 'finalizada';
+
             return {
                 ...app,
                 volunteerName: app.nombre_usuario || `Voluntario #${app.id_usuario}`, 
                 convocationTitle: convocation ? convocation.title : 'Convocatoria Eliminada/Desconocida',
                 convocationSkills: reqSkills, // Guardamos las requeridas para hacer el match
-                convocationSchedule: convocation ? convocation.horario : null 
+                convocationSchedule: convocation ? convocation.horario : null,
+                isConvocationClosed: isClosed
             };
         });
     }, [adminApplications, convocations]);
@@ -474,6 +478,16 @@ export default function VolunteersPage() {
                 </div>
             </div>
 
+            {/* MENSAJE INFORMATIVO EN HISTORIAL */}
+            {activeTab === 'historial' && paginatedList.length > 0 && (
+                <div className="mb-4 p-4 bg-surface-container-low border border-outline-variant/50 rounded-xl flex items-start gap-3 animate-fade-in">
+                    <Info className="w-5 h-5 text-on-surface-variant shrink-0 mt-0.5" />
+                    <p className="text-body-small text-on-surface-variant">
+                        <strong>Información de gestión:</strong> Las postulaciones en el historial solo pueden ser devueltas a "Pendientes" si la convocatoria asociada aún está <strong>abierta</strong>. Si el evento ya finalizó, el botón de restaurar se deshabilitará para proteger la integridad de los datos.
+                    </p>
+                </div>
+            )}
+
             {/* LISTA DE POSTULACIONES */}
             <div className="space-y-4 pt-2 min-h-[400px]">
                 {paginatedList.length === 0 ? (
@@ -557,7 +571,12 @@ export default function VolunteersPage() {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <button onClick={() => handleStatusChange(app.id, 'en_revision')} className="btn-outlined py-2 px-2 text-warning border-warning hover:bg-warning/10" title="Devolver a Pendientes">
+                                                    <button 
+                                                        onClick={() => !app.isConvocationClosed && handleStatusChange(app.id, 'en_revision')} 
+                                                        disabled={app.isConvocationClosed}
+                                                        className={`btn-outlined py-2 px-2 ${app.isConvocationClosed ? 'text-surface-variant border-surface-variant opacity-50 cursor-not-allowed' : 'text-warning border-warning hover:bg-warning/10'}`} 
+                                                        title={app.isConvocationClosed ? "No se puede restaurar: Convocatoria cerrada" : "Devolver a Pendientes"}
+                                                    >
                                                         <RotateCcw size={16}/>
                                                     </button>
                                                     <button onClick={() => handleDelete(app.id)} className="btn-outlined py-2 px-2 text-error border-error hover:bg-error/10" title="Eliminar del Historial">
