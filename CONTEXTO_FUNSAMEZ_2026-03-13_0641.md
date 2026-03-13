@@ -1,5 +1,5 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-03-10 15:44:36.643254
+📅 Generado: 2026-03-13 06:41:37.017373
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
@@ -7,7 +7,7 @@
 ├── .gitignore
 ├── .vscode/
 │   └── settings.json
-├── CONTEXTO_FUNSAMEZ_2026-03-10_1544.md
+├── CONTEXTO_FUNSAMEZ_2026-03-13_0641.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -131,7 +131,8 @@
 │   │       │           └── postgres_user_repository.py
 │   │       └── security/
 │   │           └── django_hasher.py
-│   └── manage.py
+│   ├── manage.py
+│   └── media/
 ├── docs/
 ├── frontend/
 │   ├── .gitignore
@@ -177,12 +178,15 @@
 │   │   │       ├── ProfilePage.jsx
 │   │   │       ├── VolunteerDashboard.jsx
 │   │   │       └── VolunteerLayout.jsx
-│   │   └── services/
-│   │       ├── campaignService.js
-│   │       ├── convocatoriaService.js
-│   │       ├── notificacionService.js
-│   │       ├── postulacionService.js
-│   │       └── userService.js
+│   │   ├── services/
+│   │   │   ├── campaignService.js
+│   │   │   ├── convocatoriaService.js
+│   │   │   ├── notificacionService.js
+│   │   │   ├── postulacionService.js
+│   │   │   └── userService.js
+│   │   └── utils/
+│   │       ├── constants.js
+│   │       └── cropImage.js
 │   ├── tailwind.config.js
 │   └── vite.config.js
 ├── generar_contexto.py

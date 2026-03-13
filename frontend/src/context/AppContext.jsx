@@ -31,8 +31,12 @@ export const AppProvider = ({ children }) => {
     // 0. ESTADO DEL USUARIO Y SESIÓN
     // ==========================================
     const [user, setUser] = useState(() => {
-        const name = localStorage.getItem('user_name');
-        const role = localStorage.getItem('user_role');
+
+        const token = localStorage.getItem('access_token');
+        if (!token) return null;
+
+        const role = localStorage.getItem('user_role') || 'voluntario';
+        const name = localStorage.getItem('user_name') || (role === 'administrador' ? 'Administrador' : 'Usuario');
         const id = localStorage.getItem('user_id');
         
         const correo_electronico = localStorage.getItem('user_email') || localStorage.getItem('user_correo_electronico') || '';
@@ -42,6 +46,7 @@ export const AppProvider = ({ children }) => {
         const direccion = localStorage.getItem('user_direccion') || '';
         const fecha_nacimiento = localStorage.getItem('user_fecha_nacimiento') || '';
         const tipo_documento = localStorage.getItem('user_tipo_documento') || 'CC';
+        const foto_perfil = localStorage.getItem('user_foto_perfil') || null;
 
         if (!name) return null;
 
@@ -72,9 +77,48 @@ export const AppProvider = ({ children }) => {
             tipo_documento,     
             intereses,          
             habilidades, 
-            disponibilidad 
+            disponibilidad,
+            foto_perfil
         };
     });
+
+    const login = (userData, tokens) => {
+        // 1. Persistencia física para que resista el F5
+        localStorage.setItem('access_token', tokens.access);
+        localStorage.setItem('refresh_token', tokens.refresh);
+        localStorage.setItem('user_role', userData.role);
+        localStorage.setItem('user_name', userData.full_name);
+        localStorage.setItem('user_id', userData.id);
+        localStorage.setItem('user_email', userData.email || '');
+        localStorage.setItem('user_telefono', userData.numero_telefono || '');
+        localStorage.setItem('user_documento', userData.numero_identificacion || '');
+        localStorage.setItem('user_profesion', userData.profesion || '');
+        localStorage.setItem('user_direccion', userData.direccion || '');
+        localStorage.setItem('user_fecha_nacimiento', userData.fecha_nacimiento || '');
+        localStorage.setItem('user_tipo_documento', userData.tipo_documento || 'CC');
+        localStorage.setItem('user_foto_perfil', userData.foto_perfil || '');
+        localStorage.setItem('user_habilidades', JSON.stringify(userData.habilidades || []));
+        localStorage.setItem('user_disponibilidad', JSON.stringify(userData.disponibilidad || {}));
+        localStorage.setItem('user_intereses', JSON.stringify(userData.intereses || []));
+
+        // 2. Reactividad instantánea: Avisamos a React que el usuario cambió
+        setUser({
+            id: userData.id,
+            name: userData.full_name,
+            role: userData.role,
+            correo_electronico: userData.email,
+            numero_telefono: userData.numero_telefono,
+            numero_identificacion: userData.numero_identificacion,
+            profesion: userData.profesion,
+            direccion: userData.direccion,
+            fecha_nacimiento: userData.fecha_nacimiento,
+            tipo_documento: userData.tipo_documento,
+            intereses: userData.intereses || [],
+            habilidades: userData.habilidades || [],
+            disponibilidad: userData.disponibilidad || {},
+            foto_perfil: userData.foto_perfil
+        });
+    };
 
     const logout = () => {
         localStorage.clear();
@@ -106,6 +150,10 @@ export const AppProvider = ({ children }) => {
             localStorage.setItem('user_fecha_nacimiento', updatedUser.fecha_nacimiento || '');
             localStorage.setItem('user_tipo_documento', updatedUser.tipo_documento || 'CC');
             localStorage.setItem('user_intereses', JSON.stringify(updatedUser.intereses || []));
+            
+            if (updatedUser.foto_perfil) {
+                localStorage.setItem('user_foto_perfil', updatedUser.foto_perfil);
+            }
             
             localStorage.setItem('user_habilidades', JSON.stringify(updatedUser.habilidades || []));
             localStorage.setItem('user_disponibilidad', JSON.stringify(updatedUser.disponibilidad || {}));
@@ -378,6 +426,7 @@ export const AppProvider = ({ children }) => {
 
         // Voluntarios
         user,
+        login,
         logout,
         updateProfile,
         showToast,

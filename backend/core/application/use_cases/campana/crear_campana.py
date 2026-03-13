@@ -28,7 +28,6 @@ class CrearCampanaUseCase:
         
         # 1. Validar fechas lógicas
         if fecha_fin and fecha_inicio:
-            # Convertimos a date para comparar peras con peras
             inicio_date = fecha_inicio.date() if isinstance(fecha_inicio, datetime) else fecha_inicio
             if fecha_fin < inicio_date:
                 raise ValueError("La fecha de fin debe ser posterior al inicio.")

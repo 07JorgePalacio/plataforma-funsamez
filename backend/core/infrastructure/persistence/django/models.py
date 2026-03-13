@@ -48,6 +48,7 @@ class UsuarioModel(AbstractBaseUser):
     # --- 3. Contacto ---
     numero_telefono = models.CharField(max_length=20, null=True, blank=True)
     direccion = models.CharField(max_length=255, null=True, blank=True)
+    foto_perfil = models.ImageField(upload_to='perfiles/', null=True, blank=True)
 
     # --- 4. Configuración y Estado ---
     rol = models.CharField(max_length=20, default='voluntario')

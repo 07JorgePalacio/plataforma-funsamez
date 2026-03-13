@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Eye, EyeOff, Heart } from 'lucide-react';
 import Header from '../../components/Header';
+import { iniciarSesion } from '../../services/userService';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -11,59 +11,18 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { refreshAllData, updateProfile } = useApp(); 
+  const { refreshAllData, login } = useApp(); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/users/login/', {
-        email: email,
-        password: password
-      });
-
-      const userRole = response.data.user.role;
-      localStorage.setItem('access_token', response.data.tokens.access);
-      localStorage.setItem('refresh_token', response.data.tokens.refresh);
-      localStorage.setItem('user_role', userRole); 
-      localStorage.setItem('user_name', response.data.user.full_name);
-      localStorage.setItem('user_id', response.data.user.id); 
-      
-      localStorage.setItem('user_email', response.data.user.email || '');
-      localStorage.setItem('user_telefono', response.data.user.numero_telefono || '');
-      localStorage.setItem('user_documento', response.data.user.numero_identificacion || '');
-      localStorage.setItem('user_profesion', response.data.user.profesion || '');
-      localStorage.setItem('user_habilidades', JSON.stringify(response.data.user.habilidades || []));
-      localStorage.setItem('user_disponibilidad', JSON.stringify(response.data.user.disponibilidad || {}));
-
-      updateProfile({
-          name: response.data.user.full_name,
-          role: response.data.user.role,
-          id: response.data.user.id,
-          correo_electronico: response.data.user.email,
-          numero_telefono: response.data.user.numero_telefono,
-          numero_identificacion: response.data.user.numero_identificacion,
-          profesion: response.data.user.profesion,
-          habilidades: response.data.user.habilidades || [],
-          disponibilidad: response.data.user.disponibilidad || {}
-      });
-
-      await refreshAllData();
-
-      if (userRole === 'voluntario') {
-        navigate('/voluntario');
-      } else {
-        navigate('/admin/dashboard');
-      }
-
+      const data = await iniciarSesion(email, password);
+      login(data.user, data.tokens);
+      navigate(data.user.role === 'administrador' ? '/admin/dashboard' : '/voluntario');
     } catch (err) {
-      if (err.response) {
-        const errorMsg = err.response.data.error || err.response.data.non_field_errors?.[0] || "Error al iniciar sesión";
-        setError(errorMsg);
-      } else {
-        setError("No se pudo conectar con el servidor.");
-      }
+      setError(err.message || 'Error al iniciar sesión');
     }
   };
 

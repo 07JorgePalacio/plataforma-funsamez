@@ -22,7 +22,8 @@ class PostgresUserRepository(UserRepository):
                 'profesion': user.profesion,
                 'intereses': user.intereses or [],
                 'habilidades': user.habilidades or [],
-                'disponibilidad': user.disponibilidad or {}
+                'disponibilidad': user.disponibilidad or {},
+                'foto_perfil': user.foto_perfil
             }
         )
         return self._to_domain(usuario_model)
@@ -75,5 +76,6 @@ class PostgresUserRepository(UserRepository):
             profesion=model.profesion,
             intereses=model.intereses,
             habilidades=model.habilidades,
-            disponibilidad=model.disponibilidad
+            disponibilidad=model.disponibilidad,
+            foto_perfil=model.foto_perfil.url if model.foto_perfil else None
         )

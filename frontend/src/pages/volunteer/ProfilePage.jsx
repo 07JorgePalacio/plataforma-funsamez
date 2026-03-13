@@ -3,6 +3,8 @@ import { useApp } from '../../context/AppContext';
 import { User, Save, Plus, X, Calendar, Briefcase, FileText, Edit2, Check, AlertCircle, Phone, FileDigit, Mail, Camera, MapPin, Heart } from 'lucide-react';
 import Snackbar from '../../components/Snackbar';
 import { INTERESES_OPCIONES, HABILIDADES_OPCIONES, DIAS_SEMANA, JORNADAS } from '../../utils/constants';
+import Cropper from 'react-easy-crop';
+import getCroppedImg from '../../utils/cropImage';
 
 export default function ProfilePage() {
     const { user, loading, updateProfile } = useApp();
@@ -10,6 +12,17 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'info' });
+
+    // Estados para la foto de perfil
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
+    
+    // Estados para el Recortador (Cropper)
+    const [imageToCrop, setImageToCrop] = useState(null);
+    const [showCropper, setShowCropper] = useState(false);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
     // Estado local mapeado exactamente a los campos de la base de datos
     const [formData, setFormData] = useState({
@@ -39,21 +52,78 @@ export default function ProfilePage() {
                 habilidades: Array.isArray(user.habilidades) ? user.habilidades : [],
                 disponibilidad: user.disponibilidad || {}
             });
+            
+            if (user.foto_perfil) {
+                const fullUrl = user.foto_perfil.startsWith('http') ? user.foto_perfil : `http://127.0.0.1:8000${user.foto_perfil}`;
+                setPreviewUrl(fullUrl);
+            }
         }
     }, [user, isEditing]);
-
+    
     const handleCancelEdit = () => {
         setIsEditing(false);
+        setSelectedFile(null); 
+        setShowCropper(false);
+        setImageToCrop(null);
+        
+        // Restaurar preview original
+        if (user && user.foto_perfil) {
+            const fullUrl = user.foto_perfil.startsWith('http') ? user.foto_perfil : `http://127.0.0.1:8000${user.foto_perfil}`;
+            setPreviewUrl(fullUrl);
+        } else {
+            setPreviewUrl(null);
+        }
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) { 
+                setSnackbar({ show: true, message: 'La imagen es demasiado grande (Máx. 5MB)', type: 'error' });
+                return;
+            }
+            // En vez de guardar directamente, abrimos el modo recorte
+            const url = URL.createObjectURL(file);
+            setImageToCrop(url);
+            setShowCropper(true);
+            setZoom(1);
+            setCrop({ x: 0, y: 0 });
+            e.target.value = ''; // Limpiamos el input para permitir seleccionar la misma foto si se cancela
+        }
+    };
+
+    // Funciones del Cropper
+    const onCropComplete = (croppedArea, croppedAreaPixels) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    };
+
+    const handleCropConfirm = async () => {
+        try {
+            // Usamos nuestro Utilitario Matemático para extraer el cuadrado perfecto
+            const { file, url } = await getCroppedImg(imageToCrop, croppedAreaPixels);
+            setSelectedFile(file); // Guardamos el archivo binario final
+            setPreviewUrl(url); // Mostramos el resultado circular en la UI
+            setShowCropper(false);
+            setImageToCrop(null);
+        } catch (e) {
+            console.error("Error al recortar:", e);
+            setSnackbar({ show: true, message: 'Error al procesar la imagen.', type: 'error' });
+        }
+    };
+
+    const handleCropCancel = () => {
+        setShowCropper(false);
+        setImageToCrop(null);
+    };
+    
     const handleToggleSelection = (field, item) => {
         if (!isEditing) return;
         setFormData(prev => {
             const list = prev[field] || [];
             if (list.includes(item)) {
-                return { ...prev, [field]: list.filter(i => i !== item) }; // Lo apaga
+                return { ...prev, [field]: list.filter(i => i !== item) }; 
             } else {
-                return { ...prev, [field]: [...list, item] }; // Lo enciende
+                return { ...prev, [field]: [...list, item] };
             }
         });
     };
@@ -86,12 +156,36 @@ export default function ProfilePage() {
 
         setIsSaving(true);
         try {
-            // Simulamos o llamamos a la API real
+            // Empaquetamos los datos en FormData para soportar el archivo binario
+            const submitData = new FormData();
+            
+            // 1. Textos
+            submitData.append('nombre_completo', formData.nombre_completo);
+            submitData.append('numero_telefono', formData.numero_telefono);
+            submitData.append('numero_identificacion', formData.numero_identificacion);
+            submitData.append('profesion', formData.profesion);
+            submitData.append('direccion', formData.direccion);
+            submitData.append('fecha_nacimiento', formData.fecha_nacimiento);
+            submitData.append('tipo_documento', formData.tipo_documento);
+
+            // 2. Las listas (Django REST necesita que se repita la key por cada ítem)
+            formData.intereses.forEach(item => submitData.append('intereses', item));
+            formData.habilidades.forEach(item => submitData.append('habilidades', item));
+            
+            // 3. Diccionarios (como JSON)
+            submitData.append('disponibilidad', JSON.stringify(formData.disponibilidad));
+
+            // 4. Archivo Físico
+            if (selectedFile) {
+                submitData.append('foto_perfil', selectedFile, 'foto_perfil.jpg');
+            }
+
             if (updateProfile) {
-                 await updateProfile(formData);
+                 await updateProfile(submitData);
             }
             setSnackbar({ show: true, message: '¡Perfil actualizado con éxito!', type: 'success' });
             setIsEditing(false);
+            setSelectedFile(null);
         } catch (error) {
             setSnackbar({ show: true, message: error.message || 'Error al guardar los cambios.', type: 'error' });
         } finally {
@@ -138,14 +232,23 @@ export default function ProfilePage() {
                         <div className="flex flex-col items-center justify-center shrink-0">
                             <div className="relative group">
                                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-primary/10 border-4 border-surface shadow-md flex items-center justify-center text-primary font-bold text-4xl overflow-hidden">
-                                    {/* Aquí irá el <img src={...} /> en el Sprint 3. Por ahora, inicial del nombre: */}
-                                    {formData.nombre_completo.charAt(0).toUpperCase() || <User size={40} />}
+                                    {previewUrl ? (
+                                        <img src={previewUrl} alt="Perfil" className="w-full h-full object-cover" />
+                                    ) : (
+                                        formData.nombre_completo.charAt(0).toUpperCase() || <User size={40} />
+                                    )}
                                 </div>
                                 {isEditing && (
                                     <label className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-sm">
                                         <Camera className="w-6 h-6 mb-1" />
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Cambiar</span>
-                                        <input type="file" accept="image/*" className="hidden" disabled={!isEditing} />
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            className="hidden" 
+                                            disabled={!isEditing} 
+                                            onChange={handleImageChange} 
+                                        />
                                     </label>
                                 )}
                             </div>
@@ -411,6 +514,56 @@ export default function ProfilePage() {
                     </div>
                 )}
             </form>
+
+            {/* MODAL DEL RECORTADOR DE IMAGEN */}
+            {showCropper && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 animate-fade-in p-4">
+                    <div className="bg-surface w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-slide-up">
+                        <div className="p-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface">
+                            <h3 className="text-title-medium font-bold text-on-surface">Ajusta tu foto</h3>
+                            <button type="button" onClick={handleCropCancel} className="p-2 text-on-surface-variant hover:bg-surface-container-high hover:text-error rounded-full transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="relative w-full h-80 bg-black/90">
+                            <Cropper
+                                image={imageToCrop}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={1} // Fuerza un recorte 1:1 (cuadrado perfecto)
+                                cropShape="round" // Muestra una guía circular visual
+                                showGrid={false}
+                                onCropChange={setCrop}
+                                onCropComplete={onCropComplete}
+                                onZoomChange={setZoom}
+                            />
+                        </div>
+                        <div className="p-6 bg-surface">
+                            <div className="mb-6">
+                                <label className="text-sm font-bold text-on-surface-variant mb-2 flex justify-between">
+                                    <span>Zoom</span>
+                                    <span className="text-primary">{Math.round(zoom * 100)}%</span>
+                                </label>
+                                <input 
+                                    type="range" 
+                                    value={zoom} 
+                                    min={1} 
+                                    max={3} 
+                                    step={0.1} 
+                                    onChange={(e) => setZoom(e.target.value)} 
+                                    className="w-full h-2 bg-surface-container-high rounded-lg appearance-none cursor-pointer accent-primary" 
+                                />
+                            </div>
+                            <div className="flex gap-3">
+                                <button type="button" onClick={handleCropCancel} className="btn-tonal flex-1 font-bold py-3">Cancelar</button>
+                                <button type="button" onClick={handleCropConfirm} className="btn-filled flex-1 font-bold py-3 shadow-primary/30 shadow-lg flex justify-center items-center">
+                                    <Check className="w-5 h-5 mr-2" /> Aplicar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <Snackbar show={snackbar.show} message={snackbar.message} type={snackbar.type} onClose={() => setSnackbar({ ...snackbar, show: false })} />
         </div>

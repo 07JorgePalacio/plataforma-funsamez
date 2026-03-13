@@ -33,15 +33,14 @@ class LoginUserSerializer(serializers.Serializer):
 #  SERIALIZADOR: ACTUALIZAR PERFIL
 # ==========================================
 class ActualizarPerfilSerializer(serializers.Serializer):
-    nombre_completo = serializers.CharField(max_length=100, required=False)
-    numero_telefono = serializers.CharField(required=False, allow_blank=True)
-    numero_identificacion = serializers.CharField(required=False, allow_blank=True)
-    profesion = serializers.CharField(required=False, allow_blank=True)
-    
-    # --- Nuevos campos de edición ---
-    direccion = serializers.CharField(required=False, allow_blank=True)
-    fecha_nacimiento = serializers.DateField(required=False)
-    tipo_documento = serializers.CharField(required=False, max_length=10)
+    nombre_completo = serializers.CharField(max_length=100, required=False, allow_null=True)
+    numero_telefono = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    numero_identificacion = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    profesion = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    direccion = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
+    tipo_documento = serializers.CharField(required=False, max_length=10, allow_null=True)
+    foto_perfil = serializers.ImageField(required=False, allow_null=True)
     
     intereses = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
