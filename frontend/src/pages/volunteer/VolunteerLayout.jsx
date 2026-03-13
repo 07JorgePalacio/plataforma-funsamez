@@ -218,7 +218,7 @@ export default function VolunteerLayout() {
         </button>
       </div>
 
-      {/* --- DOCK DE NAVEGACIÓN (MÓVIL) --- */}
+      {/* --- DOCK DE NAVEGACIÓN  --- */}
       <nav className="md:hidden fixed bottom-6 inset-x-4 bg-surface/80 backdrop-blur-xl border border-white/20 z-40 flex items-center justify-around p-2 rounded-3xl shadow-elevation-4">
         <MobileNavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/voluntario')} onClick={() => navigate('/voluntario')} />
         <MobileNavItem icon={<User size={22}/>} text="Perfil" active={isActive('/voluntario/perfil')} onClick={() => navigate('/voluntario/perfil')} />

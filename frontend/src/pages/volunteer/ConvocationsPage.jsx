@@ -444,6 +444,7 @@ export default function ConvocationsPage() {
                 </div>
             ) : (
                 <>
+                    {/* Porventaje de sugerencia (Sistema de MACH) */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {paginatedConvocations.map((item) => {
                             const { raw: rawConv, parsed, matchScore } = item;

@@ -31,3 +31,4 @@ class User:
     intereses: Optional[List[str]] = None
     habilidades: Optional[List[str]] = None
     disponibilidad: Optional[dict] = None
+    foto_perfil: Optional[str] = None

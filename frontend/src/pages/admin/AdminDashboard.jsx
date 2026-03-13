@@ -182,6 +182,7 @@ const AdminDashboard = () => {
                               <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
                            </div>
                         </div>
+                        
                       )}
                     </div>
                   </div>

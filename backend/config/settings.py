@@ -7,7 +7,7 @@ import os
 from datetime import timedelta
 
 # 1. BASE_DIR: Calculamos la ruta raíz (backend/)
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 2. SEGURIDAD
 SECRET_KEY = 'django-insecure-tu-clave-secreta-cambiala-en-produccion'
@@ -99,6 +99,9 @@ USE_TZ = True
 
 # 8. ARCHIVOS ESTÁTICOS (CSS, JS, Imágenes)
 STATIC_URL = 'static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Tipo de campo para claves primarias
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -2,7 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+import json
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from core.container import Container
 from core.adapters.api.rest.serializers.user_serializers import RegisterUserSerializer, LoginUserSerializer, ActualizarPerfilSerializer
 from core.domain.exceptions.user_exceptions import (
@@ -107,7 +109,8 @@ class LoginUserView(APIView):
                     "tipo_documento": getattr(user_entity, 'tipo_documento', 'CC'),
                     "intereses": getattr(user_entity, 'intereses', []),
                     "habilidades": getattr(user_entity, 'habilidades', []),
-                    "disponibilidad": getattr(user_entity, 'disponibilidad', {})
+                    "disponibilidad": getattr(user_entity, 'disponibilidad', {}),
+                    "foto_perfil": getattr(user_entity, 'foto_perfil', None)
                 }
             }, status=status.HTTP_200_OK)
 
@@ -123,9 +126,33 @@ class LoginUserView(APIView):
 # ==========================================
 class ActualizarPerfilView(APIView):
     permission_classes = [IsAuthenticated] # 🔒 Protegido: Solo usuarios logueados
+    parser_classes = [MultiPartParser, FormParser, JSONParser] # 📂 Permite recibir FormData e Imágenes
 
     def patch(self, request):
-        serializer = ActualizarPerfilSerializer(data=request.data)
+        # 1. Extraemos los datos a un diccionario mutable (Adaptador manejando HTTP)
+        data = request.data.dict() if hasattr(request.data, 'dict') else request.data.copy()
+
+        # 2. Deserializamos el JSON string de disponibilidad a un diccionario real
+        if 'disponibilidad' in data and isinstance(data['disponibilidad'], str):
+            try:
+                data['disponibilidad'] = json.loads(data['disponibilidad'])
+            except json.JSONDecodeError:
+                data['disponibilidad'] = {}
+
+        # 3. Recuperamos las listas completas (FormData solo guarda el último elemento por defecto)
+        if hasattr(request.data, 'getlist'):
+            if 'intereses' in request.data:
+                data['intereses'] = request.data.getlist('intereses')
+            if 'habilidades' in request.data:
+                data['habilidades'] = request.data.getlist('habilidades')
+
+        # 4. Sanitización: Convertir strings vacíos en None (Evita errores en DateFields y otros)
+        for key, value in data.items():
+            if value == "" or value == "null" or value == "undefined":
+                data[key] = None
+
+        # 5. Validamos con los datos ya limpios
+        serializer = ActualizarPerfilSerializer(data=data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -153,7 +180,8 @@ class ActualizarPerfilView(APIView):
                     "tipo_documento": getattr(user_entity, 'tipo_documento', 'CC'),
                     "intereses": getattr(user_entity, 'intereses', []),
                     "habilidades": getattr(user_entity, 'habilidades', []),
-                    "disponibilidad": getattr(user_entity, 'disponibilidad', {})
+                    "disponibilidad": getattr(user_entity, 'disponibilidad', {}),
+                    "foto_perfil": getattr(user_entity, 'foto_perfil', None)
                 }
             }, status=status.HTTP_200_OK)
 
