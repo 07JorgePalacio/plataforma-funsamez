@@ -12,6 +12,16 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'info' });
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    // Efecto para detectar el scroll y encoger la cabecera dinámicamente
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     // Estados para la foto de perfil
     const [selectedFile, setSelectedFile] = useState(null);
@@ -88,7 +98,7 @@ export default function ProfilePage() {
             setShowCropper(true);
             setZoom(1);
             setCrop({ x: 0, y: 0 });
-            e.target.value = ''; // Limpiamos el input para permitir seleccionar la misma foto si se cancela
+            e.target.value = ''; 
         }
     };
 
@@ -205,24 +215,46 @@ export default function ProfilePage() {
     return (
         <div className="max-w-4xl mx-auto animate-fade-in pb-12">
             
-            {/* Header con botón de edición */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+            {/* Cabecera Inteligente y Pegajosa (Sticky Header) */}
+            <div className={`sticky z-30 backdrop-blur-md pt-4 pb-4 md:py-4 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-500 border
+                ${isScrolled 
+                    ? 'top-4 md:top-6 bg-surface/90 border-outline-variant/30 shadow-elevation-3 mx-4 md:mx-8 px-4 md:px-6 rounded-2xl' 
+                    : 'top-0 md:top-4 bg-surface/80 md:bg-surface/95 border-transparent border-b-outline-variant/30 md:border-outline-variant/30 shadow-sm md:shadow-elevation-2 -mx-4 px-4 pr-16 md:pr-6 md:mx-0 md:px-6 md:rounded-2xl'
+                }`}>
                 <div>
-                    <h1 className="text-headline-medium text-on-surface font-bold mb-2">
+                    <h1 className="text-headline-medium text-on-surface font-bold mb-1">
                         Mi Perfil
                     </h1>
-                    <p className="text-body-large text-on-surface-variant">
+                    <p className="text-body-medium text-on-surface-variant">
                         {isEditing ? 'Modifica tu información y preferencias.' : 'Gestiona tu información personal y habilidades.'}
                     </p>
                 </div>
-                {!isEditing && (
-                    <button onClick={() => setIsEditing(true)} className="btn-filled flex items-center gap-2 shadow-sm font-bold">
-                        <Edit2 className="w-4 h-4" /> Editar Perfil
-                    </button>
-                )}
+                
+                <div className="flex items-center gap-3">
+                    {!isEditing ? (
+                        <button type="button" onClick={() => setIsEditing(true)} className="btn-filled flex items-center gap-2 shadow-sm font-bold py-2.5 px-5 transition-transform active:scale-95">
+                            <Edit2 className="w-4 h-4" /> Editar Perfil
+                        </button>
+                    ) : (
+                        <>
+                            <button type="button" onClick={handleCancelEdit} disabled={isSaving} className="btn-tonal font-bold py-2.5 px-5 transition-colors">
+                                Cancelar
+                            </button>
+                            {/* Vinculamos este botón al formulario inferior mediante form="profile-form" */}
+                            <button type="submit" form="profile-form" disabled={isSaving} className="btn-filled font-bold py-2.5 px-5 shadow-primary/30 shadow-lg flex justify-center items-center transition-transform active:scale-95 disabled:opacity-70 disabled:scale-100">
+                                {isSaving ? (
+                                    <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span> Guardando...</>
+                                ) : (
+                                    <><Save className="w-4 h-4 mr-2" /> Guardar</>
+                                )}
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Agregamos el ID al form para conectarlo con el botón de la cabecera */}
+            <form id="profile-form" onSubmit={handleSubmit} className="space-y-6">
                 
                 {/* 1. Información Personal */}
                 <div className="card-elevated border-none bg-surface p-6 sm:p-8 rounded-3xl relative overflow-hidden">
@@ -497,23 +529,7 @@ export default function ProfilePage() {
                         </div>
                     )}
                 </div>
-
-                {/* Acciones de Edición */}
-                {isEditing && (
-                    <div className="sticky bottom-4 z-50 flex flex-col sm:flex-row gap-4 p-4 bg-surface/90 backdrop-blur-md rounded-2xl border border-outline-variant/30 shadow-elevation-4 animate-slide-up">
-                        <button type="button" onClick={handleCancelEdit} disabled={isSaving} className="btn-tonal flex-1 font-bold py-3">
-                            Cancelar
-                        </button>
-                        <button type="submit" disabled={isSaving} className="btn-filled flex-[2] font-bold py-3 shadow-primary/30 shadow-lg flex justify-center items-center">
-                            {isSaving ? (
-                                <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span> Guardando...</>
-                            ) : (
-                                <><Save className="w-5 h-5 mr-2" /> Guardar Cambios</>
-                            )}
-                        </button>
-                    </div>
-                )}
-            </form>
+                </form>
 
             {/* MODAL DEL RECORTADOR DE IMAGEN */}
             {showCropper && (

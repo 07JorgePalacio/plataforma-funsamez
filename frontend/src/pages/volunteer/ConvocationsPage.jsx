@@ -461,8 +461,10 @@ export default function ConvocationsPage() {
                                     
                                     {/* Insignia de Recomendación */}
                                     {isHighlyRecommended && (
-                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-4 py-1 rounded-b-xl shadow-md z-20 flex items-center gap-1.5 animate-slide-up">
-                                            <Star className="w-3.5 h-3.5 fill-current" /> Recomendado para ti
+                                        <div className="absolute top-0 inset-x-0 z-20 flex justify-center pointer-events-none">
+                                            <div className="bg-primary text-white text-[10px] font-bold px-4 py-1 rounded-b-xl shadow-md flex items-center gap-1.5 animate-slide-down pointer-events-auto">
+                                                <Star className="w-3.5 h-3.5 fill-current" /> Recomendado para ti
+                                            </div>
                                         </div>
                                     )}
 

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import {
     MapPin, Users, ArrowRight, Search, Filter,
-    ChevronLeft, ChevronRight, Laptop, Clock3, CalendarCheck, Target, Briefcase, Share2
+    ChevronLeft, ChevronRight, Laptop, Clock3, CalendarCheck, Target, Briefcase, Share2, UserPlus
 } from 'lucide-react';
 
 const CATEGORIAS_INTERES = ["Salud", "Capacitación / Cursos", "Estética y Belleza", "Educación Infantil", "Medio Ambiente", "Adulto Mayor", "Salud y Bienestar", "Tecnología Social", "Arte y Cultura", "Logística de Eventos", "Deportes y Recreación", "Atención Psicosocial", "Nutrición y Cocina", "Construcción y Vivienda", "Rescate Animal"];
@@ -207,6 +207,33 @@ export default function PublicConvocationsPage() {
                         </select>
                     </div>
                 </div>
+
+                {/* Tarjeta de Registro (Lava Lamp Animated) */}
+                {!user && (
+                    <div className="mb-12 p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-primary via-institutional to-primary bg-[length:200%_200%] animate-lava-lamp text-white shadow-xl shadow-primary/20 relative overflow-hidden isolate">
+                        {/* Background decor */}
+                        <div className="absolute -top-24 -right-24 w-64 h-64 bg-white opacity-15 rounded-full blur-3xl z-0 pointer-events-none"></div>
+                        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl z-0 pointer-events-none"></div>
+                        
+                        <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center flex-shrink-0 border border-white/20 shadow-inner">
+                                <UserPlus className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                <h3 className="text-headline-small font-bold mb-3 tracking-tight">¿Quieres ser voluntario?</h3>
+                                <p className="text-body-large text-white/90 max-w-2xl mx-auto md:mx-0">
+                                    Regístrate en nuestra plataforma para postularte a las convocatorias que más te interesen y comenzar a hacer la diferencia en tu comunidad.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => navigate('/register')}
+                                className="btn-filled bg-white text-primary hover:bg-surface-container-lowest flex-shrink-0 px-8 py-4 text-lg shadow-lg active:scale-95 transition-transform flex items-center"
+                            >
+                                Crear una cuenta <ArrowRight className="w-5 h-5 ml-2" />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Grid de Convocatorias */}
                 {filteredConvocations.length === 0 ? (

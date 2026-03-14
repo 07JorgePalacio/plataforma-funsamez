@@ -219,21 +219,24 @@ export default function VolunteerLayout() {
       </div>
 
       {/* --- DOCK DE NAVEGACIÓN  --- */}
-      <nav className="md:hidden fixed bottom-6 inset-x-4 bg-surface/80 backdrop-blur-xl border border-white/20 z-40 flex items-center justify-around p-2 rounded-3xl shadow-elevation-4">
+      <nav className="md:hidden fixed bottom-6 inset-x-4 bg-surface/80 backdrop-blur-xl border border-white/20 z-40 flex items-center justify-evenly p-2 rounded-3xl shadow-elevation-4">
         <MobileNavItem icon={<LayoutDashboard size={22}/>} text="Inicio" active={isActive('/voluntario')} onClick={() => navigate('/voluntario')} />
         <MobileNavItem icon={<User size={22}/>} text="Perfil" active={isActive('/voluntario/perfil')} onClick={() => navigate('/voluntario/perfil')} />
         <MobileNavItem icon={<Briefcase size={22}/>} text="Convos" active={isActive('/voluntario/convocatorias')} onClick={() => navigate('/voluntario/convocatorias')} />
         <MobileNavItem icon={<FileText size={22}/>} text="Mis Post." active={isActive('/voluntario/postulaciones')} onClick={() => navigate('/voluntario/postulaciones')} />
         <MobileNavItem icon={<Globe size={22}/>} text="Web" active={false} onClick={() => navigate('/campanas')} />
         
+        {/* Separador */}
+        <div className="w-px h-8 bg-outline-variant/30 mx-1"></div>
+
         {/* Botón Salir pequeño */}
-        <button onClick={handleLogout} className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-error transition-colors opacity-70 hover:opacity-100">
+        <button onClick={handleLogout} className="flex flex-col items-center gap-1 p-2 pr-4 text-on-surface-variant hover:text-error transition-colors opacity-70 hover:opacity-100">
           <LogOut size={22} />
         </button>
       </nav>
 
       {/* --- CONTENIDO PRINCIPAL --- */}
-      <main className="flex-1 p-4 pt-20 md:pt-6 md:p-6 md:ml-[300px] w-full max-w-[100vw] overflow-x-hidden">
+      <main className="flex-1 p-4 pt-20 md:pt-6 md:p-6 md:ml-[300px] w-full max-w-[100vw]">
         {/* Aquí se inyectan dinámicamente las páginas (Dashboard, Perfil, etc) */}
         <Outlet />
       </main>
@@ -264,10 +267,10 @@ const NavItem = ({ icon, text, active, onClick }) => (
 
 // Subcomponente NavItem (Móvil) - IDÉNTICO AL ADMIN
 const MobileNavItem = ({ icon, text, active, onClick }) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-1 p-2 min-w-[64px] transition-colors ${active ? 'text-primary' : 'text-on-surface-variant'}`}>
-    <div className={`p-1.5 rounded-full transition-all ${active ? 'bg-primary/15' : 'bg-transparent'}`}>
+  <button onClick={onClick} className={`flex-1 flex flex-col items-center gap-1 py-2 px-1 min-w-0 transition-colors ${active ? 'text-primary' : 'text-on-surface-variant'}`}>
+    <div className={`p-1.5 rounded-full transition-all shrink-0 ${active ? 'bg-primary/15' : 'bg-transparent'}`}>
       {icon}
     </div>
-    <span className={`text-[10px] font-medium ${active ? 'font-bold' : ''}`}>{text}</span>
+    <span className={`text-[9px] sm:text-[10px] w-full text-center truncate font-medium ${active ? 'font-bold' : ''}`}>{text}</span>
   </button>
 );
