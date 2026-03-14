@@ -215,6 +215,10 @@ export default function PublicCampaignsPage() {
                 
                 {/* Header */}
                 <div className="text-center mb-10 sm:mb-12">
+                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary text-label-large mb-4">
+                        <Heart className="w-4 h-4" />
+                        Apoya Nuestras Causas
+                    </span>
                     <h1 className="text-display-small sm:text-display-medium text-on-surface font-bold mb-4">
                         Campañas Activas
                     </h1>
@@ -245,11 +249,11 @@ export default function PublicCampaignsPage() {
                     ))}
                 </div>
 
-                {/* General Donation Card */}
-                <div className="mb-12 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-primary to-primary-dark text-white shadow-xl shadow-primary/20 relative overflow-hidden isolate">
+                {/* General Donation Card (Lava Lamp Animated) */}
+                <div className="mb-12 p-8 sm:p-10 rounded-3xl bg-gradient-to-r from-primary via-institutional to-primary bg-[length:200%_200%] animate-lava-lamp text-white shadow-xl shadow-primary/20 relative overflow-hidden isolate">
                     {/* Background decor */}
-                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl z-0 pointer-events-none"></div>
-                    <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary opacity-20 rounded-full blur-3xl z-0 pointer-events-none"></div>
+                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-white opacity-15 rounded-full blur-3xl z-0 pointer-events-none"></div>
+                    <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl z-0 pointer-events-none"></div>
                     
                     <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center flex-shrink-0 border border-white/20 shadow-inner">

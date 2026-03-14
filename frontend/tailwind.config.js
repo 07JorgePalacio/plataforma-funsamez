@@ -8,6 +8,8 @@ export default {
     theme: {
         extend: {
             colors: {
+                // Color Institucional Extra
+                institutional: '#266998',
                 // Material Design 3 - FUNSAMEZ Brand Colors
                 primary: {
                     DEFAULT: '#C5A059',
@@ -92,8 +94,13 @@ export default {
                 'slide-in-right': 'slideInRight 0.3s ease-out',
                 'scale-in': 'scaleIn 0.2s ease-out',
                 'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+                'lava-lamp': 'lavaLamp 10s ease-in-out infinite',
             },
             keyframes: {
+                lavaLamp: {
+                    '0%, 100%': { backgroundPosition: '0% 50%' },
+                    '50%': { backgroundPosition: '100% 50%' },
+                },
                 fadeIn: {
                     '0%': { opacity: '0' },
                     '100%': { opacity: '1' },
