@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { Heart, Package, Target, Building, Eye, Share2, Check, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -39,8 +39,14 @@ function CampaignCard({ campaign, onDonate, currentFilter, currentPage, isHighli
     };
 
     const handleViewDetails = () => {
-        // Llenamos la "mochila" con el filtro y página actual antes de ir a detalles
-        navigate(`/campanas/${campaign.id}`, { state: { filter: currentFilter, currentPage } });
+        // Guardar posición de scroll 
+        navigate(`/campanas/${campaign.id}`, { 
+            state: { 
+                scrollPos: window.scrollY,
+                filter: currentFilter, 
+                currentPage 
+            } 
+        });
     };
 
     return (
@@ -138,8 +144,8 @@ function CampaignCard({ campaign, onDonate, currentFilter, currentPage, isHighli
                     <button onClick={handleViewDetails} className="btn-tonal flex-1 py-3.5 text-sm font-bold justify-center rounded-xl">
                         <Eye className="w-4 h-4 mr-1.5" /> Detalles
                     </button>
-                    <button onClick={() => onDonate(campaign)} className="btn-filled flex-1 py-3.5 text-sm font-bold justify-center rounded-xl shadow-md shadow-primary/20 hover:shadow-lg transition-all active:scale-95">
-                        <Heart className="w-4 h-4 mr-1.5" /> Donar
+                    <button onClick={() => onDonate(campaign)} className="btn-filled group flex-1 py-3.5 text-sm font-bold justify-center rounded-xl shadow-md shadow-primary/20 hover:shadow-lg transition-all active:scale-95">
+                        <Heart className="w-4 h-4 mr-1.5 group-hover:animate-heartbeat" /> Donar
                     </button>
                 </div>
             </div>
@@ -158,25 +164,20 @@ export default function PublicCampaignsPage() {
     const [highlightedCard, setHighlightedCard] = useState(null);
     const ITEMS_PER_PAGE = 6;
 
-    // 2. Motor de Smart Scroll & Highlight
-    useEffect(() => {
-        const highlightId = location.state?.highlightId;
+    // 2. Motor de Restauración de Scroll Sincrónico (Evita parpadeos)
+    useLayoutEffect(() => {
+        const scrollPos = location.state?.scrollPos;
         
-        if (highlightId && !loading && campaigns.length > 0) {
+        if (scrollPos !== undefined && !loading && campaigns.length > 0) {
+            // useLayoutEffect ocurre ANTES de que el navegador pinte, eliminando el "lag" visual
+            window.scrollTo({ top: scrollPos, behavior: 'instant' });
+            
+            // Limpiamos el historial de forma asíncrona para no bloquear el hilo principal
             setTimeout(() => {
-                const element = document.getElementById(`campaign-card-${highlightId}`);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setHighlightedCard(Number(highlightId));
-
-                    setTimeout(() => {
-                        setHighlightedCard(null);
-                        window.history.replaceState({}, document.title);
-                    }, 3000);
-                }
-            }, 150);
+                window.history.replaceState({}, document.title);
+            }, 0);
         }
-    }, [location.state?.highlightId, loading, campaigns.length]);
+    }, [location.state?.scrollPos, loading, campaigns.length]);
 
     const filteredCampaigns = campaigns.filter(c => {
         if (filter === 'money') return c.permite_donacion_monetaria;
@@ -267,9 +268,9 @@ export default function PublicCampaignsPage() {
                         </div>
                         <button
                             onClick={() => handleDonate(null)}
-                            className="btn-filled bg-white text-primary hover:bg-surface-container-lowest flex-shrink-0 px-8 py-4 text-lg shadow-lg active:scale-95 transition-transform"
+                            className="group bg-white text-primary hover:bg-white/90 hover:text-primary-dark rounded-full flex-shrink-0 px-8 py-4 text-lg font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center"
                         >
-                            <Heart className="w-5 h-5 mr-2" fill="currentColor" />
+                            <Heart className="w-5 h-5 mr-2 group-hover:animate-heartbeat" fill="currentColor" />
                             Donar Ahora
                         </button>
                     </div>

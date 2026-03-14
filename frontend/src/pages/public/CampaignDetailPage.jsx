@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
     ArrowLeft, Heart, Package, Target, Calendar, MapPin,
@@ -14,11 +14,16 @@ export default function CampaignDetailPage() {
     const { campaigns, loading } = useApp();
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
-    // Handler para volver a la lista manteniendo la mochila intacta
+    // Forzar el scroll al inicio (top 0) siempre que se monte este componente
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    // Handler para volver a la lista manteniendo la mochila y el scroll intactos
     const handleBack = () => {
         navigate('/campanas', { 
             state: { 
-                highlightId: id, 
+                scrollPos: location.state?.scrollPos,
                 filter: location.state?.filter, 
                 currentPage: location.state?.currentPage 
             } 
@@ -147,8 +152,8 @@ export default function CampaignDetailPage() {
                             </div>
                         )}
 
-                        <button onClick={() => alert("Pasarela de pagos en desarrollo")} className="btn-filled py-4 text-lg font-bold rounded-2xl shadow-lg shadow-primary/30 flex justify-center items-center gap-3 active:scale-95 transition-all">
-                            <Heart fill="currentColor" /> Donar Ahora
+                        <button onClick={() => alert("Pasarela de pagos en desarrollo")} className="btn-filled group py-4 text-lg font-bold rounded-2xl shadow-lg shadow-primary/30 flex justify-center items-center gap-3 active:scale-95 transition-all">
+                            <Heart className="w-6 h-6 group-hover:animate-heartbeat" fill="currentColor" /> Donar Ahora
                         </button>
                     </div>
                 </div>
