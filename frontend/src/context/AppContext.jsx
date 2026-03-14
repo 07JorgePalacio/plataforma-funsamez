@@ -382,9 +382,11 @@ export const AppProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        // Se ejecuta SIEMPRE para cargar la data pública al entrar a la app
+        // Arquitectura Reactiva: Se ejecuta al abrir la app Y automáticamente después 
+        // de cada Login/Logout para hidratar los datos privados (Postulaciones, Notificaciones)
+        // Esto elimina el bug de "estado vacío" en los Dashboards sin necesidad de recargar la página.
         refreshAllData();
-    }, []);
+    }, [user?.id]);
 
     // ==========================================
     // FILTRO DE CAMPAÑAS (Helpers)

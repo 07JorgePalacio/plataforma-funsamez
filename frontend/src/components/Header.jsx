@@ -194,8 +194,8 @@ export default function Header() {
                                     >
                                         {location.pathname === '/login' ? 'Crear cuenta' : 'Iniciar Sesión'}
                                     </Link>
-                                    <Link to="/campanas" className="btn-filled py-2 px-5 shadow-sm shadow-primary/30 flex items-center justify-center rounded-full min-w-[105px]">
-                                        <Heart className="w-4 h-4 mr-2 shrink-0" />
+                                    <Link to="/campanas" className="btn-filled group py-2 px-5 shadow-sm shadow-primary/30 flex items-center justify-center rounded-full min-w-[105px]">
+                                        <Heart className="w-4 h-4 mr-2 shrink-0 group-hover:animate-heartbeat" />
                                         <span className="text-sm font-bold whitespace-nowrap">Donar</span>
                                     </Link>
                                 </div>

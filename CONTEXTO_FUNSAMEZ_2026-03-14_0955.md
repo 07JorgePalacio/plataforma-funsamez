@@ -1,5 +1,5 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-03-13 06:41:37.017373
+📅 Generado: 2026-03-14 09:55:35.350383
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
@@ -7,7 +7,7 @@
 ├── .gitignore
 ├── .vscode/
 │   └── settings.json
-├── CONTEXTO_FUNSAMEZ_2026-03-13_0641.md
+├── CONTEXTO_FUNSAMEZ_2026-03-14_0955.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -133,6 +133,9 @@
 │   │           └── django_hasher.py
 │   ├── manage.py
 │   └── media/
+│       └── perfiles/
+│           ├── foto_perfil.jpg
+│           └── foto_perfil_fGsHhIG.jpg
 ├── docs/
 ├── frontend/
 │   ├── .gitignore

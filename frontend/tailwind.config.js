@@ -95,8 +95,16 @@ export default {
                 'scale-in': 'scaleIn 0.2s ease-out',
                 'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
                 'lava-lamp': 'lavaLamp 10s ease-in-out infinite',
+                'heartbeat': 'heartbeat 1.5s ease-in-out infinite',
             },
             keyframes: {
+                heartbeat: {
+                    '0%, 100%': { transform: 'scale(1)' },
+                    '14%': { transform: 'scale(1.3)' },
+                    '28%': { transform: 'scale(1)' },
+                    '42%': { transform: 'scale(1.3)' },
+                    '70%': { transform: 'scale(1)' },
+                },
                 lavaLamp: {
                     '0%, 100%': { backgroundPosition: '0% 50%' },
                     '50%': { backgroundPosition: '100% 50%' },
