@@ -22,8 +22,8 @@ export const AppProvider = ({ children }) => {
     // --- ESTADOS GLOBALES ---
     const [convocations, setConvocations] = useState([]);
     const [campaigns, setCampaigns] = useState([]); 
-    const [myApplications, setMyApplications] = useState([]);
-    const [adminApplications, setAdminApplications] = useState([]); 
+    const [misPostulaciones, setMisPostulaciones] = useState([]);
+    const [postulacionesAdmin, setPostulacionesAdmin] = useState([]); 
     const [notifications, setNotifications] = useState([]); 
     const [loading, setLoading] = useState(true);
 
@@ -257,44 +257,44 @@ export const AppProvider = ({ children }) => {
     // ==========================================
     // 3. MÓDULO VOLUNTARIO 
     // ==========================================
-    const fetchMyApplications = async () => {
+    const fetchMisPostulaciones = async () => {
         //1. Verificamos autenticación
         if (localStorage.getItem('user_role') !== 'voluntario') return;
         
         try {
             const data = await obtenerMisPostulaciones();
-            setMyApplications(data);
+            setMisPostulaciones(data);
             console.log('📦 Postulaciones reales recibidas:', data);
         } catch (error) {
             console.error('Error al cargar postulaciones:', error);
         }
     };
 
-    const fetchAllApplications = async () => {
+    const fetchPostulacionesAdmin = async () => {
         if (localStorage.getItem('user_role') === 'voluntario') return;
         try {
             const data = await obtenerTodasLasPostulaciones();
-            setAdminApplications(data);
+            setPostulacionesAdmin(data);
             console.log('📦 Todas las postulaciones (Admin) recibidas:', data);
         } catch (error) {
             console.error('Error al cargar todas las postulaciones:', error);
         }
     };
 
-    const updateApplicationStatus = async (id, newStatus, reason = null) => {
+    const updateEstadoPostulacion = async (id, newStatus, reason = null) => {
         try {
             await cambiarEstadoPostulacion(id, newStatus, reason);
-            await fetchAllApplications(); // Recargamos para ver los cambios
+            await fetchPostulacionesAdmin(); // Recargamos para ver los cambios
         } catch (error) {
             console.error('Error al cambiar estado:', error);
             throw error;
         }
     };
 
-    const deleteApplication = async (id) => {
+    const deletePostulacion = async (id) => {
         try {
             await eliminarPostulacion(id);
-            await fetchAllApplications(); // Recargamos para ver los cambios
+            await fetchPostulacionesAdmin(); // Recargamos para ver los cambios
         } catch (error) {
             console.error('Error al eliminar postulación:', error);
             throw error;
@@ -306,7 +306,7 @@ export const AppProvider = ({ children }) => {
             // 2. Llamamos al backend
             await postularAConvocatoria(convocationId, observaciones);
             // 3. Si sale bien, recargamos la lista desde la base de datos
-            await fetchMyApplications(); 
+            await fetchMisPostulaciones(); 
             return { success: true };
         } catch (error) {
             console.error("Error en la postulación:", error);
@@ -316,11 +316,11 @@ export const AppProvider = ({ children }) => {
     
     // 4. Validar si el voluntario ya está postulado a una convocatoria específica
     const hasApplied = (convocationId) => {
-        return myApplications.some(app => app.id_convocatoria === convocationId);
+        return misPostulaciones.some(app => app.id_convocatoria === convocationId);
     };
     // 5. Obtener mis postulaciones (Filtra por el usuario logueado)
-    const getApplicationsByVolunteer = () => {
-        return myApplications;
+    const getPostulacionesVoluntario = () => {
+        return misPostulaciones;
     };
 
     // ==========================================
@@ -383,9 +383,9 @@ export const AppProvider = ({ children }) => {
         if (localStorage.getItem('access_token')) {
             promises.push(fetchNotifications());
             if (localStorage.getItem('user_role') === 'voluntario') {
-                promises.push(fetchMyApplications());
+                promises.push(fetchMisPostulaciones());
             } else if (localStorage.getItem('user_role') === 'administrador') {
-                promises.push(fetchAllApplications()); 
+                promises.push(fetchPostulacionesAdmin()); 
             }
         }
         
@@ -445,15 +445,15 @@ export const AppProvider = ({ children }) => {
         logout,
         updateProfile,
         showToast,
-        getApplicationsByVolunteer,
+        getPostulacionesVoluntario,
         hasApplied,
         applyToConvocation,
         
         // Exportar para el Admin
-        adminApplications,
-        fetchAllApplications,
-        updateApplicationStatus,
-        deleteApplication,
+        postulacionesAdmin,
+        fetchPostulacionesAdmin,
+        updateEstadoPostulacion,
+        deletePostulacion,
 
         // Exportar Notificaciones
         notifications,

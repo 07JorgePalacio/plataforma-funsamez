@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 
 const AdminDashboard = () => {
-  const { getActiveCampaigns, adminApplications, convocations } = useApp();
+  const { getActiveCampaigns, postulacionesAdmin, convocations } = useApp();
   const navigate = useNavigate();
 
   // --- 1. DATOS REALES (Campañas) ---
@@ -15,7 +15,7 @@ const AdminDashboard = () => {
     .slice(0, 3);
 
   // --- 2. DATOS REALES (Postulaciones) ---
-  const pendingApplications = adminApplications.filter(a => a.estado === 'en_revision' || a.estado === 'en_espera');
+  const pendingApplications = postulacionesAdmin.filter(a => a.estado === 'en_revision' || a.estado === 'en_espera');
   
   // Ordenamos por más recientes, obtenemos las 3 últimas y cruzamos los datos exactos
   const mappedRecentApplications = [...pendingApplications]

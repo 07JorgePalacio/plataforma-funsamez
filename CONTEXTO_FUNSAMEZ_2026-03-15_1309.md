@@ -1,5 +1,5 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-03-14 09:55:35.350383
+📅 Generado: 2026-03-15 13:09:11.461005
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
@@ -7,7 +7,7 @@
 ├── .gitignore
 ├── .vscode/
 │   └── settings.json
-├── CONTEXTO_FUNSAMEZ_2026-03-14_0955.md
+├── CONTEXTO_FUNSAMEZ_2026-03-15_1309.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -177,7 +177,7 @@
 │   │   │   │   └── RegisterPage.jsx
 │   │   │   └── volunteer/
 │   │   │       ├── ConvocationsPage.jsx
-│   │   │       ├── MyApplicationsPage.jsx
+│   │   │       ├── MisPostulacionesPage.jsx
 │   │   │       ├── ProfilePage.jsx
 │   │   │       ├── VolunteerDashboard.jsx
 │   │   │       └── VolunteerLayout.jsx
