@@ -17,7 +17,10 @@ const getAuthHeaders = (isFormData = false) => {
 
 export const iniciarSesion = async (email, password) => {
     try {
-        const response = await axios.post(`${API_URL}/login/`, { email, password });
+        const response = await axios.post(`${API_URL}/login/`, { 
+            correo_electronico: email, 
+            contrasena: password 
+        });
         return response.data;
     } catch (error) {
         if (error.response && error.response.data) {

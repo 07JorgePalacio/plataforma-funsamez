@@ -65,7 +65,10 @@ class Container:
 
     @staticmethod
     def register_user_use_case() -> RegisterUser:
-        return RegisterUser(user_repository=Container.get_user_repository())
+        return RegisterUser(
+            user_repository=Container.get_user_repository(),
+            password_hasher=Container._password_hasher
+        )
     
     @staticmethod
     def login_user_use_case() -> LoginUser:

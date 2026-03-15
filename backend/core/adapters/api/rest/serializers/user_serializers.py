@@ -1,22 +1,20 @@
 from rest_framework import serializers
 
 class RegisterUserSerializer(serializers.Serializer):
-    # 1. Credenciales y Datos Básicos
+    # --- 1. Identificación y Credenciales ---
     nombre_completo = serializers.CharField(max_length=100)
-    email = serializers.EmailField()
-    password = serializers.CharField(min_length=8, write_only=True)
+    correo_electronico = serializers.EmailField()
+    contrasena = serializers.CharField(min_length=8, write_only=True)
     
-    # 2. Identificación Personal (Obligatorios)
+    # --- 2. Datos de Contacto ---
+    numero_telefono = serializers.CharField(required=False, allow_blank=True)
+    direccion = serializers.CharField(required=False, allow_blank=True)
+
+    # --- 3. Perfil del Voluntario ---
+    fecha_nacimiento = serializers.DateField(required=True)
     tipo_documento = serializers.CharField(required=True, max_length=10)
     numero_identificacion = serializers.CharField(required=True, max_length=20)
-    fecha_nacimiento = serializers.DateField(required=True)
-
-    # 3. Datos de Contacto y Perfil (Opcionales)
-    telefono = serializers.CharField(required=False, allow_blank=True)
-    direccion = serializers.CharField(required=False, allow_blank=True)
     profesion = serializers.CharField(required=False, allow_blank=True)
-    
-    # 4. Listas (Arrays)
     intereses = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
     )
@@ -26,26 +24,28 @@ class RegisterUserSerializer(serializers.Serializer):
     disponibilidad = serializers.DictField(required=False, allow_empty=True)
 
 class LoginUserSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+    correo_electronico = serializers.EmailField()
+    contrasena = serializers.CharField(write_only=True)
 
 # ==========================================
 #  SERIALIZADOR: ACTUALIZAR PERFIL
 # ==========================================
 class ActualizarPerfilSerializer(serializers.Serializer):
+    # --- 1. Identificación y Credenciales ---
     nombre_completo = serializers.CharField(max_length=100, required=False, allow_null=True)
+    
+    # --- 2. Datos de Contacto ---
     numero_telefono = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    numero_identificacion = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    profesion = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     direccion = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    
+    # --- 3. Perfil del Voluntario ---
     fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
     tipo_documento = serializers.CharField(required=False, max_length=10, allow_null=True)
-    foto_perfil = serializers.ImageField(required=False, allow_null=True)
-    
+    numero_identificacion = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    profesion = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     intereses = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
     )
-    
     habilidades = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
     )
