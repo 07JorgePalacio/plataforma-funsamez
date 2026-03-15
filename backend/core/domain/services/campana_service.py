@@ -52,6 +52,13 @@ class CampanaService:
         )
     
     @staticmethod
+    def validar_fecha_no_pasada(fecha: date) -> bool:
+        """
+        Valida que una fecha no sea anterior al día de hoy.
+        """
+        return fecha >= date.today()
+
+    @staticmethod
     def validar_fechas_coherentes(fecha_inicio: date, fecha_fin: date) -> bool:
         """
         Valida que fecha_fin sea posterior a fecha_inicio.
@@ -62,11 +69,11 @@ class CampanaService:
         return fecha_fin > fecha_inicio
     
     @staticmethod
-    def validar_monto_positivo(monto: int) -> bool:
+    def validar_monto_no_negativo(monto: int) -> bool:
         """
-        Valida que el monto sea positivo.
+        Valida que el monto sea 0 o positivo. (Campañas de especie pueden ser 0)
         """
-        return monto > 0
+        return monto >= 0
     
     @staticmethod
     def calcular_monto_faltante(campana: Campana) -> int:

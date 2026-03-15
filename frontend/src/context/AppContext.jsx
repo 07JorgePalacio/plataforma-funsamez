@@ -226,7 +226,11 @@ export const AppProvider = ({ children }) => {
                 // 4. Multimedia
                 imagen_url: camp.imagen_url,
 
-                // 5. Listas JSON (Garantizamos Arrays vacíos si vienen null)
+                // 5. Cálculos de Negocio (Enriquecidos desde el Backend)
+                porcentaje_progreso: Number(camp.porcentaje_progreso) || 0,
+                dias_restantes: Number(camp.dias_restantes) || 0,
+
+                // 6. Listas JSON (Garantizamos Arrays vacíos si vienen null)
                 objetivos: Array.isArray(camp.objetivos) ? camp.objetivos : [],
                 galeria_imagenes: Array.isArray(camp.galeria_imagenes) ? camp.galeria_imagenes : [],
                 video_urls: Array.isArray(camp.video_urls) ? camp.video_urls : [],

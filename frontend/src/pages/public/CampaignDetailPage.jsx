@@ -62,9 +62,8 @@ export default function CampaignDetailPage() {
         return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount || 0);
     };
 
-    const progress = campaign.monto_objetivo > 0 
-        ? Math.min(100, Math.round((campaign.recaudo_actual / campaign.monto_objetivo) * 100)) 
-        : 0;
+    // Arquitectura Limpia: Consumimos la regla de negocio directamente desde el backend
+    const progress = campaign.porcentaje_progreso || 0;
 
     // Unimos imagen principal con galería
     const allMedia = [campaign.imagen_url, ...(campaign.galeria_imagenes || [])].filter(Boolean);
@@ -284,14 +283,14 @@ export default function CampaignDetailPage() {
                                                         </div>
                                                     );
                                                 }
-                                                // Instagram (Forzado al mismo tamaño exacto de TikTok)
+                                                // Instagram 
                                                 return (
                                                     <div key={video.index} className="aspect-[9/16] w-full max-w-[320px] rounded-[2rem] overflow-hidden bg-white shadow-elevation-2 border border-outline-variant/30 relative shrink-0">
                                                         <iframe 
                                                             src={`https://www.instagram.com/p/${video.id}/embed/`} 
                                                             className="absolute top-0 left-0 w-full h-full border-0" 
                                                             scrolling="no" 
-                                                            allowTransparency="true" 
+                                                            allowtransparency="true" 
                                                             title="Instagram Video"
                                                         >
                                                         </iframe>
