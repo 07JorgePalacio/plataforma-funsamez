@@ -24,7 +24,8 @@ export const AppProvider = ({ children }) => {
     const [campaigns, setCampaigns] = useState([]); 
     const [misPostulaciones, setMisPostulaciones] = useState([]);
     const [postulacionesAdmin, setPostulacionesAdmin] = useState([]); 
-    const [notifications, setNotifications] = useState([]); 
+    const [notificaciones, setNotificaciones] = useState([]); 
+    const [conteoNoLeidas, setConteoNoLeidas] = useState(0);
     const [loading, setLoading] = useState(true);
 
     // ==========================================
@@ -323,49 +324,57 @@ export const AppProvider = ({ children }) => {
     // ==========================================
     // 4. MÓDULO DE NOTIFICACIONES
     // ==========================================
-    const fetchNotifications = async () => {
+    const cargarNotificaciones = async () => {
         try {
             const data = await obtenerMisNotificaciones();
-            setNotifications(data);
+            // El backend ahora devuelve { conteo_no_leidas: X, resultados: [...] }
+            setNotificaciones(data.resultados || []);
+            setConteoNoLeidas(data.conteo_no_leidas || 0);
             console.log('🔔 Notificaciones recibidas:', data);
         } catch (error) {
             console.error('❌ Error al cargar notificaciones:', error);
         }
     };
 
-    const markNotificationAsRead = async (id) => {
+    const marcarComoLeida = async (id) => {
         try {
             await marcarNotificacionComoLeida(id);
-            // Actualizamos el estado local para que la campanita se apague de inmediato sin recargar toda la BD
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
+            // Actualizamos el estado local UI Optimista
+            setNotificaciones(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
+            setConteoNoLeidas(prev => Math.max(0, prev - 1));
         } catch (error) {
             console.error('Error al marcar notificación como leída:', error);
         }
     };
 
-    const deleteNotification = async (id) => {
+    const borrarNotificacion = async (id) => {
         try {
             await eliminarNotificacion(id);
             // Eliminamos localmente del estado para una UX instantánea
-            setNotifications(prev => prev.filter(n => n.id !== id));
+            setNotificaciones(prev => {
+                const notif = prev.find(n => n.id === id);
+                if (notif && !notif.leida) {
+                    setConteoNoLeidas(c => Math.max(0, c - 1));
+                }
+                return prev.filter(n => n.id !== id);
+            });
         } catch (error) {
             console.error('Error al eliminar notificación:', error);
             throw error;
         }
     };
 
-    const deleteAllNotifications = async () => {
+    const vaciarNotificaciones = async () => {
         try {
             await eliminarTodasLasNotificaciones();
             // Vaciamos el estado local instantáneamente
-            setNotifications([]);
+            setNotificaciones([]);
+            setConteoNoLeidas(0);
         } catch (error) {
             console.error('Error al vaciar notificaciones:', error);
             throw error;
         }
     };
-
-    const unreadNotificationsCount = notifications.filter(n => !n.leida).length;
 
 
     // ==========================================
@@ -378,7 +387,7 @@ export const AppProvider = ({ children }) => {
         
         // 2. Carga Privada (Solo si hay sesión)
         if (localStorage.getItem('access_token')) {
-            promises.push(fetchNotifications());
+            promises.push(cargarNotificaciones());
             if (localStorage.getItem('user_rol') === 'voluntario') {
                 promises.push(fetchMisPostulaciones());
             } else if (localStorage.getItem('user_rol') === 'administrador') {
@@ -453,12 +462,12 @@ export const AppProvider = ({ children }) => {
         deletePostulacion,
 
         // Exportar Notificaciones
-        notifications,
-        fetchNotifications,
-        markNotificationAsRead,
-        deleteNotification, 
-        deleteAllNotifications,
-        unreadNotificationsCount
+        notificaciones,
+        cargarNotificaciones,
+        marcarComoLeida,
+        borrarNotificacion, 
+        vaciarNotificaciones,
+        conteoNoLeidas
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -1,5 +1,5 @@
 # CONTEXTO TÉCNICO: FUNSAMEZ (SPRINT 2)
-📅 Generado: 2026-03-15 15:26:53.129633
+📅 Generado: 2026-03-15 17:59:11.118905
 ℹ️ Modo: Escaneo Inteligente de Carpetas
 
 ## 1. ESTRUCTURA DE CARPETAS
@@ -7,7 +7,7 @@
 ├── .gitignore
 ├── .vscode/
 │   └── settings.json
-├── CONTEXTO_FUNSAMEZ_2026-03-15_1526.md
+├── CONTEXTO_FUNSAMEZ_2026-03-15_1759.md
 ├── README.md
 ├── backend/
 │   ├── config/
@@ -96,18 +96,21 @@
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── campana.py
 │   │   │   │   ├── convocatoria.py
+│   │   │   │   ├── notificacion.py
 │   │   │   │   ├── postulacion.py
 │   │   │   │   └── user.py
 │   │   │   ├── exceptions/
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── campana_exceptions.py
 │   │   │   │   ├── convocatoria_exceptions.py
+│   │   │   │   ├── notificacion_exceptions.py
 │   │   │   │   ├── postulacion_exceptions.py
 │   │   │   │   └── user_exceptions.py
 │   │   │   ├── services/
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── campana_service.py
 │   │   │   │   ├── convocatoria_service.py
+│   │   │   │   ├── notificacion_service.py
 │   │   │   │   ├── postulacion_service.py
 │   │   │   │   └── user_service.py
 │   │   │   └── value_objects/
