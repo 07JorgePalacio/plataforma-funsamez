@@ -54,9 +54,12 @@ class ListarConvocatoriasView(APIView):
 
     def get(self, request):
         estado_filtro = request.query_params.get('estado', None)
+        # Identificar si hay un usuario logueado en esta petición
+        usuario_id = request.user.id if request.user and request.user.is_authenticated else None
+        
         caso_de_uso = Container.listar_convocatorias_use_case
         try:
-            convocatorias = caso_de_uso().execute(estado=estado_filtro)
+            convocatorias = caso_de_uso().execute(estado=estado_filtro, usuario_id=usuario_id)
             serializer = ConvocatoriaSerializer(convocatorias, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:

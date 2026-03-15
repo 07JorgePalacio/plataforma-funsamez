@@ -183,6 +183,15 @@ export const AppProvider = ({ children }) => {
                 title: item.titulo,
                 description: item.descripcion || 'Sin descripción',
                 status: item.estado === 'abierta' ? 'published' : item.estado === 'cerrada' ? 'closed' : item.estado,
+                
+                // Cálculos de Negocio (Enriquecidos desde el Backend)
+                dias_para_inicio: Number(item.dias_para_inicio) || 0,
+                urgencia: item.urgencia || 'normal',
+                porcentaje_cupos: Number(item.porcentaje_cupos) || 0,
+                match_score: Number(item.match_score) || 0,
+                match_habilidades: Number(item.match_habilidades) || 0,
+                match_disponibilidad: Boolean(item.match_disponibilidad),
+
                 // Garantizamos tipos de datos
                 categorias: item.categorias || [],
                 horario: item.horario || {},

@@ -2,6 +2,11 @@ from datetime import datetime
 from typing import List, Dict, Any
 from core.domain.entities.convocatoria import Convocatoria
 from core.application.ports.output.convocatoria_repository import ConvocatoriaRepository
+from core.domain.services.convocatoria_service import ConvocatoriaService
+from core.domain.exceptions.convocatoria_exceptions import (
+    FechaConvocatoriaInvalidaError,
+    CuposInvalidosError
+)
 
 class CrearConvocatoriaUseCase:
     
@@ -22,24 +27,30 @@ class CrearConvocatoriaUseCase:
                  categorias: List[str] = None, 
                  horario: Dict[str, Any] = None) -> Convocatoria:
         
-        # Validaciones de Negocio
-        if fecha_inicio >= fecha_fin:
-            raise ValueError("La fecha de inicio debe ser anterior a la fecha de fin.")
-        if cupos <= 0:
-            raise ValueError("Debe haber al menos 1 cupo disponible.")
+        # Validaciones de Negocio delegadas al Service
+        if not ConvocatoriaService.validar_periodo(fecha_inicio, fecha_fin):
+            raise FechaConvocatoriaInvalidaError()
+            
+        if not ConvocatoriaService.validar_cupos(cupos):
+            raise CuposInvalidosError(cupos)
 
-        # Crear Entidad (Siguiendo el Orden Maestro de Tanda 1)
+        # Crear Entidad (Alineado jerárquicamente con la Base de Datos)
         nueva_convocatoria = Convocatoria(
+            # --- Identificación ---
             id_usuario_creador=id_usuario,
+            # --- Info Básica ---
             titulo=titulo,
             descripcion=descripcion,
             ubicacion=ubicacion,
             link_google_maps=link_google_maps,
             link_whatsapp=link_whatsapp,
             modalidad=modalidad, 
+            # --- Tiempos y Estado ---
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin,
+            # --- Cupos ---
             cupos_disponibles=cupos,
+            # --- Requisitos y Detalles (Listas/JSON) ---
             habilidades_requeridas=habilidades,
             categorias=categorias or [],
             horario=horario or {},

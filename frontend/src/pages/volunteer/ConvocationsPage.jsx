@@ -69,6 +69,10 @@ const mapBackendToForm = (convocation) => {
         modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', 
         spots: convocation.cupos_disponibles || 1,
         cupos_ocupados: convocation.cupos_ocupados || 0,
+        porcentaje_cupos: convocation.porcentaje_cupos || 0,
+        matchScore: convocation.match_score || 0,
+        matchHabilidades: convocation.match_habilidades || 0,
+        matchDisponibilidad: !!convocation.match_disponibilidad,
         startDate: tipoHorario === 'recurrente' && convocation.fecha_inicio ? convocation.fecha_inicio.split('T')[0] : '',
         endDate: tipoHorario === 'recurrente' && convocation.fecha_fin ? convocation.fecha_fin.split('T')[0] : '',
         categorias: Array.isArray(convocation.categorias) ? convocation.categorias : (convocation.categoria ? [convocation.categoria] : []), 
@@ -78,42 +82,7 @@ const mapBackendToForm = (convocation) => {
     };
 };
 
-// --- LÓGICA DE PRESENTACIÓN: ALGORITMO DE MATCH SCORE ---
-const calculateMatchScore = (parsedConv, user) => {
-    if (!user) return 0;
-    const habUser = user.habilidades || [];
-    const dispUser = user.disponibilidad || {};
-    const habReq = parsedConv.skills || [];
-    const horarioReq = parsedConv.horario || {};
-
-    let habScore = 50; // Puntaje base si no hay requisitos
-    if (habReq.length > 0) {
-        const coincidencias = habReq.filter(req => 
-            habUser.some(hu => hu.toLowerCase().includes(req.toLowerCase()) || req.toLowerCase().includes(hu.toLowerCase()))
-        );
-        habScore = (coincidencias.length / habReq.length) * 50;
-    }
-
-    let dispScore = 50; // Puntaje base si no hay horario estricto
-    if (parsedConv.tipoHorario === 'recurrente' && Object.keys(horarioReq).length > 0) {
-        dispScore = 0;
-        for (const dia of Object.keys(horarioReq)) {
-            if (dispUser[dia] && dispUser[dia].length > 0) {
-                dispScore = 50;
-                break;
-            }
-        }
-    } else if (parsedConv.tipoHorario === 'unico' && parsedConv.fechaEvento) {
-        dispScore = 0;
-        const dateObj = new Date(parsedConv.fechaEvento + 'T00:00:00'); 
-        const daysMap = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        const dayOfWeek = daysMap[dateObj.getDay()];
-        if (dispUser[dayOfWeek] && dispUser[dayOfWeek].length > 0) {
-            dispScore = 50;
-        }
-    }
-    return habScore + dispScore;
-};
+//TODO: Arquitectura Limpia: El algoritmo de Match Score ahora es calculado 100% por el Backend (ConvocatoriaService) 
 
 export default function ConvocationsPage() {
     const { applyToConvocation, hasApplied, getPublishedConvocations, loading, user } = useApp();
@@ -132,11 +101,10 @@ export default function ConvocationsPage() {
     const [snackbar, setSnackbar] = useState({ show: false, message: '', type: 'info' });
 
     const filteredConvocations = useMemo(() => {
-        // 1. Mapear y calcular el score de compatibilidad
+        // 1. Mapear (El backend ya calculó el score de compatibilidad)
         const processed = publishedConvocations.map(c => {
             const parsed = mapBackendToForm(c);
-            const score = calculateMatchScore(parsed, user);
-            return { raw: c, parsed, matchScore: score };
+            return { raw: c, parsed, matchScore: parsed.matchScore };
         });
 
         // 2. Aplicar filtros de búsqueda
@@ -220,42 +188,8 @@ export default function ConvocationsPage() {
         setIsApplyModalOpen(true);
     };
 
-    // --- Lógica de Smart Match ---
-    const matchInfo = useMemo(() => {
-        if (!selectedConvocation || !user) return { habMatch: 100, dispMatch: true, isPerfect: true };
-        
-        const habUser = user.habilidades || [];
-        const dispUser = user.disponibilidad || {};
-        const habReq = selectedConvocation.skills || [];
-        const horarioReq = selectedConvocation.horario || {};
-        
-        // 1. Match de Habilidades
-        let habMatch = 100;
-        if (habReq.length > 0) {
-            const coincidencias = habReq.filter(req => 
-                habUser.some(hu => hu.toLowerCase().includes(req.toLowerCase()) || req.toLowerCase().includes(hu.toLowerCase()))
-            );
-            habMatch = Math.min(100, Math.round((coincidencias.length / habReq.length) * 100));
-        }
-
-        // 2. Match de Disponibilidad
-        let dispMatch = true;
-        if (selectedConvocation.tipoHorario === 'recurrente' && Object.keys(horarioReq).length > 0) {
-            dispMatch = false;
-            for (const dia of Object.keys(horarioReq)) {
-                if (dispUser[dia] && dispUser[dia].length > 0) {
-                    dispMatch = true;
-                    break;
-                }
-            }
-        }
-
-        return {
-            habMatch,
-            dispMatch,
-            isPerfect: habMatch === 100 && dispMatch
-        };
-    }, [selectedConvocation, user]);
+    // Arquitectura Limpia: El cálculo del Match Score detallado ahora lo realiza el Backend (ConvocatoriaService)
+    const isPerfectMatch = selectedConvocation ? (selectedConvocation.matchHabilidades === 100 && selectedConvocation.matchDisponibilidad) : true;
 
     const handleConfirmApply = async () => {
         if (!selectedConvocation) return;
@@ -524,7 +458,7 @@ export default function ConvocationsPage() {
                                             <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden shadow-inner">
                                                 <div 
                                                     className="h-full bg-primary transition-all duration-500 rounded-full" 
-                                                    style={{ width: `${Math.min(100, (parsed.cupos_ocupados / parsed.spots) * 100)}%` }}
+                                                    style={{ width: `${parsed.porcentaje_cupos}%` }}
                                                 ></div>
                                             </div>
                                         </div>
@@ -585,23 +519,23 @@ export default function ConvocationsPage() {
                             
                             {/* Tarjeta de Smart Match (Emparejamiento Inteligente) */}
                             {!hasApplied(selectedConvocation.id) && (
-                                <div className={`p-5 rounded-2xl border shadow-sm ${matchInfo.isPerfect ? 'bg-success/10 border-success/20' : 'bg-warning/10 border-warning/20'}`}>
-                                    <h3 className={`text-label-large font-bold flex items-center gap-2 mb-3 ${matchInfo.isPerfect ? 'text-success' : 'text-warning'}`}>
+                                <div className={`p-5 rounded-2xl border shadow-sm ${isPerfectMatch ? 'bg-success/10 border-success/20' : 'bg-warning/10 border-warning/20'}`}>
+                                    <h3 className={`text-label-large font-bold flex items-center gap-2 mb-3 ${isPerfectMatch ? 'text-success' : 'text-warning'}`}>
                                         <Activity className="w-5 h-5"/> Tu Nivel de Compatibilidad
                                     </h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="flex items-center gap-3 bg-surface/60 p-3 rounded-xl">
-                                            {matchInfo.habMatch >= 80 ? <CheckCircle className="w-5 h-5 text-success shrink-0"/> : <AlertTriangle className="w-5 h-5 text-warning shrink-0"/>}
+                                            {selectedConvocation.matchHabilidades >= 80 ? <CheckCircle className="w-5 h-5 text-success shrink-0"/> : <AlertTriangle className="w-5 h-5 text-warning shrink-0"/>}
                                             <div>
                                                 <p className="text-body-small font-bold text-on-surface">Habilidades Requeridas</p>
-                                                <p className="text-xs text-on-surface-variant">{matchInfo.habMatch}% de coincidencia con tu perfil.</p>
+                                                <p className="text-xs text-on-surface-variant">{selectedConvocation.matchHabilidades}% de coincidencia con tu perfil.</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3 bg-surface/60 p-3 rounded-xl">
-                                            {matchInfo.dispMatch ? <CheckCircle className="w-5 h-5 text-success shrink-0"/> : <AlertTriangle className="w-5 h-5 text-warning shrink-0"/>}
+                                            {selectedConvocation.matchDisponibilidad ? <CheckCircle className="w-5 h-5 text-success shrink-0"/> : <AlertTriangle className="w-5 h-5 text-warning shrink-0"/>}
                                             <div>
                                                 <p className="text-body-small font-bold text-on-surface">Disponibilidad de Tiempo</p>
-                                                <p className="text-xs text-on-surface-variant">{matchInfo.dispMatch ? 'Tu horario coincide.' : 'Posible conflicto de horario.'}</p>
+                                                <p className="text-xs text-on-surface-variant">{selectedConvocation.matchDisponibilidad ? 'Tu horario coincide.' : 'Posible conflicto de horario.'}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -665,7 +599,7 @@ export default function ConvocationsPage() {
                                         <label className="block text-sm font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                                             <Clock3 className="w-5 h-5 opacity-80"/> Disponibilidad ({selectedConvocation.tipoHorario})
                                         </label>
-                                        {matchInfo.dispMatch && (
+                                        {selectedConvocation.matchDisponibilidad && (
                                             <span className="flex items-center gap-1.5 text-[10px] font-bold text-success-dark bg-success/10 px-2.5 py-1 rounded-full">
                                                 <CheckCircle className="w-3.5 h-3.5 text-success" /> Coincide con tu horario
                                             </span>
@@ -727,14 +661,14 @@ export default function ConvocationsPage() {
                             </div>
 
                             {/* Advertencia Amigable si no hay match perfecto */}
-                            {!matchInfo.isPerfect && (
+                            {!isPerfectMatch && (
                                 <div className="mb-6 p-4 bg-warning/10 rounded-xl border border-warning/30 flex items-start gap-3">
                                     <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
                                     <div>
                                         <p className="text-label-large font-bold text-warning mb-1">Aviso de Compatibilidad</p>
                                         <p className="text-body-small text-on-surface-variant">
-                                            {!matchInfo.dispMatch ? 'Tu disponibilidad no coincide exactamente con el horario requerido. ' : ''}
-                                            {matchInfo.habMatch < 100 ? `Tienes un ${matchInfo.habMatch}% de coincidencia en las habilidades solicitadas. ` : ''}
+                                            {!selectedConvocation.matchDisponibilidad ? 'Tu disponibilidad no coincide exactamente con el horario requerido. ' : ''}
+                                            {selectedConvocation.matchHabilidades < 100 ? `Tienes un ${selectedConvocation.matchHabilidades}% de coincidencia en las habilidades solicitadas. ` : ''}
                                             ¿Estás seguro de que deseas comprometerte y postularte de todos modos?
                                         </p>
                                     </div>
