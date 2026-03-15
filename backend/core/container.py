@@ -95,7 +95,10 @@ class Container:
     
     @staticmethod
     def listar_convocatorias_use_case() -> ListarConvocatoriasUseCase:
-        return ListarConvocatoriasUseCase(repository=Container.get_convocatoria_repository())
+        return ListarConvocatoriasUseCase(
+            repository=Container.get_convocatoria_repository(),
+            user_repository=Container.get_user_repository()
+        )
     
     @staticmethod
     def actualizar_convocatoria_use_case() -> ActualizarConvocatoriaUseCase:

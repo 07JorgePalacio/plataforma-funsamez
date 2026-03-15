@@ -37,3 +37,20 @@ class HorarioIncompatibleError(ValueError):
         super().__init__(
             "Tu disponibilidad horaria no coincide con la convocatoria"
         )
+
+
+class FechaConvocatoriaInvalidaError(ValueError):
+    """Se lanza cuando la fecha de inicio no es estrictamente anterior a la de fin"""
+    def __init__(self):
+        super().__init__(
+            "La fecha de inicio debe ser anterior a la fecha de fin."
+        )
+
+
+class CuposInvalidosError(ValueError):
+    """Se lanza cuando se define una cantidad de cupos menor o igual a cero"""
+    def __init__(self, cupos: int):
+        super().__init__(
+            f"Debe haber al menos 1 cupo disponible. Recibido: {cupos}"
+        )
+        self.cupos = cupos
