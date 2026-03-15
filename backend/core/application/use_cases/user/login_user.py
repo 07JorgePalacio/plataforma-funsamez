@@ -1,6 +1,7 @@
 from core.domain.entities.user import User
 from core.application.ports.output.user_repository import UserRepository
-from core.application.ports.output.password_hasher import PasswordHasher 
+from core.application.ports.output.password_hasher import PasswordHasher
+from core.domain.exceptions.user_exceptions import CredencialesInvalidasError, UsuarioInactivoError
 
 class LoginUser:
     def __init__(self, user_repository: UserRepository, password_hasher: PasswordHasher):
@@ -11,9 +12,9 @@ class LoginUser:
         user = self.user_repository.get_by_email(email)
         
         if not user or not self.password_hasher.verify(password, user.contrasena_hash):
-            raise ValueError("Credenciales inválidas")
+            raise CredencialesInvalidasError()
 
         if user.estado != 'activo':
-            raise ValueError("El usuario está inactivo")
+            raise UsuarioInactivoError()
 
         return user

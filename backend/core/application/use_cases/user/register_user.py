@@ -1,7 +1,7 @@
-import hashlib
 from typing import List, Optional
 from core.domain.entities.user import User
 from core.application.ports.output.user_repository import UserRepository
+from core.application.ports.output.password_hasher import PasswordHasher
 from core.domain.services.user_service import UserService
 from core.domain.exceptions.user_exceptions import (
     EmailDuplicadoError,
@@ -45,8 +45,8 @@ class RegisterUser:
                 edad = UserService.calcular_edad(fecha_nacimiento)
                 raise UsuarioMenorDeEdadError(edad)
 
-        # 4. Hashear contraseña
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        # 4. Hashear contraseña delegando al puerto de salida (Infraestructura)
+        hashed_password = self.password_hasher.hash(password)
 
         # 5. Crear Entidad
         new_user = User(

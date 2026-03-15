@@ -35,20 +35,20 @@ export const AppProvider = ({ children }) => {
         const token = localStorage.getItem('access_token');
         if (!token) return null;
 
-        const role = localStorage.getItem('user_role') || 'voluntario';
-        const name = localStorage.getItem('user_name') || (role === 'administrador' ? 'Administrador' : 'Usuario');
+        const rol = localStorage.getItem('user_rol') || 'voluntario';
+        const nombre_completo = localStorage.getItem('user_nombre_completo') || (rol === 'administrador' ? 'Administrador' : 'Usuario');
         const id = localStorage.getItem('user_id');
         
-        const correo_electronico = localStorage.getItem('user_email') || localStorage.getItem('user_correo_electronico') || '';
-        const numero_telefono = localStorage.getItem('user_telefono') || localStorage.getItem('user_numero_telefono') || '';
-        const numero_identificacion = localStorage.getItem('user_documento') || localStorage.getItem('user_numero_identificacion') || '';
-        const profesion = localStorage.getItem('user_profesion') || localStorage.getItem('user_ocupacion') || '';
+        const correo_electronico = localStorage.getItem('user_correo_electronico') || '';
+        const numero_telefono = localStorage.getItem('user_numero_telefono') || '';
+        const numero_identificacion = localStorage.getItem('user_numero_identificacion') || '';
+        const profesion = localStorage.getItem('user_profesion') || '';
         const direccion = localStorage.getItem('user_direccion') || '';
         const fecha_nacimiento = localStorage.getItem('user_fecha_nacimiento') || '';
         const tipo_documento = localStorage.getItem('user_tipo_documento') || 'CC';
         const foto_perfil = localStorage.getItem('user_foto_perfil') || null;
 
-        if (!name) return null;
+        if (!nombre_completo) return null;
 
         let habilidades = [];
         let disponibilidad = {};
@@ -65,8 +65,8 @@ export const AppProvider = ({ children }) => {
         }
 
         return { 
-            name, 
-            role, 
+            nombre_completo, 
+            rol, 
             id: id ? parseInt(id) : null, 
             correo_electronico,
             numero_telefono,
@@ -86,12 +86,12 @@ export const AppProvider = ({ children }) => {
         // 1. Persistencia física para que resista el F5
         localStorage.setItem('access_token', tokens.access);
         localStorage.setItem('refresh_token', tokens.refresh);
-        localStorage.setItem('user_role', userData.role);
-        localStorage.setItem('user_name', userData.full_name);
+        localStorage.setItem('user_rol', userData.rol);
+        localStorage.setItem('user_nombre_completo', userData.nombre_completo);
         localStorage.setItem('user_id', userData.id);
-        localStorage.setItem('user_email', userData.email || '');
-        localStorage.setItem('user_telefono', userData.numero_telefono || '');
-        localStorage.setItem('user_documento', userData.numero_identificacion || '');
+        localStorage.setItem('user_correo_electronico', userData.correo_electronico || '');
+        localStorage.setItem('user_numero_telefono', userData.numero_telefono || '');
+        localStorage.setItem('user_numero_identificacion', userData.numero_identificacion || '');
         localStorage.setItem('user_profesion', userData.profesion || '');
         localStorage.setItem('user_direccion', userData.direccion || '');
         localStorage.setItem('user_fecha_nacimiento', userData.fecha_nacimiento || '');
@@ -104,9 +104,9 @@ export const AppProvider = ({ children }) => {
         // 2. Reactividad instantánea: Avisamos a React que el usuario cambió
         setUser({
             id: userData.id,
-            name: userData.full_name,
-            role: userData.role,
-            correo_electronico: userData.email,
+            nombre_completo: userData.nombre_completo,
+            rol: userData.rol,
+            correo_electronico: userData.correo_electronico,
             numero_telefono: userData.numero_telefono,
             numero_identificacion: userData.numero_identificacion,
             profesion: userData.profesion,
@@ -134,17 +134,14 @@ export const AppProvider = ({ children }) => {
             // 2. Si es exitoso, actualizamos el estado local de React
             setUser(prev => ({ 
                 ...prev, 
-                ...updatedUser,
-                // Garantizamos los alias que usa la UI
-                name: updatedUser.full_name,
-                nombre_completo: updatedUser.full_name
+                ...updatedUser
             }));
             
             // 3. Blindaje total: Actualizamos el localStorage para que no se borre al recargar
-            localStorage.setItem('user_name', updatedUser.full_name || '');
-            localStorage.setItem('user_email', updatedUser.email || '');
-            localStorage.setItem('user_telefono', updatedUser.numero_telefono || '');
-            localStorage.setItem('user_documento', updatedUser.numero_identificacion || '');
+            localStorage.setItem('user_nombre_completo', updatedUser.nombre_completo || '');
+            localStorage.setItem('user_correo_electronico', updatedUser.correo_electronico || '');
+            localStorage.setItem('user_numero_telefono', updatedUser.numero_telefono || '');
+            localStorage.setItem('user_numero_identificacion', updatedUser.numero_identificacion || '');
             localStorage.setItem('user_profesion', updatedUser.profesion || '');
             localStorage.setItem('user_direccion', updatedUser.direccion || '');
             localStorage.setItem('user_fecha_nacimiento', updatedUser.fecha_nacimiento || '');
@@ -259,7 +256,7 @@ export const AppProvider = ({ children }) => {
     // ==========================================
     const fetchMisPostulaciones = async () => {
         //1. Verificamos autenticación
-        if (localStorage.getItem('user_role') !== 'voluntario') return;
+        if (localStorage.getItem('user_rol') !== 'voluntario') return;
         
         try {
             const data = await obtenerMisPostulaciones();
@@ -271,7 +268,7 @@ export const AppProvider = ({ children }) => {
     };
 
     const fetchPostulacionesAdmin = async () => {
-        if (localStorage.getItem('user_role') === 'voluntario') return;
+        if (localStorage.getItem('user_rol') === 'voluntario') return;
         try {
             const data = await obtenerTodasLasPostulaciones();
             setPostulacionesAdmin(data);
@@ -382,9 +379,9 @@ export const AppProvider = ({ children }) => {
         // 2. Carga Privada (Solo si hay sesión)
         if (localStorage.getItem('access_token')) {
             promises.push(fetchNotifications());
-            if (localStorage.getItem('user_role') === 'voluntario') {
+            if (localStorage.getItem('user_rol') === 'voluntario') {
                 promises.push(fetchMisPostulaciones());
-            } else if (localStorage.getItem('user_role') === 'administrador') {
+            } else if (localStorage.getItem('user_rol') === 'administrador') {
                 promises.push(fetchPostulacionesAdmin()); 
             }
         }

@@ -37,3 +37,16 @@ class CredencialesInvalidasError(ValueError):
     """Se lanza en login cuando email/password son incorrectos"""
     def __init__(self):
         super().__init__("Email o contraseña incorrectos")
+
+
+class UsuarioInactivoError(ValueError):
+    """Se lanza cuando un usuario inactivo intenta iniciar sesión"""
+    def __init__(self):
+        super().__init__("El usuario está inactivo")
+
+
+class FormatoEmailInvalidoError(ValueError):
+    """Se lanza cuando el email no cumple con el formato estándar"""
+    def __init__(self, email: str):
+        super().__init__(f"El formato del correo electrónico '{email}' no es válido.")
+        self.email = email

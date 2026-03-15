@@ -20,7 +20,7 @@ const LoginPage = () => {
     try {
       const data = await iniciarSesion(email, password);
       login(data.user, data.tokens);
-      navigate(data.user.role === 'administrador' ? '/admin/dashboard' : '/voluntario');
+      navigate(data.user.rol === 'administrador' ? '/admin/dashboard' : '/voluntario');
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión');
     }

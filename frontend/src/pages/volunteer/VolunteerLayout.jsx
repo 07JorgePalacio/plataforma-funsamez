@@ -142,8 +142,8 @@ export default function VolunteerLayout() {
     }
   };
 
-  // Obtenemos el nombre del usuario desde el contexto
-  const userName = user?.name || 'Voluntario';
+  // Obtenemos el nombre del usuario desde el contexto (Lenguaje Ubicuo)
+  const userName = user?.nombre_completo || 'Voluntario';
 
   const handleLogout = () => {
     logout();
