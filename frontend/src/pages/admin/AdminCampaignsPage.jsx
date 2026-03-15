@@ -264,7 +264,8 @@ export default function AdminCampaignsPage() {
     const sortedList = [...filteredList].sort((a, b) => {
         if (sortBy === 'newest') return new Date(b.fecha_creacion) - new Date(a.fecha_creacion);
         if (sortBy === 'oldest') return new Date(a.fecha_creacion) - new Date(b.fecha_creacion);
-        if (sortBy === 'progress') return (b.recaudo_actual / b.monto_objetivo) - (a.recaudo_actual / a.monto_objetivo);
+        // Arquitectura Limpia: Usamos el cálculo de negocio que viene del backend
+        if (sortBy === 'progress') return (b.porcentaje_progreso || 0) - (a.porcentaje_progreso || 0);
         if (sortBy === 'alpha') return a.titulo.localeCompare(b.titulo); 
         if (sortBy === 'alpha_desc') return b.titulo.localeCompare(a.titulo); 
         return 0;
@@ -344,7 +345,7 @@ export default function AdminCampaignsPage() {
                                     {camp.permite_donacion_monetaria && (
                                         <div className="mb-4">
                                             <div className="flex justify-between text-xs font-bold mb-1"><span className="text-primary">${formatCurrency(camp.recaudo_actual || 0)}</span><span className="text-on-surface-variant">Meta: ${formatCurrency(camp.monto_objetivo)}</span></div>
-                                            <div className="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${Math.min(((camp.recaudo_actual || 0) / camp.monto_objetivo) * 100, 100)}%` }} /></div>
+                                            <div className="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${camp.porcentaje_progreso || 0}%` }} /></div>
                                         </div>
                                     )}
                                     <div className="flex gap-2 mt-auto pt-3 border-t border-outline-variant/20">

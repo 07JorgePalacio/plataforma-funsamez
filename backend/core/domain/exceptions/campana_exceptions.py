@@ -1,3 +1,4 @@
+from datetime import date
 """
 Excepciones específicas del dominio Campaña
 """
@@ -8,6 +9,12 @@ class CampanaNoEncontradaError(ValueError):
         super().__init__(f"Campaña no encontrada: ID {id_campana}")
         self.id_campana = id_campana
 
+
+class FechaEnPasadoError(ValueError):
+    """Se lanza cuando se intenta crear una campaña con fecha de inicio en el pasado"""
+    def __init__(self, fecha: date):
+        super().__init__(f"La campaña no puede iniciar en el pasado. Fecha recibida: {fecha}")
+        self.fecha = fecha
 
 class FechasIncoherentesError(ValueError):
     """Se lanza cuando fecha_fin es anterior a fecha_inicio"""

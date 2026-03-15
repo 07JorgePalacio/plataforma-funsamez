@@ -3,6 +3,10 @@ from core.infrastructure.persistence.django.models import CampanaModel
 
 class CampanaSerializer(serializers.ModelSerializer):
     
+    # Cálculos de Negocio (Enriquecidos en el Use Case)
+    porcentaje_progreso = serializers.FloatField(read_only=True, required=False)
+    dias_restantes = serializers.IntegerField(read_only=True, required=False)
+
     objetivos = serializers.ListField(
         child=serializers.CharField(), 
         required=False, 
@@ -51,6 +55,8 @@ class CampanaSerializer(serializers.ModelSerializer):
             'monto_objetivo', 'recaudo_actual', 
             'permite_donacion_monetaria', 'permite_donacion_especie',
             # 5. Listas JSON
-            'objetivos', 'galeria_imagenes', 'video_urls', 'necesidades', 'categoria', 'tipo_impacto'
+            'objetivos', 'galeria_imagenes', 'video_urls', 'necesidades', 'categoria', 'tipo_impacto',
+            # 6. Cálculos de Negocio
+            'porcentaje_progreso', 'dias_restantes'
         ]
-        read_only_fields = ['id', 'fecha_creacion', 'usuario_creador', 'recaudo_actual']
+        read_only_fields = ['id', 'fecha_creacion', 'usuario_creador', 'recaudo_actual', 'porcentaje_progreso', 'dias_restantes']

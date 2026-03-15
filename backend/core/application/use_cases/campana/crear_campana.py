@@ -1,6 +1,12 @@
 from datetime import date, datetime
 from typing import List
 from core.domain.entities.campana import Campana
+from core.domain.services.campana_service import CampanaService
+from core.domain.exceptions.campana_exceptions import (
+    FechasIncoherentesError,
+    FechaEnPasadoError,
+    MontoNegativoError
+)
 
 class CrearCampanaUseCase:
     def __init__(self, repository):
@@ -24,39 +30,37 @@ class CrearCampanaUseCase:
                  categoria: List[str] = None, 
                  tipo_impacto: List[str] = None) -> Campana:
         
-        # Validación de Negocio
+        # Validación de Negocio orquestada por el Service
+        inicio_date = fecha_inicio.date() if isinstance(fecha_inicio, datetime) else fecha_inicio
         
-        # 1. Validar fechas lógicas
-        if fecha_fin and fecha_inicio:
-            inicio_date = fecha_inicio.date() if isinstance(fecha_inicio, datetime) else fecha_inicio
-            if fecha_fin < inicio_date:
-                raise ValueError("La fecha de fin debe ser posterior al inicio.")
+        # 1. Validar inicio en el pasado
+        if not CampanaService.validar_fecha_no_pasada(inicio_date):
+            raise FechaEnPasadoError(inicio_date)
 
-        # 2. Validar inicio en el pasado (Solo al CREAR)
-        hoy = date.today()
-        inicio_check = fecha_inicio.date() if isinstance(fecha_inicio, datetime) else fecha_inicio
-        if inicio_check < hoy:
-            raise ValueError("La campaña no puede iniciar en el pasado.")
+        # 2. Validar fechas lógicas
+        if fecha_fin and not CampanaService.validar_fechas_coherentes(inicio_date, fecha_fin):
+            raise FechasIncoherentesError()
 
         # 3. Validar Montos
-        if monto_objetivo < 0:
-            raise ValueError("El monto objetivo no puede ser negativo.")
+        if not CampanaService.validar_monto_no_negativo(monto_objetivo):
+            raise MontoNegativoError(monto_objetivo)
         
+        # 4. Creación (Orden de campos idéntico al de models.py)
         nueva_campana = Campana(
-            # 1. Info Básica
+            # --- 1. Identificación ---
+            id_usuario_creador=id_usuario,
+            # --- 2. Información Básica ---
             titulo=titulo,
             descripcion=descripcion,
             imagen_url=imagen_url,
-            # 2. Tiempos
+            # --- 3. Tiempos ---
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin,
-            # 3. Identificación
-            id_usuario_creador=id_usuario,
-            # 4. Financiero
+            # --- 4. Financiero ---
             monto_objetivo=monto_objetivo,
             permite_donacion_monetaria=permite_monetaria,
             permite_donacion_especie=permite_especie,
-            # 5. Listas / JSON
+            # --- 5. Listas / JSON ---
             objetivos=objetivos or [],
             galeria_imagenes=galeria or [],
             necesidades=necesidades or [],

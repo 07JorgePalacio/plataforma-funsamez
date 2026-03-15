@@ -25,9 +25,9 @@ function ShareButton({ title, url }) {
 // --- Tarjeta de Campaña ---
 function CampaignCard({ campaign, onDonate, currentFilter, currentPage, isHighlighted }) {
     const navigate = useNavigate();
-    const progress = campaign.monto_objetivo
-        ? Math.round((campaign.recaudo_actual / campaign.monto_objetivo) * 100)
-        : 0;
+    
+    // Arquitectura Limpia: El frontend es pasivo, solo renderiza lo que el backend calculó
+    const progress = campaign.porcentaje_progreso || 0;
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('es-CO', {
