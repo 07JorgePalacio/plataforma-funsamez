@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from core.container import Container
+from core.domain.exceptions.notificacion_exceptions import NotificacionNoEncontradaError
 
 class ListarNotificacionesView(APIView):
 
@@ -33,7 +34,7 @@ class MarcarNotificacionLeidaView(APIView):
             return Response({
                 "mensaje": "Notificación marcada como leída."
             }, status=status.HTTP_200_OK)
-        except ValueError as e:
+        except NotificacionNoEncontradaError as e:
             return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({
@@ -53,7 +54,7 @@ class EliminarNotificacionView(APIView):
             return Response({
                 "mensaje": "Notificación eliminada exitosamente."
             }, status=status.HTTP_200_OK)
-        except ValueError as e:
+        except NotificacionNoEncontradaError as e:
             return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({
