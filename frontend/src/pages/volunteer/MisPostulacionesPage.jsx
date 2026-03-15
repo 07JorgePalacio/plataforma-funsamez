@@ -6,10 +6,10 @@ import {
     Search, Filter, ChevronLeft, ChevronRight, Pause, MessageCircle, Info 
 } from 'lucide-react';
 
-export default function MyApplicationsPage() {
+export default function MisPostulacionesPage() {
 
-    const { getApplicationsByVolunteer, convocations, loading } = useApp();
-    const applications = getApplicationsByVolunteer();
+    const { getPostulacionesVoluntario, convocations, loading } = useApp();
+    const postulaciones = getPostulacionesVoluntario();
     const location = useLocation();
     const cardRefs = useRef({}); 
 
@@ -39,16 +39,13 @@ export default function MyApplicationsPage() {
         }
     };
 
-    const filteredApplications = useMemo(() => {
-        return applications.filter(app => {
+    const postulacionesFiltradas = useMemo(() => {
+        return postulaciones.filter(app => {
             const convocation = convocations.find(c => c.id === app.id_convocatoria);
             const title = convocation ? convocation.title.toLowerCase() : '';
             
-            const convStatus = convocation ? (convocation.estado || convocation.status) : 'cerrada';
-            const isConvClosed = convStatus === 'cerrada' || convStatus === 'closed' || convStatus === 'finalizada';
-            
-            // CORRECCIÓN LÓGICA: Si está en revisión o en espera, SIEMPRE es activa (incluso si la convocatoria ya cerró)
-            const isHistory = app.estado === 'rechazada' || (isConvClosed && app.estado !== 'en_revision' && app.estado !== 'en_espera');
+            // Arquitectura Limpia: El backend ya calculó si la postulación es histórica o activa
+            const isHistory = !app.es_activa;
             
             const matchesTab = activeTab === 'activas' ? !isHistory : isHistory;
             const matchesSearch = title.includes(searchTerm.toLowerCase());
@@ -56,23 +53,20 @@ export default function MyApplicationsPage() {
             
             return matchesTab && matchesSearch && matchesStatus;
         });
-    }, [applications, convocations, searchTerm, statusFilter, activeTab]);
+    }, [postulaciones, convocations, searchTerm, statusFilter, activeTab]);
 
     // Helper para contar cuántas hay en cada pestaña dinámicamente
     const { activasCount, historialCount } = useMemo(() => {
         let act = 0; let hist = 0;
-        applications.forEach(app => {
-            const conv = convocations.find(c => c.id === app.id_convocatoria);
-            const st = conv ? (conv.estado || conv.status) : 'cerrada';
-            const isClosed = st === 'cerrada' || st === 'closed' || st === 'finalizada';
-            if (app.estado === 'rechazada' || isClosed) hist++;
+        postulaciones.forEach(app => {
+            if (!app.es_activa) hist++;
             else act++;
         });
         return { activasCount: act, historialCount: hist };
-    }, [applications, convocations]);
+    }, [postulaciones]);
 
-    const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
-    const paginatedApplications = filteredApplications.slice(
+    const totalPages = Math.ceil(postulacionesFiltradas.length / itemsPerPage);
+    const postulacionesPaginadas = postulacionesFiltradas.slice(
         (currentPage - 1) * itemsPerPage, 
         currentPage * itemsPerPage
     );
@@ -123,7 +117,7 @@ export default function MyApplicationsPage() {
             </div>
 
             {/* CASO 1: El voluntario NUNCA se ha postulado a nada */}
-            {applications.length === 0 ? (
+            {postulaciones.length === 0 ? (
                 <div className="card-elevated text-center py-12">
                     <Clock className="w-16 h-16 text-on-surface-variant mx-auto mb-4" />
                     <h3 className="text-title-large text-on-surface mb-2">Aún no te has postulado a nada</h3>
@@ -149,7 +143,7 @@ export default function MyApplicationsPage() {
                         </button>
                     </div>
 
-                    {activeTab === 'historial' && applications.length > 0 && (
+                    {activeTab === 'historial' && postulaciones.length > 0 && (
                         <div className="mb-6 p-4 bg-surface-container-low border border-outline-variant/50 rounded-xl flex items-start gap-3 animate-fade-in">
                             <Info className="w-5 h-5 text-on-surface-variant shrink-0 mt-0.5" />
                             <p className="text-body-small text-on-surface-variant">
@@ -188,7 +182,7 @@ export default function MyApplicationsPage() {
                     </div>
 
                     {/* CASO 2: La búsqueda no arrojó resultados */}
-                    {filteredApplications.length === 0 ? (
+                    {postulacionesFiltradas.length === 0 ? (
                         <div className="card-elevated text-center py-16">
                             <Search className="w-16 h-16 text-on-surface-variant mx-auto mb-4 opacity-50" />
                             <h3 className="text-title-large text-on-surface mb-2">
@@ -202,7 +196,7 @@ export default function MyApplicationsPage() {
                         </div>
                     ) : (
                         <div className="grid gap-6">
-                            {paginatedApplications.map((app) => {
+                            {postulacionesPaginadas.map((app) => {
                                 const convocation = convocations.find(c => c.id === app.id_convocatoria);
                                 const statusInfo = getStatusInfo(app.estado, app.motivo_rechazo, !!convocation?.link_whatsapp);
                                 const StatusIcon = statusInfo.icon;

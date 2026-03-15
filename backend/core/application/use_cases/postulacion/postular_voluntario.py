@@ -1,5 +1,11 @@
 from datetime import datetime
 from core.domain.entities.postulacion import Postulacion
+from core.domain.exceptions.postulacion_exceptions import (
+    PostulacionDuplicadaError,
+    EstadoPostulacionInvalidoError
+)
+from core.domain.exceptions.convocatoria_exceptions import ConvocatoriaNoEncontradaError
+from core.domain.services.convocatoria_service import ConvocatoriaService
 
 class PostularVoluntarioUseCase:
     """
@@ -17,47 +23,25 @@ class PostularVoluntarioUseCase:
         # Regla 1: Validar que la convocatoria exista y esté disponible
         convocatoria = self.convocatoria_repo.obtener_por_id(id_convocatoria)
         if not convocatoria:
-            raise ValueError("La convocatoria a la que intentas postularte no existe.")
+            raise ConvocatoriaNoEncontradaError(id_convocatoria)
         
         if convocatoria.estado not in ['publicada', 'abierta']:
-            raise ValueError("Esta convocatoria no está disponible actualmente para postulaciones.")
+            raise EstadoPostulacionInvalidoError("Esta convocatoria no está disponible actualmente para postulaciones.")
         
-        # Regla 2: Validar que el voluntario no esté postulado ya [cite: 1056]
+        # Regla 2: Validar que el voluntario no esté postulado ya
         postulacion_existente = self.postulacion_repo.obtener_por_usuario_y_convocatoria(id_usuario, id_convocatoria)
         if postulacion_existente:
-            raise ValueError("Ya te encuentras postulado a esta convocatoria.")
+            raise PostulacionDuplicadaError(id_usuario, id_convocatoria)
             
         # Regla 3: Extraer usuario y calcular Nivel de Compatibilidad (Smart Match)
         usuario = self.user_repo.obtener_por_id(id_usuario)
         if not usuario:
-            raise ValueError("El usuario no existe.")
+            raise ValueError("El usuario no existe.") # TODO: Mover a UsuarioNoEncontradoError en el Módulo 4
         
-        habilidades_req = convocatoria.habilidades_requeridas or ""
-        habilidades_req_list = [str(h).strip().lower() for h in habilidades_req.split(",") if h.strip()]
-        
-        habilidades_user_raw = usuario.habilidades if isinstance(usuario.habilidades, list) else []
-        habilidades_user = [str(h).lower() for h in habilidades_user_raw if h]
-        
-        if not habilidades_req_list:
-            match_hab = 100
-        else:
-            coincidencias = sum(1 for req in habilidades_req_list if any(req in hab or hab in req for hab in habilidades_user))
-            match_hab = int((coincidencias / len(habilidades_req_list)) * 100)
-            if match_hab > 100: match_hab = 100
-
-        horario_req = convocatoria.horario if isinstance(convocatoria.horario, dict) else {}
-        disp_user = usuario.disponibilidad if isinstance(usuario.disponibilidad, dict) else {}
-        
-        match_disp = True
-        if horario_req:
-            match_disp = False
-            for dia, turnos_req in horario_req.items():
-                turnos_user = disp_user.get(dia, []) if isinstance(disp_user, dict) else []
-                turnos_req_iterable = turnos_req if isinstance(turnos_req, (list, dict)) else []
-                
-                if turnos_user and any(turno in turnos_user for turno in turnos_req_iterable):
-                    match_disp = True
-                    break
+        # Delegamos la lógica matemática pura al Service de Convocatoria (Reutilización de Dominio)
+        match_data = ConvocatoriaService.calcular_match_score(convocatoria, usuario)
+        match_hab = match_data["habilidades"]
+        match_disp = match_data["disponibilidad"]
                 
         # Armar el JSON del historial de estados
         historial_inicial = [{

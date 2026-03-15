@@ -176,3 +176,23 @@ class PostulacionService:
         postulacion.fecha_actualizacion = datetime.now()
         
         return postulacion
+
+    @staticmethod
+    def es_postulacion_activa(estado_postulacion: str, estado_convocatoria: str) -> bool:
+        """
+        Determina si una postulación se considera 'activa' o pertenece al 'historial'.
+        Regla de negocio pura (DDD) extraída de la capa de Presentación (React).
+        
+        Args:
+            estado_postulacion: ej. 'en_revision', 'aprobada', 'rechazada'
+            estado_convocatoria: ej. 'abierta', 'cerrada'
+        """
+        is_conv_closed = estado_convocatoria in ['cerrada', 'closed', 'finalizada']
+        
+        # Es historial si fue rechazada, o si la convocatoria cerró 
+        # (pero se mantiene activa si la convocatoria cerró y aún seguimos en revisión/espera)
+        is_history = (estado_postulacion == 'rechazada') or (
+            is_conv_closed and estado_postulacion not in ['en_revision', 'en_espera']
+        )
+        
+        return not is_history

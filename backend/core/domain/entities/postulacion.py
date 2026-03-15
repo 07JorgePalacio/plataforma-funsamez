@@ -25,6 +25,8 @@ class Postulacion:
     
     # --- 3. Logística/Configuración ---
     estado: str = "en_revision"  # en_revision, aprobada, rechazada
+    estado_convocatoria: Optional[str] = None
+    es_activa: Optional[bool] = None
     
     # --- 4. Tiempos ---
     fecha_postulacion: Optional[datetime] = None
