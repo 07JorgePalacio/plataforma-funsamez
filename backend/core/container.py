@@ -187,7 +187,8 @@ class Container:
             postulacion_repository=Container.get_postulacion_repository(),
             notificacion_repository=Container.get_notificacion_repository(),
             email_service=Container.get_email_service(),
-            convocatoria_repository=Container.get_convocatoria_repository()
+            convocatoria_repository=Container.get_convocatoria_repository(),
+            user_repository=Container.get_user_repository()
         )
 
     @staticmethod
