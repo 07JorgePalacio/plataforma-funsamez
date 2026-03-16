@@ -6,15 +6,18 @@ class RegisterUserSerializer(serializers.Serializer):
     correo_electronico = serializers.EmailField()
     contrasena = serializers.CharField(min_length=8, write_only=True)
     
-    # --- 2. Datos de Contacto ---
-    numero_telefono = serializers.CharField(required=False, allow_blank=True)
-    direccion = serializers.CharField(required=False, allow_blank=True)
-
-    # --- 3. Perfil del Voluntario ---
-    fecha_nacimiento = serializers.DateField(required=True)
+    # --- 2. Información Personal ---
     tipo_documento = serializers.CharField(required=True, max_length=10)
     numero_identificacion = serializers.CharField(required=True, max_length=20)
+    fecha_nacimiento = serializers.DateField(required=True)
     profesion = serializers.CharField(required=False, allow_blank=True)
+
+    # --- 3. Datos de Contacto ---
+    numero_telefono = serializers.CharField(required=False, allow_blank=True)
+    direccion = serializers.CharField(required=False, allow_blank=True)
+    foto_perfil = serializers.ImageField(required=False, allow_null=True)
+
+    # --- 6. Perfil del Voluntario ---
     intereses = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
     )

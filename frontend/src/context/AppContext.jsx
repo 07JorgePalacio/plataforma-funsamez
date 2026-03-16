@@ -36,88 +36,111 @@ export const AppProvider = ({ children }) => {
         const token = localStorage.getItem('access_token');
         if (!token) return null;
 
-        const rol = localStorage.getItem('user_rol') || 'voluntario';
-        const nombre_completo = localStorage.getItem('user_nombre_completo') || (rol === 'administrador' ? 'Administrador' : 'Usuario');
-        const id = localStorage.getItem('user_id');
-        
+        // 1. Identificación y Credenciales
+        const nombre_completo = localStorage.getItem('user_nombre_completo') || '';
         const correo_electronico = localStorage.getItem('user_correo_electronico') || '';
-        const numero_telefono = localStorage.getItem('user_numero_telefono') || '';
-        const numero_identificacion = localStorage.getItem('user_numero_identificacion') || '';
-        const profesion = localStorage.getItem('user_profesion') || '';
-        const direccion = localStorage.getItem('user_direccion') || '';
-        const fecha_nacimiento = localStorage.getItem('user_fecha_nacimiento') || '';
-        const tipo_documento = localStorage.getItem('user_tipo_documento') || 'CC';
-        const foto_perfil = localStorage.getItem('user_foto_perfil') || null;
 
         if (!nombre_completo) return null;
 
+        // 2. Información Personal
+        const tipo_documento = localStorage.getItem('user_tipo_documento') || 'CC';
+        const numero_identificacion = localStorage.getItem('user_numero_identificacion') || '';
+        const fecha_nacimiento = localStorage.getItem('user_fecha_nacimiento') || '';
+        const profesion = localStorage.getItem('user_profesion') || '';
+
+        // 3. Contacto
+        const numero_telefono = localStorage.getItem('user_numero_telefono') || '';
+        const direccion = localStorage.getItem('user_direccion') || '';
+        const foto_perfil = localStorage.getItem('user_foto_perfil') || null;
+
+        // 4. Config y Estado
+        const rol = localStorage.getItem('user_rol') || 'voluntario';
+        const estado = localStorage.getItem('user_estado') || 'activo';
+        const autenticacion_2fa_habilitada = localStorage.getItem('user_2fa') === 'true';
+
+        // 5. Tiempos
+        const id = localStorage.getItem('user_id');
+
+        // 6. Listas y JSON
+        let intereses = [];
         let habilidades = [];
-        let disponibilidad = {};
-        let intereses = []; 
+        let disponibilidad = {}; 
         try {
+            const ints = localStorage.getItem('user_intereses'); 
             const habs = localStorage.getItem('user_habilidades');
             const disp = localStorage.getItem('user_disponibilidad');
-            const ints = localStorage.getItem('user_intereses'); 
+            if (ints) intereses = JSON.parse(ints); 
             if (habs) habilidades = JSON.parse(habs);
             if (disp) disponibilidad = JSON.parse(disp);
-            if (ints) intereses = JSON.parse(ints); 
         } catch (e) {
             console.error("Error al cargar los datos del usuario:", e);
         }
 
         return { 
-            nombre_completo, 
-            rol, 
-            id: id ? parseInt(id) : null, 
+            nombre_completo,
             correo_electronico,
-            numero_telefono,
+            tipo_documento,
             numero_identificacion,
+            fecha_nacimiento,
             profesion,
-            direccion,          
-            fecha_nacimiento,   
-            tipo_documento,     
+            numero_telefono,
+            direccion,
+            foto_perfil,
+            rol,
+            estado,
+            autenticacion_2fa_habilitada,
+            id: id ? parseInt(id) : null,
             intereses,          
             habilidades, 
-            disponibilidad,
-            foto_perfil
+            disponibilidad
         };
     });
 
     const login = (userData, tokens) => {
-        // 1. Persistencia física para que resista el F5
+        // 1. Persistencia física (Orden Maestro)
         localStorage.setItem('access_token', tokens.access);
         localStorage.setItem('refresh_token', tokens.refresh);
-        localStorage.setItem('user_rol', userData.rol);
-        localStorage.setItem('user_nombre_completo', userData.nombre_completo);
-        localStorage.setItem('user_id', userData.id);
+
+        localStorage.setItem('user_nombre_completo', userData.nombre_completo || '');
         localStorage.setItem('user_correo_electronico', userData.correo_electronico || '');
-        localStorage.setItem('user_numero_telefono', userData.numero_telefono || '');
-        localStorage.setItem('user_numero_identificacion', userData.numero_identificacion || '');
-        localStorage.setItem('user_profesion', userData.profesion || '');
-        localStorage.setItem('user_direccion', userData.direccion || '');
-        localStorage.setItem('user_fecha_nacimiento', userData.fecha_nacimiento || '');
+
         localStorage.setItem('user_tipo_documento', userData.tipo_documento || 'CC');
+        localStorage.setItem('user_numero_identificacion', userData.numero_identificacion || '');
+        localStorage.setItem('user_fecha_nacimiento', userData.fecha_nacimiento || '');
+        localStorage.setItem('user_profesion', userData.profesion || '');
+
+        localStorage.setItem('user_numero_telefono', userData.numero_telefono || '');
+        localStorage.setItem('user_direccion', userData.direccion || '');
         localStorage.setItem('user_foto_perfil', userData.foto_perfil || '');
+
+        localStorage.setItem('user_rol', userData.rol || 'voluntario');
+        localStorage.setItem('user_estado', userData.estado || 'activo');
+        localStorage.setItem('user_2fa', userData.autenticacion_2fa_habilitada || false);
+
+        localStorage.setItem('user_id', userData.id || '');
+
+        localStorage.setItem('user_intereses', JSON.stringify(userData.intereses || []));
         localStorage.setItem('user_habilidades', JSON.stringify(userData.habilidades || []));
         localStorage.setItem('user_disponibilidad', JSON.stringify(userData.disponibilidad || {}));
-        localStorage.setItem('user_intereses', JSON.stringify(userData.intereses || []));
 
         // 2. Reactividad instantánea: Avisamos a React que el usuario cambió
         setUser({
-            id: userData.id,
             nombre_completo: userData.nombre_completo,
-            rol: userData.rol,
             correo_electronico: userData.correo_electronico,
-            numero_telefono: userData.numero_telefono,
-            numero_identificacion: userData.numero_identificacion,
-            profesion: userData.profesion,
-            direccion: userData.direccion,
-            fecha_nacimiento: userData.fecha_nacimiento,
             tipo_documento: userData.tipo_documento,
+            numero_identificacion: userData.numero_identificacion,
+            fecha_nacimiento: userData.fecha_nacimiento,
+            profesion: userData.profesion,
+            numero_telefono: userData.numero_telefono,
+            direccion: userData.direccion,
+            foto_perfil: userData.foto_perfil,
+            rol: userData.rol,
+            estado: userData.estado,
+            autenticacion_2fa_habilitada: userData.autenticacion_2fa_habilitada,
+            id: userData.id,
             intereses: userData.intereses || [],
             habilidades: userData.habilidades || [],
-            disponibilidad: userData.disponibilidad || {},
-            foto_perfil: userData.foto_perfil
+            disponibilidad: userData.disponibilidad || {}
         });
     };
 
@@ -138,21 +161,26 @@ export const AppProvider = ({ children }) => {
                 ...updatedUser
             }));
             
-            // 3. Blindaje total: Actualizamos el localStorage para que no se borre al recargar
+            // 3. Blindaje total: Actualizamos el localStorage (Orden Maestro)
             localStorage.setItem('user_nombre_completo', updatedUser.nombre_completo || '');
             localStorage.setItem('user_correo_electronico', updatedUser.correo_electronico || '');
-            localStorage.setItem('user_numero_telefono', updatedUser.numero_telefono || '');
-            localStorage.setItem('user_numero_identificacion', updatedUser.numero_identificacion || '');
-            localStorage.setItem('user_profesion', updatedUser.profesion || '');
-            localStorage.setItem('user_direccion', updatedUser.direccion || '');
-            localStorage.setItem('user_fecha_nacimiento', updatedUser.fecha_nacimiento || '');
+
             localStorage.setItem('user_tipo_documento', updatedUser.tipo_documento || 'CC');
-            localStorage.setItem('user_intereses', JSON.stringify(updatedUser.intereses || []));
-            
+            localStorage.setItem('user_numero_identificacion', updatedUser.numero_identificacion || '');
+            localStorage.setItem('user_fecha_nacimiento', updatedUser.fecha_nacimiento || '');
+            localStorage.setItem('user_profesion', updatedUser.profesion || '');
+
+            localStorage.setItem('user_numero_telefono', updatedUser.numero_telefono || '');
+            localStorage.setItem('user_direccion', updatedUser.direccion || '');
             if (updatedUser.foto_perfil) {
                 localStorage.setItem('user_foto_perfil', updatedUser.foto_perfil);
             }
-            
+
+            localStorage.setItem('user_rol', updatedUser.rol || 'voluntario');
+            localStorage.setItem('user_estado', updatedUser.estado || 'activo');
+            localStorage.setItem('user_2fa', updatedUser.autenticacion_2fa_habilitada || false);
+
+            localStorage.setItem('user_intereses', JSON.stringify(updatedUser.intereses || []));
             localStorage.setItem('user_habilidades', JSON.stringify(updatedUser.habilidades || []));
             localStorage.setItem('user_disponibilidad', JSON.stringify(updatedUser.disponibilidad || {}));
             

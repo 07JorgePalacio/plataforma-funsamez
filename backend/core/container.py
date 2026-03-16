@@ -157,14 +157,16 @@ class Container:
     def listar_mis_postulaciones_use_case() -> ListarMisPostulacionesUseCase:
         return ListarMisPostulacionesUseCase(
             postulacion_repository=Container.get_postulacion_repository(),
-            convocatoria_repository=Container.get_convocatoria_repository()
+            convocatoria_repository=Container.get_convocatoria_repository(),
+            user_repository=Container.get_user_repository()
         )
 
     @staticmethod
     def listar_todas_postulaciones_use_case() -> ListarTodasPostulacionesUseCase:
         return ListarTodasPostulacionesUseCase(
             postulacion_repository=Container.get_postulacion_repository(),
-            convocatoria_repository=Container.get_convocatoria_repository()
+            convocatoria_repository=Container.get_convocatoria_repository(),
+            user_repository=Container.get_user_repository()
         )
 
     @staticmethod

@@ -3,7 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from core.container import Container
-from core.adapters.api.rest.serializers.postulacion_serializers import PostularVoluntarioSerializer
+from core.adapters.api.rest.serializers.postulacion_serializers import (
+    PostularVoluntarioSerializer,
+    PostulacionResponseSerializer
+)
 
 class PostularVoluntarioView(APIView):
     """
