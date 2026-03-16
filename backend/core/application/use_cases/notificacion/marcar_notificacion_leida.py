@@ -1,4 +1,5 @@
 from core.application.ports.output.notificacion_repository import NotificacionRepository
+from core.domain.exceptions.notificacion_exceptions import NotificacionNoEncontradaError
 
 class MarcarNotificacionLeidaUseCase:
     
@@ -8,6 +9,6 @@ class MarcarNotificacionLeidaUseCase:
     def execute(self, id_notificacion: int) -> bool:
         exito = self.notificacion_repository.marcar_como_leida(id_notificacion)
         if not exito:
-            raise ValueError(f"La notificación con ID {id_notificacion} no existe o no pudo ser actualizada.")
+            raise NotificacionNoEncontradaError(id_notificacion)
         return True
     

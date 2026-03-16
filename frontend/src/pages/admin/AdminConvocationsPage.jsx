@@ -33,7 +33,7 @@ const mapBackendToForm = (convocation) => {
     }
     return {
         id: convocation.id, title: convocation.titulo || '', description: convocation.descripcion || '', location: convocation.ubicacion || '',
-        link_google_maps: convocation.link_google_maps || '', whatsappGroupLink: convocation.link_whatsapp || '', modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', spots: convocation.cupos_disponibles || 1, cupos_ocupados: convocation.cupos_ocupados || 0,
+        link_google_maps: convocation.link_google_maps || '', whatsappGroupLink: convocation.link_whatsapp || '', modalidad: convocation.modalidad ? convocation.modalidad.toLowerCase() : 'presencial', spots: convocation.cupos_disponibles || 1, cupos_ocupados: convocation.cupos_ocupados || 0, porcentaje_cupos: convocation.porcentaje_cupos || 0,
         startDate: tipoHorario === 'recurrente' && convocation.fecha_inicio ? convocation.fecha_inicio.split('T')[0] : '',
         endDate: tipoHorario === 'recurrente' && convocation.fecha_fin ? convocation.fecha_fin.split('T')[0] : '',
         categorias: convocation.categorias || [], skills: skillsArray, beneficios: convocation.beneficios || [], 
@@ -625,7 +625,7 @@ export default function AdminConvocationsPage() {
                                                         <span className="font-bold">{convocation.cupos_ocupados || 0} / {convocation.spots || convocation.cupos_disponibles}</span>
                                                     </div>
                                                     <div className="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                                                        <div className={`h-full transition-all duration-500 rounded-full ${(convocation.cupos_ocupados || 0) >= (convocation.spots || convocation.cupos_disponibles) ? 'bg-error' : 'bg-primary'}`} style={{ width: `${Math.min(100, ((convocation.cupos_ocupados || 0) / (convocation.spots || convocation.cupos_disponibles)) * 100)}%` }}></div>
+                                                        <div className={`h-full transition-all duration-500 rounded-full ${convocation.porcentaje_cupos >= 100 ? 'bg-error' : 'bg-primary'}`} style={{ width: `${convocation.porcentaje_cupos}%` }}></div>
                                                     </div>
                                                 </div>
                                             </div>

@@ -34,8 +34,8 @@ export default function Header() {
 
     //  AppContext
     const isAuthenticated = !!user;
-    const isAdmin = user?.role === 'administrador';
-    const isVolunteer = user?.role === 'voluntario';
+    const isAdmin = user?.rol === 'administrador';
+    const isVolunteer = user?.rol === 'voluntario';
 
     // Solo dejamos Campañas y Convocatorias (Sin Inicio por ahora)
     const publicLinks = [
@@ -119,7 +119,7 @@ export default function Header() {
                                                 <User className="w-4 h-4 text-white" />
                                             </div>
                                             <span className="hidden sm:block text-label-large font-bold text-on-surface pr-2 pl-1">
-                                                {user?.name?.split(' ')[0] || 'Mi Cuenta'}
+                                                {user?.nombre_completo?.split(' ')[0] || 'Mi Cuenta'}
                                             </span>
                                             <ChevronDown className={`w-4 h-4 text-on-surface-variant transition-transform duration-300 mr-1 ${userMenuOpen ? 'rotate-180' : ''}`} />
                                         </button>
@@ -127,9 +127,9 @@ export default function Header() {
                                         {/* Menú Desplegable */}
                                         <div className={`absolute right-0 mt-3 w-64 bg-surface/70 backdrop-blur-lg rounded-2xl shadow-elevation-3 border border-outline-variant/30 overflow-hidden origin-top-right transition-all duration-200 ease-out z-[60] ${userMenuOpen ? 'opacity-100 scale-100 visible translate-y-0' : 'opacity-0 scale-95 invisible -translate-y-2'}`}>
                                             <div className="p-4 bg-surface-container-lowest/20 border-b border-outline-variant/30">
-                                                <p className="text-label-medium text-on-surface font-bold truncate">{user?.name}</p>
-                                                <p className="text-[11px] text-on-surface-variant uppercase tracking-wider font-medium">{user?.role}</p>
-                                            </div>
+                                            <p className="text-label-medium text-on-surface font-bold truncate">{user?.nombre_completo}</p>
+                                            <p className="text-[11px] text-on-surface-variant uppercase tracking-wider font-medium">{user?.rol}</p>
+                                        </div>
                                             
                                             <div className="p-2">
                                                 <Link to={getDashboardLink()} onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-body-medium text-on-surface hover:bg-primary/10 hover:text-primary transition-colors">

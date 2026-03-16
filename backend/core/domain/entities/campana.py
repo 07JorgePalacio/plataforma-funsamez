@@ -14,7 +14,7 @@ class Campana:
     imagen_url: str = "" # Foto Principal
 
     # 3. Tiempos y Estado
-    fecha_inicio: Optional[datetime] = None
+    fecha_inicio: Optional[date] = None
     fecha_fin: Optional[date] = None
     estado: str = "activa"
     fecha_creacion: Optional[datetime] = None

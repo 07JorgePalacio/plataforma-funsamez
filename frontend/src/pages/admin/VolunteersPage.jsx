@@ -287,8 +287,7 @@ function VolunteerDetailsModal({ application, onClose }) {
 }
 
 export default function VolunteersPage() {
-    // Traemos adminApplications y convocations del Contexto Real
-    const { adminApplications = [], convocations = [], updateApplicationStatus, deleteApplication, loading } = useApp();
+    const { postulacionesAdmin, convocations, updateEstadoPostulacion, deletePostulacion, loading } = useApp();
     const location = useLocation();
 
     const [activeTab, setActiveTab] = useState('pendientes');
@@ -314,7 +313,7 @@ export default function VolunteersPage() {
             async () => {
                 closeConfirm();
                 try { 
-                    await deleteApplication(id); 
+                    await deletePostulacion(id); 
                     showMessage("Postulación eliminada del historial.", "error");
                 } catch (error) { 
                     showMessage("Error al eliminar la postulación.", "error"); 
@@ -332,7 +331,7 @@ export default function VolunteersPage() {
     // Motor de Smart Scroll & Highlight
     useEffect(() => {
         const highlightId = location.state?.highlightId;
-        if (highlightId && !loading && adminApplications.length > 0) {
+        if (highlightId && !loading && postulacionesAdmin.length > 0) {
             setTimeout(() => {
                 const element = document.getElementById(`admin-volunteer-${highlightId}`);
                 if (element) {
@@ -347,10 +346,10 @@ export default function VolunteersPage() {
                 }
             }, 150);
         }
-    }, [location.state?.highlightId, loading, adminApplications.length]);
+    }, [location.state?.highlightId, loading, postulacionesAdmin.length]);
 
     const mappedApplications = useMemo(() => {
-        return adminApplications.map(app => {
+        return postulacionesAdmin.map(app => {
             const convocation = convocations.find(c => c.id === app.id_convocatoria);
             
             // Extraemos y normalizamos las habilidades requeridas de la convocatoria
@@ -376,7 +375,7 @@ export default function VolunteersPage() {
                 isConvocationClosed: isClosed
             };
         });
-    }, [adminApplications, convocations]);
+    }, [postulacionesAdmin, convocations]);
 
     // Lógica de Pestañas
     const rawList = mappedApplications.filter(app => {
@@ -396,7 +395,7 @@ export default function VolunteersPage() {
 
     const handleStatusChange = async (appId, newStatus, reason = null) => {
         try {
-            await updateApplicationStatus(appId, newStatus, reason);
+            await updateEstadoPostulacion(appId, newStatus, reason);
             if (newStatus === 'aprobada') showMessage("¡Voluntario aprobado con éxito!", "success");
             else if (newStatus === 'en_espera') showMessage("Postulación puesta en espera.", "warning");
             else if (newStatus === 'en_revision') showMessage("Postulación devuelta a pendientes.", "info");

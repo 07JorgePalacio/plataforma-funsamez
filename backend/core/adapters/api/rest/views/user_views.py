@@ -9,7 +9,11 @@ from core.container import Container
 from core.adapters.api.rest.serializers.user_serializers import RegisterUserSerializer, LoginUserSerializer, ActualizarPerfilSerializer
 from core.domain.exceptions.user_exceptions import (
     EmailDuplicadoError,
-    UsuarioMenorDeEdadError
+    UsuarioMenorDeEdadError,
+    FormatoEmailInvalidoError,
+    CredencialesInvalidasError,
+    UsuarioInactivoError,
+    UsuarioNoEncontradoError
 )
 
 class RegisterUserView(APIView):
@@ -25,14 +29,15 @@ class RegisterUserView(APIView):
         try:
             user_entity = Container.register_user_use_case().execute(
                 nombre_completo=data['nombre_completo'],
-                email=data['email'],
-                password=data['password'],
+                correo_electronico=data['correo_electronico'],
+                contrasena=data['contrasena'],
                 tipo_documento=data.get('tipo_documento', 'CC'),
                 numero_identificacion=data.get('numero_identificacion'),
-                telefono=data.get('telefono'),
-                direccion=data.get('direccion'),
                 fecha_nacimiento=data.get('fecha_nacimiento'),
                 profesion=data.get('profesion'),
+                numero_telefono=data.get('numero_telefono'),
+                direccion=data.get('direccion'),
+                foto_perfil=data.get('foto_perfil'),
                 intereses=data.get('intereses', []),
                 habilidades=data.get('habilidades', []),
                 disponibilidad=data.get('disponibilidad', {})
@@ -42,9 +47,9 @@ class RegisterUserView(APIView):
                 "message": "Usuario registrado exitosamente",
                 "user": {
                     "id": user_entity.id,
-                    "full_name": user_entity.nombre_completo,
-                    "email": user_entity.correo_electronico,
-                    "role": user_entity.rol
+                    "nombre_completo": user_entity.nombre_completo,
+                    "correo_electronico": user_entity.correo_electronico,
+                    "rol": user_entity.rol
                 }
             }, status=status.HTTP_201_CREATED)
 
@@ -57,6 +62,9 @@ class RegisterUserView(APIView):
             
         except UsuarioMenorDeEdadError as e:
             # Atrapa el error de minoría de edad y devuelve un 400
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except FormatoEmailInvalidoError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         except ValueError as e:
@@ -81,8 +89,8 @@ class LoginUserView(APIView):
         try:
             # 1. Delegar TODA la lógica de negocio al Caso de Uso
             user_entity = Container.login_user_use_case().execute(
-                email=data['email'],
-                password=data['password']
+                email=data['correo_electronico'],
+                password=data['contrasena']
             )
 
             # 2. Generar tokens JWT manualmente 
@@ -98,24 +106,26 @@ class LoginUserView(APIView):
                 },
                 "user": {
                     "id": user_entity.id,
-                    "full_name": user_entity.nombre_completo,
-                    "email": user_entity.correo_electronico,
-                    "role": user_entity.rol,
-                    "numero_telefono": getattr(user_entity, 'numero_telefono', getattr(user_entity, 'telefono', '')),
-                    "numero_identificacion": getattr(user_entity, 'numero_identificacion', getattr(user_entity, 'documento', '')),
-                    "profesion": getattr(user_entity, 'profesion', getattr(user_entity, 'ocupacion', '')),
-                    "direccion": getattr(user_entity, 'direccion', ''),
-                    "fecha_nacimiento": str(getattr(user_entity, 'fecha_nacimiento', '')) if getattr(user_entity, 'fecha_nacimiento', None) else None,
-                    "tipo_documento": getattr(user_entity, 'tipo_documento', 'CC'),
-                    "intereses": getattr(user_entity, 'intereses', []),
-                    "habilidades": getattr(user_entity, 'habilidades', []),
-                    "disponibilidad": getattr(user_entity, 'disponibilidad', {}),
-                    "foto_perfil": getattr(user_entity, 'foto_perfil', None)
+                    "nombre_completo": user_entity.nombre_completo,
+                    "correo_electronico": user_entity.correo_electronico,
+                    "rol": user_entity.rol,
+                    "numero_telefono": user_entity.numero_telefono,
+                    "numero_identificacion": user_entity.numero_identificacion,
+                    "profesion": user_entity.profesion,
+                    "direccion": user_entity.direccion,
+                    "fecha_nacimiento": str(user_entity.fecha_nacimiento) if user_entity.fecha_nacimiento else None,
+                    "tipo_documento": user_entity.tipo_documento,
+                    "intereses": user_entity.intereses or [],
+                    "habilidades": user_entity.habilidades or [],
+                    "disponibilidad": user_entity.disponibilidad or {},
+                    "foto_perfil": user_entity.foto_perfil
                 }
             }, status=status.HTTP_200_OK)
 
+        except (CredencialesInvalidasError, UsuarioInactivoError) as e:
+            return Response({"non_field_errors": [str(e)]}, status=status.HTTP_401_UNAUTHORIZED)
         except ValueError as e:
-            # Si el caso de uso lanza un ValueError por credenciales inválidas
+            # Fallback de seguridad
             return Response({"non_field_errors": [str(e)]}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
             print(f"❌ ERROR LOGIN: {e}")
@@ -169,22 +179,24 @@ class ActualizarPerfilView(APIView):
                 "message": "Perfil actualizado exitosamente",
                 "user": {
                     "id": user_entity.id,
-                    "full_name": user_entity.nombre_completo,
-                    "email": user_entity.correo_electronico,
-                    "role": user_entity.rol,
-                    "numero_telefono": getattr(user_entity, 'numero_telefono', getattr(user_entity, 'telefono', '')),
-                    "numero_identificacion": getattr(user_entity, 'numero_identificacion', getattr(user_entity, 'documento', '')),
-                    "profesion": getattr(user_entity, 'profesion', getattr(user_entity, 'ocupacion', '')),
-                    "direccion": getattr(user_entity, 'direccion', ''),
-                    "fecha_nacimiento": str(getattr(user_entity, 'fecha_nacimiento', '')) if getattr(user_entity, 'fecha_nacimiento', None) else None,
-                    "tipo_documento": getattr(user_entity, 'tipo_documento', 'CC'),
-                    "intereses": getattr(user_entity, 'intereses', []),
-                    "habilidades": getattr(user_entity, 'habilidades', []),
-                    "disponibilidad": getattr(user_entity, 'disponibilidad', {}),
-                    "foto_perfil": getattr(user_entity, 'foto_perfil', None)
+                    "nombre_completo": user_entity.nombre_completo,
+                    "correo_electronico": user_entity.correo_electronico,
+                    "rol": user_entity.rol,
+                    "numero_telefono": user_entity.numero_telefono,
+                    "numero_identificacion": user_entity.numero_identificacion,
+                    "profesion": user_entity.profesion,
+                    "direccion": user_entity.direccion,
+                    "fecha_nacimiento": str(user_entity.fecha_nacimiento) if user_entity.fecha_nacimiento else None,
+                    "tipo_documento": user_entity.tipo_documento,
+                    "intereses": user_entity.intereses or [],
+                    "habilidades": user_entity.habilidades or [],
+                    "disponibilidad": user_entity.disponibilidad or {},
+                    "foto_perfil": user_entity.foto_perfil
                 }
             }, status=status.HTTP_200_OK)
 
+        except UsuarioNoEncontradoError as e:
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:

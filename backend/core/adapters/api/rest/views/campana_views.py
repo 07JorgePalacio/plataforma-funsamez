@@ -17,27 +17,23 @@ class CrearCampanaView(APIView):
         data = serializer.validated_data
         
         try:
-            # 2. Ejecutar Caso de Uso con datos limpios
+            # 2. Ejecutar Caso de Uso con datos limpios (Orden Maestro)
             nueva_campana = Container.crear_campana_use_case().execute(
-                # Básicos
+                id_usuario=request.user.id,
                 titulo=data['titulo'],
                 descripcion=data['descripcion'],
-                # Tiempos
+                imagen_url=data.get('imagen_url', ''),
                 fecha_inicio=data['fecha_inicio'],
                 fecha_fin=data['fecha_fin'],
-                # Identificación
-                id_usuario=request.user.id,
-                # Financiero
                 monto_objetivo=data.get('monto_objetivo', 0),
-                permite_monetaria=data.get('permite_donacion_monetaria', True),
-                permite_especie=data.get('permite_donacion_especie', True),
-                # Listas / JSON
-                imagen_url=data.get('imagen_url', ''),
-                categoria=data.get('categoria', []),
-                tipo_impacto=data.get('tipo_impacto', []),
+                permite_donacion_monetaria=data.get('permite_donacion_monetaria', True),
+                permite_donacion_especie=data.get('permite_donacion_especie', True),
                 objetivos=data.get('objetivos', []),
-                galeria=data.get('galeria_imagenes', []),
-                necesidades=data.get('necesidades', [])
+                galeria_imagenes=data.get('galeria_imagenes', []),
+                video_urls=data.get('video_urls', []),
+                necesidades=data.get('necesidades', []),
+                categoria=data.get('categoria', []),
+                tipo_impacto=data.get('tipo_impacto', [])
             )
             
             return Response(

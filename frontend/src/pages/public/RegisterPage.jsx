@@ -74,10 +74,10 @@ const RegisterPage = () => {
   const [countryCode, setCountryCode] = useState('+57');
   const [formData, setFormData] = useState({
     nombre_completo: '',
-    email: '',
-    password: '',
+    correo_electronico: '',
+    contrasena: '',
     confirmPassword: '',
-    telefono: '', 
+    numero_telefono: '', 
     fecha_nacimiento: '',
     tipo_documento: 'CC',
     numero_identificacion: '',
@@ -102,7 +102,7 @@ const RegisterPage = () => {
   useEffect(() => {
     if (formData.confirmPassword.length > 0) {
       // Si lo que va escribiendo NO es el inicio exacto de la contraseña, lanza error al instante
-      if (!formData.password.startsWith(formData.confirmPassword)) {
+      if (!formData.contrasena.startsWith(formData.confirmPassword)) {
         setErrors(prev => ({ 
           ...prev, 
           confirmPassword: "Las contraseñas no coinciden." 
@@ -116,7 +116,7 @@ const RegisterPage = () => {
         });
       }
     }
-  }, [formData.password, formData.confirmPassword]);
+  }, [formData.contrasena, formData.confirmPassword]);
 
   // Manejador de Inputs con restricción numérica
   const handleChange = (e, numericOnly = false) => {
@@ -171,10 +171,10 @@ const RegisterPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (formData.password.length < 8) {
-      newErrors.password = ["La contraseña debe tener mínimo 8 caracteres."];
+    if (formData.contrasena.length < 8) {
+      newErrors.contrasena = ["La contraseña debe tener mínimo 8 caracteres."];
     }
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.contrasena !== formData.confirmPassword) {
       newErrors.confirmPassword = ["Las contraseñas no coinciden."];
     }
     if (!formData.numero_identificacion) {
@@ -199,7 +199,7 @@ const RegisterPage = () => {
     try {
       const payload = {
           ...formData,
-          telefono: formData.telefono ? `${countryCode} ${formData.telefono}` : ''
+          numero_telefono: formData.numero_telefono ? `${countryCode} ${formData.numero_telefono}` : ''
       };
 
       await axios.post('http://127.0.0.1:8000/api/users/register/', payload);
@@ -355,7 +355,7 @@ const RegisterPage = () => {
 
           <div className="md:col-span-2 pb-2 border-b border-outline-variant text-on-surface-variant font-bold uppercase text-xs tracking-wider mt-6 mb-2">Acceso y Contacto</div>
 
-          <InputField label="Correo Electrónico" name="email" type="email" required placeholder="ejemplo@correo.com" formData={formData} handleChange={handleChange} errors={errors} />
+          <InputField label="Correo Electrónico" name="correo_electronico" type="email" required placeholder="ejemplo@correo.com" formData={formData} handleChange={handleChange} errors={errors} />
           
           {/* GRUPO TELÉFONO: CÓDIGO PAIS + NUMERO */}
           <div className="space-y-1">
@@ -371,10 +371,10 @@ const RegisterPage = () => {
                     </select>
                 </div>
                 <input 
-                    name="telefono"
+                    name="numero_telefono"
                     type="tel"
                     placeholder="300 123 4567"
-                    value={formData.telefono}
+                    value={formData.numero_telefono}
                     onChange={(e) => handleChange(e, true)}
                     className="w-2/3 px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container outline-none focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-on-surface"
                 />
@@ -389,19 +389,19 @@ const RegisterPage = () => {
               <label className="text-sm font-semibold text-on-surface">Contraseña <span className="text-error">*</span></label>
               <div className="relative">
                 <input 
-                  name="password" 
+                  name="contrasena" 
                   type={showPassword ? "text" : "password"} 
                   required 
-                  value={formData.password} 
+                  value={formData.contrasena} 
                   onChange={handleChange} 
                   placeholder="Mínimo 8 caracteres"
-                  className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all pr-12 ${errors.password ? "border-error bg-error-container text-error" : "border-outline-variant bg-surface-container focus:bg-white focus:border-primary text-on-surface"}`} 
+                  className={`w-full px-4 py-2.5 rounded-xl border outline-none transition-all pr-12 ${errors.contrasena ? "border-error bg-error-container text-error" : "border-outline-variant bg-surface-container focus:bg-white focus:border-primary text-on-surface"}`} 
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant hover:text-primary p-1">
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {errors.password && <div className="flex items-center mt-1 text-error animate-pulse"><AlertCircle size={14} className="mr-1" /><span className="text-xs font-bold">{errors.password}</span></div>}
+              {errors.contrasena && <div className="flex items-center mt-1 text-error animate-pulse"><AlertCircle size={14} className="mr-1" /><span className="text-xs font-bold">{errors.contrasena}</span></div>}
             </div>
 
             {/* Confirmar Contraseña */}

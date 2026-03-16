@@ -115,7 +115,108 @@ class ConvocatoriaService:
                     return True
         
         return False
+
+    @staticmethod
+    def validar_periodo(fecha_inicio, fecha_fin) -> bool:
+        """
+        Valida que la fecha de fin sea estrictamente posterior a la fecha de inicio.
+        """
+        return fecha_inicio < fecha_fin
+
+    @staticmethod
+    def validar_cupos(cupos: int) -> bool:
+        """
+        Valida que la cantidad de cupos disponibles sea mayor a cero.
+        """
+        return cupos > 0
     
+    @staticmethod
+    def calcular_porcentaje_cupos(convocatoria: Convocatoria) -> float:
+        """
+        Calcula el porcentaje matemático de cupos ocupados (0 a 100).
+        """
+        cupos_ocupados = getattr(convocatoria, 'cupos_ocupados', 0)
+        cupos_disp = getattr(convocatoria, 'cupos_disponibles', 0)
+        
+        if not cupos_disp or cupos_disp <= 0:
+            return 0.0
+            
+        return min((cupos_ocupados / cupos_disp) * 100, 100.0)
+
+    @staticmethod
+    def calcular_match_score(convocatoria: Convocatoria, usuario) -> dict:
+        """
+        Calcula el desglose de compatibilidad (Match Score) entre una convocatoria y un usuario.
+        Lógica pura de negocio (DDD) extraída del frontend.
+        """
+        if not usuario:
+            return {"total": 0, "habilidades": 0, "disponibilidad": False}
+            
+        hab_user = getattr(usuario, 'habilidades', []) or []
+        disp_user = getattr(usuario, 'disponibilidad', {}) or {}
+        
+        # Normalizar habilidades de la convocatoria
+        hab_req_raw = getattr(convocatoria, 'habilidades_requeridas', "") or ""
+        if isinstance(hab_req_raw, list):
+            hab_req = [str(h).strip().lower() for h in hab_req_raw]
+        else:
+            hab_req = [h.strip().lower() for h in str(hab_req_raw).split(',')] if hab_req_raw else []
+            
+        horario_req = getattr(convocatoria, 'horario', {}) or {}
+        
+        # --- 1. Match de Habilidades (Base 50 puntos) ---
+        hab_score = 50
+        porcentaje_hab = 100
+        if hab_req:
+            coincidencias = 0
+            for req in hab_req:
+                if any(req in hu.lower() or hu.lower() in req for hu in hab_user):
+                    coincidencias += 1
+            hab_score = int((coincidencias / len(hab_req)) * 50)
+            porcentaje_hab = int((coincidencias / len(hab_req)) * 100)
+            
+        # --- 2. Match de Disponibilidad (Base 50 puntos) ---
+        disp_score = 50
+        disp_match = True
+        dias_map = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+        
+        tipo_horario = horario_req.get('tipo')
+        if not tipo_horario:
+            # Deducir tipo si no viene explícito
+            tipo_horario = 'recurrente' if any(dia in horario_req for dia in dias_map) else 'unico'
+        
+        if tipo_horario == 'recurrente':
+            dias_req = [k for k in horario_req.keys() if k in dias_map]
+            if dias_req:
+                disp_score = 0
+                disp_match = False
+                for dia in dias_req:
+                    if dia in disp_user and disp_user[dia]:
+                        disp_score = 50
+                        disp_match = True
+                        break
+        elif tipo_horario == 'unico':
+            fecha_evento = horario_req.get('fecha')
+            if fecha_evento:
+                disp_score = 0
+                disp_match = False
+                try:
+                    # Convertir "YYYY-MM-DD" al día de la semana
+                    from datetime import datetime
+                    fecha_obj = datetime.strptime(fecha_evento, "%Y-%m-%d")
+                    dia_semana = dias_map[fecha_obj.weekday()]
+                    if dia_semana in disp_user and disp_user[dia_semana]:
+                        disp_score = 50
+                        disp_match = True
+                except ValueError:
+                    pass
+                    
+        return {
+            "total": hab_score + disp_score,
+            "habilidades": porcentaje_hab,
+            "disponibilidad": disp_match
+        }
+
     @staticmethod
     def clasificar_urgencia(convocatoria: Convocatoria) -> str:
         """

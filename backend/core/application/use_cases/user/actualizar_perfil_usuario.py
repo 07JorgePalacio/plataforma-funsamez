@@ -2,6 +2,7 @@ from typing import Dict, Any
 from core.application.ports.input.user_use_cases import ActualizarPerfilUsuarioInputPort
 from core.application.ports.output.user_repository import UserRepository
 from core.domain.entities.user import User
+from core.domain.exceptions.user_exceptions import UsuarioNoEncontradoError
 
 class ActualizarPerfilUsuarioUseCase(ActualizarPerfilUsuarioInputPort):
     def __init__(self, user_repository: UserRepository):
@@ -23,6 +24,6 @@ class ActualizarPerfilUsuarioUseCase(ActualizarPerfilUsuarioInputPort):
         
         # 3. Validamos que el usuario realmente existiera
         if not usuario_actualizado:
-            raise ValueError(f"No se pudo actualizar: Usuario con ID {user_id} no encontrado.")
+            raise UsuarioNoEncontradoError(str(user_id))
             
         return usuario_actualizado

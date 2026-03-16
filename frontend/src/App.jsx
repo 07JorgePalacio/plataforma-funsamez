@@ -19,7 +19,7 @@ import VolunteerLayout from './pages/volunteer/VolunteerLayout';
 import VolunteerDashboard from './pages/volunteer/VolunteerDashboard';
 import ProfilePage from './pages/volunteer/ProfilePage';
 import ConvocationsPage from './pages/volunteer/ConvocationsPage';
-import MyApplicationsPage from './pages/volunteer/MyApplicationsPage';
+import MisPostulacionesPage from './pages/volunteer/MisPostulacionesPage';
 
 function App() {
   return (
@@ -51,7 +51,7 @@ function App() {
             <Route index element={<VolunteerDashboard />} />
             <Route path="perfil" element={<ProfilePage />} />
             <Route path="convocatorias" element={<ConvocationsPage />} />
-            <Route path="postulaciones" element={<MyApplicationsPage />} />
+            <Route path="postulaciones" element={<MisPostulacionesPage />} />
           </Route>
 
         </Routes>

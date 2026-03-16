@@ -22,9 +22,10 @@ export const AppProvider = ({ children }) => {
     // --- ESTADOS GLOBALES ---
     const [convocations, setConvocations] = useState([]);
     const [campaigns, setCampaigns] = useState([]); 
-    const [myApplications, setMyApplications] = useState([]);
-    const [adminApplications, setAdminApplications] = useState([]); 
-    const [notifications, setNotifications] = useState([]); 
+    const [misPostulaciones, setMisPostulaciones] = useState([]);
+    const [postulacionesAdmin, setPostulacionesAdmin] = useState([]); 
+    const [notificaciones, setNotificaciones] = useState([]); 
+    const [conteoNoLeidas, setConteoNoLeidas] = useState(0);
     const [loading, setLoading] = useState(true);
 
     // ==========================================
@@ -35,88 +36,111 @@ export const AppProvider = ({ children }) => {
         const token = localStorage.getItem('access_token');
         if (!token) return null;
 
-        const role = localStorage.getItem('user_role') || 'voluntario';
-        const name = localStorage.getItem('user_name') || (role === 'administrador' ? 'Administrador' : 'Usuario');
-        const id = localStorage.getItem('user_id');
-        
-        const correo_electronico = localStorage.getItem('user_email') || localStorage.getItem('user_correo_electronico') || '';
-        const numero_telefono = localStorage.getItem('user_telefono') || localStorage.getItem('user_numero_telefono') || '';
-        const numero_identificacion = localStorage.getItem('user_documento') || localStorage.getItem('user_numero_identificacion') || '';
-        const profesion = localStorage.getItem('user_profesion') || localStorage.getItem('user_ocupacion') || '';
-        const direccion = localStorage.getItem('user_direccion') || '';
-        const fecha_nacimiento = localStorage.getItem('user_fecha_nacimiento') || '';
+        // 1. Identificación y Credenciales
+        const nombre_completo = localStorage.getItem('user_nombre_completo') || '';
+        const correo_electronico = localStorage.getItem('user_correo_electronico') || '';
+
+        if (!nombre_completo) return null;
+
+        // 2. Información Personal
         const tipo_documento = localStorage.getItem('user_tipo_documento') || 'CC';
+        const numero_identificacion = localStorage.getItem('user_numero_identificacion') || '';
+        const fecha_nacimiento = localStorage.getItem('user_fecha_nacimiento') || '';
+        const profesion = localStorage.getItem('user_profesion') || '';
+
+        // 3. Contacto
+        const numero_telefono = localStorage.getItem('user_numero_telefono') || '';
+        const direccion = localStorage.getItem('user_direccion') || '';
         const foto_perfil = localStorage.getItem('user_foto_perfil') || null;
 
-        if (!name) return null;
+        // 4. Config y Estado
+        const rol = localStorage.getItem('user_rol') || 'voluntario';
+        const estado = localStorage.getItem('user_estado') || 'activo';
+        const autenticacion_2fa_habilitada = localStorage.getItem('user_2fa') === 'true';
 
+        // 5. Tiempos
+        const id = localStorage.getItem('user_id');
+
+        // 6. Listas y JSON
+        let intereses = [];
         let habilidades = [];
-        let disponibilidad = {};
-        let intereses = []; 
+        let disponibilidad = {}; 
         try {
+            const ints = localStorage.getItem('user_intereses'); 
             const habs = localStorage.getItem('user_habilidades');
             const disp = localStorage.getItem('user_disponibilidad');
-            const ints = localStorage.getItem('user_intereses'); 
+            if (ints) intereses = JSON.parse(ints); 
             if (habs) habilidades = JSON.parse(habs);
             if (disp) disponibilidad = JSON.parse(disp);
-            if (ints) intereses = JSON.parse(ints); 
         } catch (e) {
             console.error("Error al cargar los datos del usuario:", e);
         }
 
         return { 
-            name, 
-            role, 
-            id: id ? parseInt(id) : null, 
+            nombre_completo,
             correo_electronico,
-            numero_telefono,
+            tipo_documento,
             numero_identificacion,
+            fecha_nacimiento,
             profesion,
-            direccion,          
-            fecha_nacimiento,   
-            tipo_documento,     
+            numero_telefono,
+            direccion,
+            foto_perfil,
+            rol,
+            estado,
+            autenticacion_2fa_habilitada,
+            id: id ? parseInt(id) : null,
             intereses,          
             habilidades, 
-            disponibilidad,
-            foto_perfil
+            disponibilidad
         };
     });
 
     const login = (userData, tokens) => {
-        // 1. Persistencia física para que resista el F5
+        // 1. Persistencia física (Orden Maestro)
         localStorage.setItem('access_token', tokens.access);
         localStorage.setItem('refresh_token', tokens.refresh);
-        localStorage.setItem('user_role', userData.role);
-        localStorage.setItem('user_name', userData.full_name);
-        localStorage.setItem('user_id', userData.id);
-        localStorage.setItem('user_email', userData.email || '');
-        localStorage.setItem('user_telefono', userData.numero_telefono || '');
-        localStorage.setItem('user_documento', userData.numero_identificacion || '');
-        localStorage.setItem('user_profesion', userData.profesion || '');
-        localStorage.setItem('user_direccion', userData.direccion || '');
-        localStorage.setItem('user_fecha_nacimiento', userData.fecha_nacimiento || '');
+
+        localStorage.setItem('user_nombre_completo', userData.nombre_completo || '');
+        localStorage.setItem('user_correo_electronico', userData.correo_electronico || '');
+
         localStorage.setItem('user_tipo_documento', userData.tipo_documento || 'CC');
+        localStorage.setItem('user_numero_identificacion', userData.numero_identificacion || '');
+        localStorage.setItem('user_fecha_nacimiento', userData.fecha_nacimiento || '');
+        localStorage.setItem('user_profesion', userData.profesion || '');
+
+        localStorage.setItem('user_numero_telefono', userData.numero_telefono || '');
+        localStorage.setItem('user_direccion', userData.direccion || '');
         localStorage.setItem('user_foto_perfil', userData.foto_perfil || '');
+
+        localStorage.setItem('user_rol', userData.rol || 'voluntario');
+        localStorage.setItem('user_estado', userData.estado || 'activo');
+        localStorage.setItem('user_2fa', userData.autenticacion_2fa_habilitada || false);
+
+        localStorage.setItem('user_id', userData.id || '');
+
+        localStorage.setItem('user_intereses', JSON.stringify(userData.intereses || []));
         localStorage.setItem('user_habilidades', JSON.stringify(userData.habilidades || []));
         localStorage.setItem('user_disponibilidad', JSON.stringify(userData.disponibilidad || {}));
-        localStorage.setItem('user_intereses', JSON.stringify(userData.intereses || []));
 
         // 2. Reactividad instantánea: Avisamos a React que el usuario cambió
         setUser({
-            id: userData.id,
-            name: userData.full_name,
-            role: userData.role,
-            correo_electronico: userData.email,
-            numero_telefono: userData.numero_telefono,
-            numero_identificacion: userData.numero_identificacion,
-            profesion: userData.profesion,
-            direccion: userData.direccion,
-            fecha_nacimiento: userData.fecha_nacimiento,
+            nombre_completo: userData.nombre_completo,
+            correo_electronico: userData.correo_electronico,
             tipo_documento: userData.tipo_documento,
+            numero_identificacion: userData.numero_identificacion,
+            fecha_nacimiento: userData.fecha_nacimiento,
+            profesion: userData.profesion,
+            numero_telefono: userData.numero_telefono,
+            direccion: userData.direccion,
+            foto_perfil: userData.foto_perfil,
+            rol: userData.rol,
+            estado: userData.estado,
+            autenticacion_2fa_habilitada: userData.autenticacion_2fa_habilitada,
+            id: userData.id,
             intereses: userData.intereses || [],
             habilidades: userData.habilidades || [],
-            disponibilidad: userData.disponibilidad || {},
-            foto_perfil: userData.foto_perfil
+            disponibilidad: userData.disponibilidad || {}
         });
     };
 
@@ -134,27 +158,29 @@ export const AppProvider = ({ children }) => {
             // 2. Si es exitoso, actualizamos el estado local de React
             setUser(prev => ({ 
                 ...prev, 
-                ...updatedUser,
-                // Garantizamos los alias que usa la UI
-                name: updatedUser.full_name,
-                nombre_completo: updatedUser.full_name
+                ...updatedUser
             }));
             
-            // 3. Blindaje total: Actualizamos el localStorage para que no se borre al recargar
-            localStorage.setItem('user_name', updatedUser.full_name || '');
-            localStorage.setItem('user_email', updatedUser.email || '');
-            localStorage.setItem('user_telefono', updatedUser.numero_telefono || '');
-            localStorage.setItem('user_documento', updatedUser.numero_identificacion || '');
-            localStorage.setItem('user_profesion', updatedUser.profesion || '');
-            localStorage.setItem('user_direccion', updatedUser.direccion || '');
-            localStorage.setItem('user_fecha_nacimiento', updatedUser.fecha_nacimiento || '');
+            // 3. Blindaje total: Actualizamos el localStorage (Orden Maestro)
+            localStorage.setItem('user_nombre_completo', updatedUser.nombre_completo || '');
+            localStorage.setItem('user_correo_electronico', updatedUser.correo_electronico || '');
+
             localStorage.setItem('user_tipo_documento', updatedUser.tipo_documento || 'CC');
-            localStorage.setItem('user_intereses', JSON.stringify(updatedUser.intereses || []));
-            
+            localStorage.setItem('user_numero_identificacion', updatedUser.numero_identificacion || '');
+            localStorage.setItem('user_fecha_nacimiento', updatedUser.fecha_nacimiento || '');
+            localStorage.setItem('user_profesion', updatedUser.profesion || '');
+
+            localStorage.setItem('user_numero_telefono', updatedUser.numero_telefono || '');
+            localStorage.setItem('user_direccion', updatedUser.direccion || '');
             if (updatedUser.foto_perfil) {
                 localStorage.setItem('user_foto_perfil', updatedUser.foto_perfil);
             }
-            
+
+            localStorage.setItem('user_rol', updatedUser.rol || 'voluntario');
+            localStorage.setItem('user_estado', updatedUser.estado || 'activo');
+            localStorage.setItem('user_2fa', updatedUser.autenticacion_2fa_habilitada || false);
+
+            localStorage.setItem('user_intereses', JSON.stringify(updatedUser.intereses || []));
             localStorage.setItem('user_habilidades', JSON.stringify(updatedUser.habilidades || []));
             localStorage.setItem('user_disponibilidad', JSON.stringify(updatedUser.disponibilidad || {}));
             
@@ -183,6 +209,15 @@ export const AppProvider = ({ children }) => {
                 title: item.titulo,
                 description: item.descripcion || 'Sin descripción',
                 status: item.estado === 'abierta' ? 'published' : item.estado === 'cerrada' ? 'closed' : item.estado,
+                
+                // Cálculos de Negocio (Enriquecidos desde el Backend)
+                dias_para_inicio: Number(item.dias_para_inicio) || 0,
+                urgencia: item.urgencia || 'normal',
+                porcentaje_cupos: Number(item.porcentaje_cupos) || 0,
+                match_score: Number(item.match_score) || 0,
+                match_habilidades: Number(item.match_habilidades) || 0,
+                match_disponibilidad: Boolean(item.match_disponibilidad),
+
                 // Garantizamos tipos de datos
                 categorias: item.categorias || [],
                 horario: item.horario || {},
@@ -226,7 +261,11 @@ export const AppProvider = ({ children }) => {
                 // 4. Multimedia
                 imagen_url: camp.imagen_url,
 
-                // 5. Listas JSON (Garantizamos Arrays vacíos si vienen null)
+                // 5. Cálculos de Negocio (Enriquecidos desde el Backend)
+                porcentaje_progreso: Number(camp.porcentaje_progreso) || 0,
+                dias_restantes: Number(camp.dias_restantes) || 0,
+
+                // 6. Listas JSON (Garantizamos Arrays vacíos si vienen null)
                 objetivos: Array.isArray(camp.objetivos) ? camp.objetivos : [],
                 galeria_imagenes: Array.isArray(camp.galeria_imagenes) ? camp.galeria_imagenes : [],
                 video_urls: Array.isArray(camp.video_urls) ? camp.video_urls : [],
@@ -244,44 +283,44 @@ export const AppProvider = ({ children }) => {
     // ==========================================
     // 3. MÓDULO VOLUNTARIO 
     // ==========================================
-    const fetchMyApplications = async () => {
+    const fetchMisPostulaciones = async () => {
         //1. Verificamos autenticación
-        if (localStorage.getItem('user_role') !== 'voluntario') return;
+        if (localStorage.getItem('user_rol') !== 'voluntario') return;
         
         try {
             const data = await obtenerMisPostulaciones();
-            setMyApplications(data);
+            setMisPostulaciones(data);
             console.log('📦 Postulaciones reales recibidas:', data);
         } catch (error) {
             console.error('Error al cargar postulaciones:', error);
         }
     };
 
-    const fetchAllApplications = async () => {
-        if (localStorage.getItem('user_role') === 'voluntario') return;
+    const fetchPostulacionesAdmin = async () => {
+        if (localStorage.getItem('user_rol') === 'voluntario') return;
         try {
             const data = await obtenerTodasLasPostulaciones();
-            setAdminApplications(data);
+            setPostulacionesAdmin(data);
             console.log('📦 Todas las postulaciones (Admin) recibidas:', data);
         } catch (error) {
             console.error('Error al cargar todas las postulaciones:', error);
         }
     };
 
-    const updateApplicationStatus = async (id, newStatus, reason = null) => {
+    const updateEstadoPostulacion = async (id, newStatus, reason = null) => {
         try {
             await cambiarEstadoPostulacion(id, newStatus, reason);
-            await fetchAllApplications(); // Recargamos para ver los cambios
+            await fetchPostulacionesAdmin(); // Recargamos para ver los cambios
         } catch (error) {
             console.error('Error al cambiar estado:', error);
             throw error;
         }
     };
 
-    const deleteApplication = async (id) => {
+    const deletePostulacion = async (id) => {
         try {
             await eliminarPostulacion(id);
-            await fetchAllApplications(); // Recargamos para ver los cambios
+            await fetchPostulacionesAdmin(); // Recargamos para ver los cambios
         } catch (error) {
             console.error('Error al eliminar postulación:', error);
             throw error;
@@ -293,7 +332,7 @@ export const AppProvider = ({ children }) => {
             // 2. Llamamos al backend
             await postularAConvocatoria(convocationId, observaciones);
             // 3. Si sale bien, recargamos la lista desde la base de datos
-            await fetchMyApplications(); 
+            await fetchMisPostulaciones(); 
             return { success: true };
         } catch (error) {
             console.error("Error en la postulación:", error);
@@ -303,59 +342,67 @@ export const AppProvider = ({ children }) => {
     
     // 4. Validar si el voluntario ya está postulado a una convocatoria específica
     const hasApplied = (convocationId) => {
-        return myApplications.some(app => app.id_convocatoria === convocationId);
+        return misPostulaciones.some(app => app.id_convocatoria === convocationId);
     };
     // 5. Obtener mis postulaciones (Filtra por el usuario logueado)
-    const getApplicationsByVolunteer = () => {
-        return myApplications;
+    const getPostulacionesVoluntario = () => {
+        return misPostulaciones;
     };
 
     // ==========================================
     // 4. MÓDULO DE NOTIFICACIONES
     // ==========================================
-    const fetchNotifications = async () => {
+    const cargarNotificaciones = async () => {
         try {
             const data = await obtenerMisNotificaciones();
-            setNotifications(data);
+            // El backend ahora devuelve { conteo_no_leidas: X, resultados: [...] }
+            setNotificaciones(data.resultados || []);
+            setConteoNoLeidas(data.conteo_no_leidas || 0);
             console.log('🔔 Notificaciones recibidas:', data);
         } catch (error) {
             console.error('❌ Error al cargar notificaciones:', error);
         }
     };
 
-    const markNotificationAsRead = async (id) => {
+    const marcarComoLeida = async (id) => {
         try {
             await marcarNotificacionComoLeida(id);
-            // Actualizamos el estado local para que la campanita se apague de inmediato sin recargar toda la BD
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
+            // Actualizamos el estado local UI Optimista
+            setNotificaciones(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n));
+            setConteoNoLeidas(prev => Math.max(0, prev - 1));
         } catch (error) {
             console.error('Error al marcar notificación como leída:', error);
         }
     };
 
-    const deleteNotification = async (id) => {
+    const borrarNotificacion = async (id) => {
         try {
             await eliminarNotificacion(id);
             // Eliminamos localmente del estado para una UX instantánea
-            setNotifications(prev => prev.filter(n => n.id !== id));
+            setNotificaciones(prev => {
+                const notif = prev.find(n => n.id === id);
+                if (notif && !notif.leida) {
+                    setConteoNoLeidas(c => Math.max(0, c - 1));
+                }
+                return prev.filter(n => n.id !== id);
+            });
         } catch (error) {
             console.error('Error al eliminar notificación:', error);
             throw error;
         }
     };
 
-    const deleteAllNotifications = async () => {
+    const vaciarNotificaciones = async () => {
         try {
             await eliminarTodasLasNotificaciones();
             // Vaciamos el estado local instantáneamente
-            setNotifications([]);
+            setNotificaciones([]);
+            setConteoNoLeidas(0);
         } catch (error) {
             console.error('Error al vaciar notificaciones:', error);
             throw error;
         }
     };
-
-    const unreadNotificationsCount = notifications.filter(n => !n.leida).length;
 
 
     // ==========================================
@@ -368,11 +415,11 @@ export const AppProvider = ({ children }) => {
         
         // 2. Carga Privada (Solo si hay sesión)
         if (localStorage.getItem('access_token')) {
-            promises.push(fetchNotifications());
-            if (localStorage.getItem('user_role') === 'voluntario') {
-                promises.push(fetchMyApplications());
-            } else if (localStorage.getItem('user_role') === 'administrador') {
-                promises.push(fetchAllApplications()); 
+            promises.push(cargarNotificaciones());
+            if (localStorage.getItem('user_rol') === 'voluntario') {
+                promises.push(fetchMisPostulaciones());
+            } else if (localStorage.getItem('user_rol') === 'administrador') {
+                promises.push(fetchPostulacionesAdmin()); 
             }
         }
         
@@ -432,23 +479,23 @@ export const AppProvider = ({ children }) => {
         logout,
         updateProfile,
         showToast,
-        getApplicationsByVolunteer,
+        getPostulacionesVoluntario,
         hasApplied,
         applyToConvocation,
         
         // Exportar para el Admin
-        adminApplications,
-        fetchAllApplications,
-        updateApplicationStatus,
-        deleteApplication,
+        postulacionesAdmin,
+        fetchPostulacionesAdmin,
+        updateEstadoPostulacion,
+        deletePostulacion,
 
         // Exportar Notificaciones
-        notifications,
-        fetchNotifications,
-        markNotificationAsRead,
-        deleteNotification, 
-        deleteAllNotifications,
-        unreadNotificationsCount
+        notificaciones,
+        cargarNotificaciones,
+        marcarComoLeida,
+        borrarNotificacion, 
+        vaciarNotificaciones,
+        conteoNoLeidas
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

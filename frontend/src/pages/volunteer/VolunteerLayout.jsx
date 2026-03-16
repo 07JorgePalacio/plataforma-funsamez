@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { LayoutDashboard, User, Briefcase, FileText, Heart, LogOut, Bell, X, Trash2, Globe } from 'lucide-react';
 
 // ---  MODAL DE NOTIFICACIONES ---
-function NotificationsModal({ isOpen, onClose, notifications, onNotificationClick, onDeleteClick, onDeleteAllClick }) {
+function NotificationsModal({ isOpen, onClose, notificaciones, onNotificationClick, onDeleteClick, onDeleteAllClick }) {
     if (!isOpen) return null;
 
     return (
@@ -19,7 +19,7 @@ function NotificationsModal({ isOpen, onClose, notifications, onNotificationClic
                         <h2 className="text-title-large font-bold text-on-surface">Notificaciones</h2>
                     </div>
                     <div className="flex items-center gap-1">
-                        {notifications.length > 0 && (
+                        {notificaciones.length > 0 && (
                             <button 
                                 onClick={onDeleteAllClick} 
                                 className="text-xs font-bold text-error hover:bg-error/10 px-3 py-1.5 rounded-lg transition-colors"
@@ -35,14 +35,14 @@ function NotificationsModal({ isOpen, onClose, notifications, onNotificationClic
 
                 {/* Lista de Notificaciones */}
                 <div className="overflow-y-auto p-3 bg-surface-container-lowest flex-1">
-                    {notifications.length === 0 ? (
+                    {notificaciones.length === 0 ? (
                         <div className="p-8 text-center text-on-surface-variant flex flex-col items-center">
                             <Bell className="w-12 h-12 mb-3 opacity-20" />
                             <p>No tienes notificaciones nuevas.</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {notifications.map(notif => {
+                            {notificaciones.map(notif => {
                                 // Mapeo de colores M3
                                 const typeStyles = {
                                     success: 'bg-success/10 text-success border-success/20',
@@ -110,7 +110,7 @@ function NotificationsModal({ isOpen, onClose, notifications, onNotificationClic
 }
 
 export default function VolunteerLayout() {
-  const { user, logout, notifications = [], markNotificationAsRead, deleteNotification, deleteAllNotifications, unreadNotificationsCount = 0 } = useApp(); 
+  const { user, logout, notificaciones = [], marcarComoLeida, borrarNotificacion, vaciarNotificaciones, conteoNoLeidas = 0 } = useApp(); 
   const navigate = useNavigate();
   const location = useLocation();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -118,7 +118,7 @@ export default function VolunteerLayout() {
  //  Handler para Clic en Notificación (Navega y Marca como Leída)
   const handleNotificationClick = (notif) => {
     if (!notif.leida) {
-        markNotificationAsRead(notif.id);
+        marcarComoLeida(notif.id);
     }
     setIsNotificationsOpen(false); // Cierra el modal
     navigate('/voluntario/postulaciones', { state: { highlightId: notif.referencia_id } });
@@ -127,7 +127,7 @@ export default function VolunteerLayout() {
   // Handler para Eliminar Definitivamente individual
   const handleDeleteNotification = async (id) => {
     try {
-        await deleteNotification(id); 
+        await borrarNotificacion(id); 
     } catch (error) {
         console.error("No se pudo eliminar la notificación:", error);
     }
@@ -136,14 +136,14 @@ export default function VolunteerLayout() {
   // Handler para Vaciar la bandeja
   const handleDeleteAllNotifications = async () => {
     try {
-        await deleteAllNotifications(); 
+        await vaciarNotificaciones(); 
     } catch (error) {
         console.error("No se pudieron eliminar las notificaciones:", error);
     }
   };
 
-  // Obtenemos el nombre del usuario desde el contexto
-  const userName = user?.name || 'Voluntario';
+  // Obtenemos el nombre del usuario desde el contexto (Lenguaje Ubicuo)
+  const userName = user?.nombre_completo || 'Voluntario';
 
   const handleLogout = () => {
     logout();
@@ -182,7 +182,7 @@ export default function VolunteerLayout() {
           {/* Botón Campanita PC */}
           <button onClick={() => setIsNotificationsOpen(true)} className="absolute -top-3 -right-2 p-3 bg-white rounded-full shadow-elevation-2 border border-outline-variant/50 hover:bg-surface-container transition-colors focus:ring-4 focus:ring-primary/20">
             <Bell size={20} className="text-on-surface-variant" />
-            {unreadNotificationsCount > 0 && (
+            {conteoNoLeidas > 0 && (
               <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-error rounded-full border-2 border-white animate-pulse"></span>
             )}
           </button>
@@ -212,7 +212,7 @@ export default function VolunteerLayout() {
       <div className="md:hidden fixed top-4 right-4 z-40">
         <button onClick={() => setIsNotificationsOpen(true)} className="p-3.5 bg-surface/90 backdrop-blur-md rounded-full shadow-elevation-3 border border-outline-variant/50 relative hover:scale-105 transition-transform active:scale-95">
           <Bell size={24} className="text-on-surface-variant" />
-          {unreadNotificationsCount > 0 && (
+          {conteoNoLeidas > 0 && (
               <span className="absolute top-2 right-2 w-3.5 h-3.5 bg-error rounded-full border-2 border-surface animate-pulse"></span>
           )}
         </button>
@@ -245,7 +245,7 @@ export default function VolunteerLayout() {
       <NotificationsModal 
         isOpen={isNotificationsOpen} 
         onClose={() => setIsNotificationsOpen(false)} 
-        notifications={notifications} 
+        notificaciones={notificaciones} 
         onNotificationClick={handleNotificationClick} 
         onDeleteClick={handleDeleteNotification}
         onDeleteAllClick={handleDeleteAllNotifications}

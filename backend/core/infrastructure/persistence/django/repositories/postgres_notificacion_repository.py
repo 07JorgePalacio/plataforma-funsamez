@@ -1,8 +1,9 @@
-from typing import List, Dict
+from typing import List
 from django.utils import timezone
 from datetime import timedelta
 from core.application.ports.output.notificacion_repository import NotificacionRepository
 from core.infrastructure.persistence.django.models import NotificacionModel
+from core.domain.entities.notificacion import Notificacion
 
 class PostgresNotificacionRepository(NotificacionRepository):
     
@@ -15,19 +16,22 @@ class PostgresNotificacionRepository(NotificacionRepository):
             referencia_id=referencia_id 
         )
 
-    def obtener_por_usuario(self, id_usuario: int) -> List[Dict]:
+    def _to_entity(self, model: NotificacionModel) -> Notificacion:
+        """Convierte el modelo de Django a una Entidad de Dominio pura."""
+        return Notificacion(
+            id_usuario=model.usuario_id,
+            titulo=model.titulo,
+            mensaje=model.mensaje,
+            tipo=model.tipo,
+            id=model.id,
+            referencia_id=model.referencia_id,
+            leida=model.leida,
+            fecha_creacion=model.fecha_creacion
+        )
+
+    def obtener_por_usuario(self, id_usuario: int) -> List[Notificacion]:
         notificaciones = NotificacionModel.objects.filter(usuario_id=id_usuario).order_by('-fecha_creacion')
-        return [
-            {
-                "id": n.id,
-                "titulo": n.titulo,
-                "mensaje": n.mensaje,
-                "tipo": n.tipo,
-                "leida": n.leida,
-                "fecha_creacion": n.fecha_creacion,
-                "referencia_id": n.referencia_id
-            } for n in notificaciones
-        ]
+        return [self._to_entity(n) for n in notificaciones]
 
     def marcar_como_leida(self, id_notificacion: int) -> bool:
         try:

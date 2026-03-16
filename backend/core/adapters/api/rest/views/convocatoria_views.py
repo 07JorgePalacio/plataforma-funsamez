@@ -17,21 +17,17 @@ class CrearConvocatoriaView(APIView):
         
         try:
             nueva_convocatoria = Container.crear_convocatoria_use_case().execute(
-                # 1. Info Básica
+                id_usuario=request.user.id,
                 titulo=data['titulo'],
-                descripcion=data.get('descripcion', ''),
-                # 2. Tiempos y Cupos
                 fecha_inicio=data['fecha_inicio'],
                 fecha_fin=data['fecha_fin'],
-                cupos=data['cupos_disponibles'],
-                id_usuario=request.user.id,
-                # 3. Logística
+                cupos_disponibles=data['cupos_disponibles'],
+                descripcion=data.get('descripcion', ''),
                 ubicacion=data.get('ubicacion', ''),
                 link_google_maps=data.get('link_google_maps', ''),
                 link_whatsapp=data.get('link_whatsapp', ''),
                 modalidad=data.get('modalidad', 'presencial'), 
-                # 4. JSON/Listas
-                habilidades=data.get('habilidades_requeridas', ''),
+                habilidades_requeridas=data.get('habilidades_requeridas', ''),
                 categorias=data.get('categorias', []), 
                 horario=data.get('horario', {}),
                 beneficios=data.get('beneficios', []) 
@@ -54,9 +50,12 @@ class ListarConvocatoriasView(APIView):
 
     def get(self, request):
         estado_filtro = request.query_params.get('estado', None)
+        # Identificar si hay un usuario logueado en esta petición
+        usuario_id = request.user.id if request.user and request.user.is_authenticated else None
+        
         caso_de_uso = Container.listar_convocatorias_use_case
         try:
-            convocatorias = caso_de_uso().execute(estado=estado_filtro)
+            convocatorias = caso_de_uso().execute(estado=estado_filtro, usuario_id=usuario_id)
             serializer = ConvocatoriaSerializer(convocatorias, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:

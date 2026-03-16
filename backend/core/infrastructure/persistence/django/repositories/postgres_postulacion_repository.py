@@ -14,16 +14,9 @@ class PostgresPostulacionRepository(PostulacionRepository):
         """Convierte el modelo de la BD a una Entidad pura de Dominio usando El Orden Maestro."""
         return Postulacion(
             # --- 1. Identificación ---
-            id=model.id,
             id_usuario=model.usuario_id,
             id_convocatoria=model.convocatoria_id,
-            titulo_convocatoria=model.convocatoria.titulo if hasattr(model, 'convocatoria') else None,
-            nombre_usuario=model.usuario.nombre_completo if hasattr(model, 'usuario') else None,
-            correo_usuario=model.usuario.correo_electronico if hasattr(model, 'usuario') else None,
-            telefono_usuario=model.usuario.numero_telefono if hasattr(model, 'usuario') else None,
-            documento_usuario=f"{model.usuario.tipo_documento} {model.usuario.numero_identificacion}" if hasattr(model, 'usuario') else None,
-            habilidades_usuario=model.usuario.habilidades if hasattr(model, 'usuario') else [],
-            disponibilidad_usuario=model.usuario.disponibilidad if hasattr(model, 'usuario') else {},
+            id=model.id,
             
             # --- 2. Información Básica ---
             observaciones=model.observaciones,
@@ -31,15 +24,15 @@ class PostgresPostulacionRepository(PostulacionRepository):
             match_habilidades=model.match_habilidades,
             match_disponibilidad=model.match_disponibilidad,
             
-            # --- 3. Logística/Configuración ---
+            # --- 3. Estado ---
             estado=model.estado,
             
             # --- 4. Tiempos ---
             fecha_postulacion=model.fecha_postulacion,
             fecha_actualizacion=model.fecha_actualizacion,
             
-            # --- 5. Listas y JSON ---
-            historial_estados=model.historial_estados
+            # --- 5. Historial ---
+            historial_estados=model.historial_estados if isinstance(model.historial_estados, list) else []
         )
 
     def crear(self, postulacion: Postulacion) -> Postulacion:

@@ -4,18 +4,13 @@ from typing import Optional, List, Dict
 
 @dataclass
 class Postulacion:
-
+    """
+    Entidad de Dominio: Postulación
+    """
     # --- 1. Identificación ---
+    id_usuario: int
+    id_convocatoria: int
     id: Optional[int] = None
-    id_usuario: Optional[int] = None
-    id_convocatoria: Optional[int] = None
-    titulo_convocatoria: Optional[str] = None
-    nombre_usuario: Optional[str] = None
-    correo_usuario: Optional[str] = None
-    telefono_usuario: Optional[str] = None
-    documento_usuario: Optional[str] = None
-    habilidades_usuario: list = field(default_factory=list)
-    disponibilidad_usuario: dict = field(default_factory=dict)
     
     # --- 2. Información Básica ---
     observaciones: Optional[str] = None
@@ -23,13 +18,12 @@ class Postulacion:
     match_habilidades: Optional[int] = None
     match_disponibilidad: Optional[bool] = None 
     
-    # --- 3. Logística/Configuración ---
+    # --- 3. Estado ---
     estado: str = "en_revision"  # en_revision, aprobada, rechazada
     
     # --- 4. Tiempos ---
     fecha_postulacion: Optional[datetime] = None
     fecha_actualizacion: Optional[datetime] = None
     
-    # --- 5. Listas y JSON ---
-    # Trazabiliad de quien cambio el estado
-    historial_estados: List[Dict] = field(default_factory=list)
+    # --- 5. Historial (JSON) ---
+    historial_estados: list = field(default_factory=list)

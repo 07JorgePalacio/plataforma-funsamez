@@ -51,10 +51,10 @@ export default function ProfilePage() {
     useEffect(() => {
         if (user) {
             setFormData({
-                nombre_completo: user.nombre_completo || user.nombre || user.name || '',
-                numero_telefono: user.numero_telefono || user.telefono || user.phone || '',
-                numero_identificacion: user.numero_identificacion || user.documento || user.identificacion || '',
-                profesion: user.profesion || user.ocupacion || '',
+                nombre_completo: user.nombre_completo || '',
+                numero_telefono: user.numero_telefono || '',
+                numero_identificacion: user.numero_identificacion || '',
+                profesion: user.profesion || '',
                 direccion: user.direccion || '', 
                 fecha_nacimiento: user.fecha_nacimiento || '', 
                 tipo_documento: user.tipo_documento || 'CC', 
@@ -311,7 +311,7 @@ export default function ProfilePage() {
                         <div className="sm:col-span-2 md:col-span-1">
                             <label className="block text-label-large text-on-surface font-bold mb-2 flex items-center gap-1.5"><Mail className="w-4 h-4"/> Correo Electrónico</label>
                             <p className="text-body-medium text-on-surface-variant bg-surface-container-high px-4 py-3 rounded-xl border border-outline-variant/30 flex items-center justify-between">
-                                {user.correo_electronico || user.email || 'No especificado'}
+                                {user.correo_electronico || 'No especificado'}
                                 <span className="text-[10px] font-bold bg-surface-variant/20 px-2 py-0.5 rounded uppercase tracking-wider">No editable</span>
                             </p>
                         </div>

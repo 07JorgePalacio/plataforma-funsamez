@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 export default function VolunteerDashboard() {
-    const { user, getPublishedConvocations, getApplicationsByVolunteer, convocations, loading } = useApp();
+    const { user, getPublishedConvocations, getPostulacionesVoluntario, convocations, loading } = useApp();
     const navigate = useNavigate();
 
     if (loading) {
@@ -22,30 +22,30 @@ export default function VolunteerDashboard() {
     const publishedConvocations = getPublishedConvocations ? getPublishedConvocations() : convocations.filter(c => c.estado === 'publicada' || c.status === 'published');
 
     // --- 2. DATOS REALES DE POSTULACIONES (Mapeo y cruce de datos) ---
-    const rawMyApplications = getApplicationsByVolunteer() || [];
-    const myApplications = rawMyApplications.map(app => {
+    const rawMisPostulaciones = getPostulacionesVoluntario() || [];
+    const misPostulaciones = rawMisPostulaciones.map(post => {
 
-        const convocation = convocations.find(c => c.id === app.id_convocatoria);
-        const convStatus = convocation ? (convocation.estado || convocation.status) : 'cerrada';
-        const isConvClosed = convStatus === 'cerrada' || convStatus === 'closed' || convStatus === 'finalizada';
-        const isHistory = app.estado === 'rechazada' || (isConvClosed && app.estado !== 'en_revision' && app.estado !== 'en_espera');
+        const convocation = convocations.find(c => c.id === post.id_convocatoria);
+        
+        // Arquitectura Limpia: El backend ya calculó si es histórica o activa
+        const isHistory = !post.es_activa;
 
         return {
-            ...app,
+            ...post,
             convocationTitle: convocation ? convocation.title : 'Convocatoria no encontrada',
-            appliedAt: app.fecha_postulacion ? new Date(app.fecha_postulacion).toLocaleDateString('es-CO') : 'Fecha desconocida',
+            appliedAt: post.fecha_postulacion ? new Date(post.fecha_postulacion).toLocaleDateString('es-CO') : 'Fecha desconocida',
     
-            uiStatus: (app.estado === 'en_revision' || app.estado === 'en_espera') ? 'pending' : 
-                      (app.estado === 'aprobada') ? 'accepted' : 
-                      (app.estado === 'rechazada') ? 'rejected' : app.status,
-            isHistory // <-- Marcador para filtrarla fácilmente
+            uiStatus: (post.estado === 'en_revision' || post.estado === 'en_espera') ? 'pending' : 
+                      (post.estado === 'aprobada') ? 'accepted' : 
+                      (post.estado === 'rechazada') ? 'rejected' : post.estado,
+            isHistory
         };
     });
 
     // --- 3. FILTROS PARA ESTADÍSTICAS Y LISTAS ---
-    const activeApplications = myApplications.filter(a => !a.isHistory);
-    const pendingApplications = activeApplications.filter(a => a.uiStatus === 'pending');
-    const acceptedApplications = activeApplications.filter(a => a.uiStatus === 'accepted');
+    const postulacionesActivas = misPostulaciones.filter(p => !p.isHistory);
+    const postulacionesPendientes = postulacionesActivas.filter(p => p.uiStatus === 'pending');
+    const postulacionesAprobadas = postulacionesActivas.filter(p => p.uiStatus === 'accepted');
 
     const stats = [
         {
@@ -57,14 +57,14 @@ export default function VolunteerDashboard() {
         },
         {
             label: 'Postulaciones Pendientes',
-            value: pendingApplications.length,
+            value: postulacionesPendientes.length,
             icon: Clock,
             color: 'warning',
             link: '/voluntario/postulaciones'
         },
         {
             label: 'Posiciones Activas',
-            value: acceptedApplications.length,
+            value: postulacionesAprobadas.length,
             icon: CheckCircle2,
             color: 'success',
             link: '/voluntario/postulaciones'
@@ -170,32 +170,32 @@ export default function VolunteerDashboard() {
                         </Link>
                     </div>
 
-                    {activeApplications.length > 0 ? (
+                    {postulacionesActivas.length > 0 ? (
                         <div className="space-y-4">
-                            {activeApplications.slice(0, 3).map(application => (
+                            {postulacionesActivas.slice(0, 3).map(postulacion => (
                                 <div
-                                    key={application.id}
-                                    onClick={() => navigate('/voluntario/postulaciones', { state: { highlightId: application.id } })}
+                                    key={postulacion.id}
+                                    onClick={() => navigate('/voluntario/postulaciones', { state: { highlightId: postulacion.id } })}
                                     className="p-4 rounded-2xl bg-surface-container flex items-center gap-4 border border-outline-variant/30 hover:bg-surface-container-high hover:border-secondary/30 transition-colors cursor-pointer group"
                                 >
                                     <div className="flex-1 min-w-0 flex flex-col items-start gap-2">
-                                        <h3 className="text-title-small text-on-surface font-bold line-clamp-1" title={application.convocationTitle}>
-                                            {application.convocationTitle}
+                                        <h3 className="text-title-small text-on-surface font-bold line-clamp-1" title={postulacion.convocationTitle}>
+                                            {postulacion.convocationTitle}
                                         </h3>
                                         {/* Frijolito de Fecha */}
                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container-highest text-on-surface-variant text-[10px] font-bold uppercase tracking-wider border border-outline-variant/50">
                                             <Calendar className="w-3 h-3" />
-                                            Postulado el {application.appliedAt}
+                                            Postulado el {postulacion.appliedAt}
                                         </span>
                                     </div>
                                     <span className={`px-3 py-1 rounded-full text-label-small font-medium whitespace-nowrap
-                                        ${application.uiStatus === 'pending' ? 'bg-warning-container text-warning' : ''}
-                                        ${application.uiStatus === 'accepted' ? 'bg-success-container text-success' : ''}
-                                        ${application.uiStatus === 'rejected' ? 'bg-error-container text-error' : ''}
+                                        ${postulacion.uiStatus === 'pending' ? 'bg-warning-container text-warning' : ''}
+                                        ${postulacion.uiStatus === 'accepted' ? 'bg-success-container text-success' : ''}
+                                        ${postulacion.uiStatus === 'rejected' ? 'bg-error-container text-error' : ''}
                                     `}>
-                                        {application.uiStatus === 'pending' && 'Pendiente'}
-                                        {application.uiStatus === 'accepted' && 'Aprobada'}
-                                        {application.uiStatus === 'rejected' && 'Rechazada'}
+                                        {postulacion.uiStatus === 'pending' && 'Pendiente'}
+                                        {postulacion.uiStatus === 'accepted' && 'Aprobada'}
+                                        {postulacion.uiStatus === 'rejected' && 'Rechazada'}
                                     </span>
                                 </div>
                             ))}

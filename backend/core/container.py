@@ -65,7 +65,10 @@ class Container:
 
     @staticmethod
     def register_user_use_case() -> RegisterUser:
-        return RegisterUser(user_repository=Container.get_user_repository())
+        return RegisterUser(
+            user_repository=Container.get_user_repository(),
+            password_hasher=Container._password_hasher
+        )
     
     @staticmethod
     def login_user_use_case() -> LoginUser:
@@ -95,7 +98,10 @@ class Container:
     
     @staticmethod
     def listar_convocatorias_use_case() -> ListarConvocatoriasUseCase:
-        return ListarConvocatoriasUseCase(repository=Container.get_convocatoria_repository())
+        return ListarConvocatoriasUseCase(
+            repository=Container.get_convocatoria_repository(),
+            user_repository=Container.get_user_repository()
+        )
     
     @staticmethod
     def actualizar_convocatoria_use_case() -> ActualizarConvocatoriaUseCase:
@@ -150,13 +156,17 @@ class Container:
     @staticmethod
     def listar_mis_postulaciones_use_case() -> ListarMisPostulacionesUseCase:
         return ListarMisPostulacionesUseCase(
-            postulacion_repository=Container.get_postulacion_repository()
+            postulacion_repository=Container.get_postulacion_repository(),
+            convocatoria_repository=Container.get_convocatoria_repository(),
+            user_repository=Container.get_user_repository()
         )
 
     @staticmethod
     def listar_todas_postulaciones_use_case() -> ListarTodasPostulacionesUseCase:
         return ListarTodasPostulacionesUseCase(
-            postulacion_repository=Container.get_postulacion_repository()
+            postulacion_repository=Container.get_postulacion_repository(),
+            convocatoria_repository=Container.get_convocatoria_repository(),
+            user_repository=Container.get_user_repository()
         )
 
     @staticmethod
@@ -177,7 +187,8 @@ class Container:
             postulacion_repository=Container.get_postulacion_repository(),
             notificacion_repository=Container.get_notificacion_repository(),
             email_service=Container.get_email_service(),
-            convocatoria_repository=Container.get_convocatoria_repository()
+            convocatoria_repository=Container.get_convocatoria_repository(),
+            user_repository=Container.get_user_repository()
         )
 
     @staticmethod

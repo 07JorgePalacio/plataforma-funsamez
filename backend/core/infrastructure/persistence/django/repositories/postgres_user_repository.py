@@ -55,27 +55,26 @@ class PostgresUserRepository(UserRepository):
             return None
 
     def _to_domain(self, model: UsuarioModel) -> User:
-        # Mapeo: Modelo Django -> Entidad
+        # Mapeo: Modelo Django -> Entidad (Estricto Orden Maestro)
         return User(
-            id=model.id,
             nombre_completo=model.nombre_completo,
             correo_electronico=model.correo_electronico,
             contrasena_hash=model.password,
+            tipo_documento=model.tipo_documento,
+            numero_identificacion=model.numero_identificacion,
+            fecha_nacimiento=str(model.fecha_nacimiento) if model.fecha_nacimiento else None,
+            profesion=model.profesion,
             numero_telefono=model.numero_telefono,
             direccion=model.direccion,
+            foto_perfil=model.foto_perfil,
             rol=model.rol,
             estado=model.estado,
             autenticacion_2fa_habilitada=model.autenticacion_2fa_habilitada,
+            id=model.id,
             fecha_creacion=model.fecha_creacion,
+            fecha_verificacion_correo=getattr(model, 'fecha_verificacion_correo', None),
             ultima_conexion=model.ultima_conexion,
-            
-            # Campos Nuevos
-            fecha_nacimiento=str(model.fecha_nacimiento) if model.fecha_nacimiento else None,
-            tipo_documento=model.tipo_documento, 
-            numero_identificacion=model.numero_identificacion,
-            profesion=model.profesion,
-            intereses=model.intereses,
-            habilidades=model.habilidades,
-            disponibilidad=model.disponibilidad,
-            foto_perfil=model.foto_perfil.url if model.foto_perfil else None
+            intereses=model.intereses or [],
+            habilidades=model.habilidades or [],
+            disponibilidad=model.disponibilidad or {}
         )

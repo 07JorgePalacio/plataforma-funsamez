@@ -3,7 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from core.container import Container
-from core.adapters.api.rest.serializers.postulacion_serializers import PostularVoluntarioSerializer
+from core.adapters.api.rest.serializers.postulacion_serializers import (
+    PostularVoluntarioSerializer,
+    PostulacionResponseSerializer
+)
 
 class PostularVoluntarioView(APIView):
     """
@@ -82,6 +85,7 @@ class MisPostulacionesView(APIView):
                     "id": post.id,
                     "id_convocatoria": post.id_convocatoria,
                     "estado": post.estado,
+                    "es_activa": post.es_activa,
                     "fecha_postulacion": post.fecha_postulacion,
                     "observaciones": post.observaciones,
                     "motivo_rechazo": post.motivo_rechazo,
@@ -121,6 +125,7 @@ class ListarTodasPostulacionesView(APIView):
                     "disponibilidad_usuario": getattr(post, 'disponibilidad_usuario', {}),
                     "id_convocatoria": post.id_convocatoria,
                     "estado": post.estado,
+                    "es_activa": post.es_activa,
                     "fecha_postulacion": post.fecha_postulacion,
                     "observaciones": post.observaciones,
                     "motivo_rechazo": post.motivo_rechazo,
