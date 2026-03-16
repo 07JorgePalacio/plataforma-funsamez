@@ -17,7 +17,7 @@ class ListarTodasPostulacionesUseCase(ListarTodasPostulacionesInputPort):
         
         for post in postulaciones:
             convocatoria = self.convocatoria_repository.obtener_por_id(post.id_convocatoria)
-            usuario = self.user_repository.get_by_id(post.id_usuario)
+            usuario = self.user_repository.obtener_por_id(post.id_usuario)
             
             estado_convocatoria = convocatoria.estado if convocatoria else 'cerrada'
             
