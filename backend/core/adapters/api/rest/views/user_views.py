@@ -29,14 +29,15 @@ class RegisterUserView(APIView):
         try:
             user_entity = Container.register_user_use_case().execute(
                 nombre_completo=data['nombre_completo'],
-                email=data['correo_electronico'],
-                password=data['contrasena'],
+                correo_electronico=data['correo_electronico'],
+                contrasena=data['contrasena'],
                 tipo_documento=data.get('tipo_documento', 'CC'),
                 numero_identificacion=data.get('numero_identificacion'),
-                telefono=data.get('numero_telefono'),
-                direccion=data.get('direccion'),
                 fecha_nacimiento=data.get('fecha_nacimiento'),
                 profesion=data.get('profesion'),
+                numero_telefono=data.get('numero_telefono'),
+                direccion=data.get('direccion'),
+                foto_perfil=data.get('foto_perfil'),
                 intereses=data.get('intereses', []),
                 habilidades=data.get('habilidades', []),
                 disponibilidad=data.get('disponibilidad', {})
